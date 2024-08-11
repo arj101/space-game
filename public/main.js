@@ -37,8 +37,9 @@ const complexBody = Bodies.fromVertices(400, 10, [
   ],
 ]);
 
-const ship = Bodies.rectangle(200, 50, 250, 87, {});
+const ship = Bodies.rectangle(300, window.innerHeight - 160, 250, 87, {});
 ship.render.sprite.texture = "./shiptexture.png";
+let shipHealth = 100;
 
 const ground = Bodies.rectangle(
   window.innerWidth / 2,
@@ -73,6 +74,16 @@ const upperWall = Bodies.rectangle(
   { isStatic: true },
 );
 
+const otherBodies = [
+  boxA,
+  boxB,
+  ground,
+  complexBody,
+  leftWall,
+  rightWall,
+  upperWall,
+];
+
 Composite.add(engine.world, [
   boxA,
   boxB,
@@ -105,6 +116,8 @@ const runner = Runner.create();
 
 let prevT = 0;
 
+const collissionMap = {};
+
 function run(t) {
   window.requestAnimationFrame(run);
 
@@ -129,6 +142,20 @@ function run(t) {
     Body.applyForce(ship, forceOriginOff, force);
   }
 
+  for (const other of otherBodies) {
+    const collission = Matter.Collision.collides(ship, other);
+
+    if (collission != null && collissionMap[other.id] != true) {
+      shipHealth -= collission.depth * 10;
+      collissionMap[other.id] = true;
+    } else if (collissionMap[other.id] == true && collission == null) {
+      collissionMap[other.id] = false;
+    }
+  }
+
   Engine.update(engine, dt);
+  render.context.fillStyle = "white";
+  render.context.font = "30px serif";
+  render.context.fillText(`Health: ${shipHealth.toFixed(0)}`, 100, 100);
 }
 window.requestAnimationFrame(run);

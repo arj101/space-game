@@ -125,13 +125,13 @@ const PI_2 = Math.PI / 2;
 let leftThruster, rightThruster;
 
 window.addEventListener("keydown", (e) => {
-  leftThruster = e.key == "a" || leftThruster;
-  rightThruster = e.key == "d" || rightThruster;
+  leftThruster = e.key == "a" || e.key == "ArrowLeft" || leftThruster;
+  rightThruster = e.key == "d" || e.key == "ArrowRight" || rightThruster;
 });
 
 window.addEventListener("keyup", (e) => {
-  if (e.key == "a") leftThruster = false;
-  if (e.key == "d") rightThruster = false;
+  if (e.key == "a" || e.key == "ArrowLeft") leftThruster = false;
+  if (e.key == "d" || e.key == "ArrowRight") rightThruster = false;
 });
 
 const runner = Runner.create();
@@ -140,7 +140,7 @@ let prevT = 0;
 
 const collissionMap = {};
 
-const leftThrusterButtonPos = Vector.create(100, window.innerHeight - 100);
+const leftThrusterButtonPos = Vector.create(100, window.innerHeight / 2 - 100);
 const rightThrusterButtonPos = Vector.create(
   window.innerWidth - 100,
   window.innerHeight - 100,
@@ -177,6 +177,9 @@ window.addEventListener("pointerup", (e) => {
 let landed = false;
 let landTime = 0;
 
+let camPos = Vector.create(ship.position.x, ship.position.y);
+let camVel = Vector.create(0, 0);
+
 function run(t) {
   window.requestAnimationFrame(run);
 
@@ -201,12 +204,14 @@ function run(t) {
     Body.applyForce(ship, forceOriginOff, force);
   }
 
+  let collided = false;
   for (const other of otherBodies) {
     const collission = Matter.Collision.collides(ship, other);
 
     if (collission != null && collissionMap[other.id] != true) {
       shipHealth -= collission.depth * 10;
       collissionMap[other.id] = true;
+      collided = true;
     } else if (collissionMap[other.id] == true && collission == null) {
       collissionMap[other.id] = false;
     }
@@ -234,6 +239,7 @@ function run(t) {
   }
 
   Engine.update(engine, dt);
+  render.context.restore();
   render.context.fillStyle = "white";
   render.context.font = "30px serif";
   render.context.fillText(`Health: ${shipHealth.toFixed(0)}`, 100, 100);
@@ -256,11 +262,25 @@ function run(t) {
   if (landed) {
     ctx.fillStyle = `rgba(255, 255, 255, ${0.4 + ((t - landTime) / 4000) * 0.6})`;
     ctx.fillRect(
-      ship.position.x - 125,
-      ship.position.y - 100,
+      window.innerWidth / 2 - 125,
+      window.innerHeight / 2 - 100,
       ((t - landTime) / 4000) * 250,
       30,
     );
   }
+  render.context.save();
+  render.context.translate(
+    window.innerWidth / 2 - camPos.x,
+    window.innerHeight / 2 - camPos.y,
+  );
+
+  const dp = Vector.sub(ship.position, camPos);
+  let accel = (collided ? 0.1 : 0.05) * Vector.magnitude(dp);
+
+  const norm_dp = Vector.normalise(dp);
+
+  camVel = Vector.add(camVel, Vector.mult(norm_dp, accel));
+  camVel = Vector.sub(camVel, Vector.mult(camVel, collided ? 0.05 : 0.4));
+  camPos = Vector.add(camPos, Vector.mult(camVel, dt));
 }
 window.requestAnimationFrame(run);

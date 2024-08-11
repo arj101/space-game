@@ -1,33 +1,128 @@
-const canvas = document.getElementById("canvas1");
+const Engine = Matter.Engine,
+  Render = Matter.Render,
+  Runner = Matter.Runner,
+  Bodies = Matter.Bodies,
+  Body = Matter.Body,
+  Composite = Matter.Composite,
+  Vector = Matter.Vector;
 
-const ctx = canvas.getContext("2d");
-ctx.canvas.width = window.innerWidth;
-ctx.canvas.height = window.innerHeight;
+const engine = Engine.create();
 
-let y = 100;
+const render = Render.create({
+  element: document.body,
+  engine: engine,
+  options: {
+    wireframes: false,
+  },
+});
 
-let vy = 0.0;
-let ay = 0.008;
+Render.setSize(render, window.innerWidth, window.innerHeight);
 
-let tPrev = -1;
-function draw(tNow) {
-  if (tPrev < 0) tPrev = tNow;
-  const dt = (tNow - tPrev) * 0.001;
+window.onresize = () => {
+  Render.setSize(render, window.innerWidth, window.innerHeight);
+};
 
-  ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+engine.gravity.scale = 0.0001;
 
-  const text = "Epic space game";
-  ctx.font = "30px serif";
-  ctx.fillStyle = "rgba(255, 255, 255, 1)";
-  ctx.fillText(text, canvas.width / 2 - ctx.measureText(text).width, y);
+const boxA = Bodies.rectangle(400, 200, 80, 80);
+const boxB = Bodies.rectangle(450, 50, 80, 80);
 
-  vy += ay * dt;
-  y += vy * dt;
-  if (y >= canvas.height) vy = -vy * 0.8;
-  if (y > canvas.height) y = canvas.height;
+const complexBody = Bodies.fromVertices(400, 10, [
+  [
+    { x: 0, y: 100 },
+    { x: 95, y: 30 },
+    { x: 60, y: -80 },
+    { x: -60, y: -80 },
+    { x: -95, y: 30 },
+  ],
+]);
 
-  requestAnimationFrame(draw);
+const ship = Bodies.rectangle(200, 50, 250, 87, {});
+ship.render.sprite.texture = "./shiptexture.png";
+
+const ground = Bodies.rectangle(
+  window.innerWidth / 2,
+  window.innerHeight - 30,
+  window.innerWidth,
+  60,
+  { isStatic: true },
+);
+
+const leftWall = Bodies.rectangle(
+  0,
+  window.innerHeight / 2,
+  20,
+  window.innerHeight,
+  {
+    isStatic: true,
+  },
+);
+const rightWall = Bodies.rectangle(
+  window.innerWidth - 10,
+  window.innerHeight / 2,
+  20,
+  window.innerHeight,
+  { isStatic: true },
+);
+
+const upperWall = Bodies.rectangle(
+  window.innerWidth / 2,
+  0,
+  window.innerWidth,
+  20,
+  { isStatic: true },
+);
+
+Composite.add(engine.world, [
+  boxA,
+  boxB,
+  ground,
+  complexBody,
+  ship,
+  leftWall,
+  rightWall,
+  upperWall,
+]);
+
+Render.run(render);
+
+const PI = Math.PI;
+const PI_2 = Math.PI / 2;
+
+let leftThruster, rightThruster;
+
+window.addEventListener("keydown", (e) => {
+  leftThruster = e.key == "a";
+  rightThruster = e.key == "d";
+});
+
+const runner = Runner.create();
+
+let prevT = 0;
+
+function run(t) {
+  window.requestAnimationFrame(run);
+
+  if (prevT == 0) prevT = t;
+  const dt = Math.min(t - prevT, 1000 / 60); //deltaTime should never be too high, it will result in low accuracy
+  prevT = t;
+
+  if (leftThruster || rightThruster) {
+    let forceOrigin = Vector.create(ship.position.x, ship.position.y);
+    const fOriginOffset = Vector.rotate(
+      Vector.create(0, -100),
+      ship.angle + (rightThruster ? 1 : -1) * PI_2,
+    );
+
+    const forceOriginOff = Vector.add(forceOrigin, fOriginOffset);
+    const force = Vector.rotate(Vector.create(0, -0.1), ship.angle);
+
+    console.log(ship.position, forceOriginOff);
+
+    Body.applyForce(ship, forceOriginOff, force);
+    (leftThruster = false), (rightThruster = false);
+  }
+
+  Engine.update(engine, dt);
 }
-
-requestAnimationFrame(draw);
+window.requestAnimationFrame(run);

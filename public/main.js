@@ -24,8 +24,8 @@ window.onresize = () => {
 
 engine.gravity.scale = 0.0001;
 
-const boxA = Bodies.rectangle(400, 200, 80, 80);
-const boxB = Bodies.rectangle(450, 50, 80, 80);
+const boxA = Bodies.rectangle(200, 200, 80, 80);
+const boxB = Bodies.rectangle(300, 50, 80, 80);
 
 const complexBody = Bodies.fromVertices(400, 10, [
   [
@@ -74,25 +74,47 @@ const upperWall = Bodies.rectangle(
   { isStatic: true },
 );
 
+const midGround = Bodies.rectangle(
+  window.innerWidth * 0.75,
+  window.innerHeight / 2,
+  window.innerWidth / 2,
+  30,
+  { isStatic: true },
+);
+
+const finishPlatform = Bodies.rectangle(
+  window.innerWidth * 0.75,
+  window.innerHeight / 2 - 20,
+  300,
+  20,
+  { isStatic: true },
+);
+
+finishPlatform.render.fillStyle = "rgba(252, 215, 3, 1)";
+
 const otherBodies = [
   boxA,
-  boxB,
+  // boxB,
   ground,
-  complexBody,
+  // complexBody,
   leftWall,
   rightWall,
   upperWall,
+  midGround,
+  finishPlatform,
 ];
 
 Composite.add(engine.world, [
   boxA,
-  boxB,
+  // boxB,
   ground,
-  complexBody,
+  // complexBody,
   ship,
   leftWall,
   rightWall,
   upperWall,
+  midGround,
+  finishPlatform,
 ]);
 
 Render.run(render);
@@ -152,6 +174,9 @@ window.addEventListener("pointerup", (e) => {
   }
 });
 
+let landed = false;
+let landTime = 0;
+
 function run(t) {
   window.requestAnimationFrame(run);
 
@@ -187,6 +212,27 @@ function run(t) {
     }
   }
 
+  const landedCollission = Matter.Collision.collides(ship, finishPlatform);
+
+  if (
+    landedCollission != null &&
+    landedCollission.supports.length >= 2 &&
+    ship.angularSpeed < 1e-6 &&
+    ship.speed < 1e-1
+  ) {
+    if (!landed) {
+      landed = true;
+      landTime = t;
+    }
+
+    if (t - landTime > 4000) {
+      landTime = t - 4000;
+    }
+  } else {
+    landed = false;
+    landTime = -1;
+  }
+
   Engine.update(engine, dt);
   render.context.fillStyle = "white";
   render.context.font = "30px serif";
@@ -206,5 +252,15 @@ function run(t) {
   ctx.arc(window.innerWidth - 100, window.innerHeight - 100, 80, 0, 2 * PI);
   ctx.stroke();
   ctx.closePath();
+
+  if (landed) {
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.4 + ((t - landTime) / 4000) * 0.6})`;
+    ctx.fillRect(
+      ship.position.x - 125,
+      ship.position.y - 100,
+      ((t - landTime) / 4000) * 250,
+      30,
+    );
+  }
 }
 window.requestAnimationFrame(run);

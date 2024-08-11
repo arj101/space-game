@@ -107,11 +107,11 @@ function run(t) {
   const dt = Math.min(t - prevT, 1000 / 60); //deltaTime should never be too high, it will result in low accuracy
   prevT = t;
 
-  if (leftThruster || rightThruster) {
+  if (leftThruster) {
     let forceOrigin = Vector.create(ship.position.x, ship.position.y);
     const fOriginOffset = Vector.rotate(
       Vector.create(0, -100),
-      ship.angle + (rightThruster ? 1 : -1) * PI_2,
+      ship.angle - PI_2,
     );
 
     const forceOriginOff = Vector.add(forceOrigin, fOriginOffset);
@@ -120,8 +120,24 @@ function run(t) {
     console.log(ship.position, forceOriginOff);
 
     Body.applyForce(ship, forceOriginOff, force);
-    (leftThruster = false), (rightThruster = false);
   }
+
+  if (rightThruster) {
+    let forceOrigin = Vector.create(ship.position.x, ship.position.y);
+    const fOriginOffset = Vector.rotate(
+      Vector.create(0, -100),
+      ship.angle + PI_2,
+    );
+
+    const forceOriginOff = Vector.add(forceOrigin, fOriginOffset);
+    const force = Vector.rotate(Vector.create(0, -0.1), ship.angle);
+
+    console.log(ship.position, forceOriginOff);
+
+    Body.applyForce(ship, forceOriginOff, force);
+  }
+
+  (leftThruster = false), (rightThruster = false);
 
   Engine.update(engine, dt);
 }

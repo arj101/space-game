@@ -118,6 +118,40 @@ let prevT = 0;
 
 const collissionMap = {};
 
+const leftThrusterButtonPos = Vector.create(100, window.innerHeight - 100);
+const rightThrusterButtonPos = Vector.create(
+  window.innerWidth - 100,
+  window.innerHeight - 100,
+);
+window.addEventListener("mousedown", (e) => {
+  const x = e.clientX;
+  const y = e.clientY;
+  const mouse = Vector.create(x, y);
+  console.log(x, Bodies);
+
+  if (Vector.magnitude(Vector.sub(leftThrusterButtonPos, mouse)) <= 80) {
+    leftThruster = true;
+  }
+
+  if (Vector.magnitude(Vector.sub(rightThrusterButtonPos, mouse)) <= 80) {
+    rightThruster = true;
+  }
+});
+
+window.addEventListener("mouseup", (e) => {
+  const x = e.clientX;
+  const y = e.clientY;
+  const mouse = Vector.create(x, y);
+
+  if (Vector.magnitude(Vector.sub(leftThrusterButtonPos, mouse)) <= 80) {
+    leftThruster = false;
+  }
+
+  if (Vector.magnitude(Vector.sub(rightThrusterButtonPos, mouse)) <= 80) {
+    rightThruster = false;
+  }
+});
+
 function run(t) {
   window.requestAnimationFrame(run);
 
@@ -157,5 +191,20 @@ function run(t) {
   render.context.fillStyle = "white";
   render.context.font = "30px serif";
   render.context.fillText(`Health: ${shipHealth.toFixed(0)}`, 100, 100);
+
+  const ctx = render.context;
+  ctx.strokeStyle = `rgba(255, 255, 255, ${leftThruster ? 0.7 : 0.2})`;
+  ctx.lineWidth = leftThruster ? 20 : 4;
+  render.context.beginPath();
+  ctx.arc(100, window.innerHeight - 100, 80, 0, 2 * PI);
+  ctx.stroke();
+  render.context.closePath();
+
+  ctx.strokeStyle = `rgba(255, 255, 255, ${rightThruster ? 0.7 : 0.2})`;
+  ctx.lineWidth = rightThruster ? 20 : 4;
+  ctx.beginPath();
+  ctx.arc(window.innerWidth - 100, window.innerHeight - 100, 80, 0, 2 * PI);
+  ctx.stroke();
+  ctx.closePath();
 }
 window.requestAnimationFrame(run);

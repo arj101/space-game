@@ -140,7 +140,7 @@ let prevT = 0;
 
 const collissionMap = {};
 
-const leftThrusterButtonPos = Vector.create(100, window.innerHeight / 2 - 100);
+const leftThrusterButtonPos = Vector.create(100, window.innerHeight - 100);
 const rightThrusterButtonPos = Vector.create(
   window.innerWidth - 100,
   window.innerHeight - 100,

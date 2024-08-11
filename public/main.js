@@ -123,7 +123,7 @@ const rightThrusterButtonPos = Vector.create(
   window.innerWidth - 100,
   window.innerHeight - 100,
 );
-window.addEventListener("mousedown", (e) => {
+window.addEventListener("pointerdown", (e) => {
   const x = e.pageX;
   const y = e.pageY;
   const mouse = Vector.create(x, y);
@@ -138,7 +138,7 @@ window.addEventListener("mousedown", (e) => {
   }
 });
 
-window.addEventListener("mouseup", (e) => {
+window.addEventListener("pointerup", (e) => {
   const x = e.pageX;
   const y = e.pageY;
   const mouse = Vector.create(x, y);

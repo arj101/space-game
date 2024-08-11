@@ -124,8 +124,8 @@ const rightThrusterButtonPos = Vector.create(
   window.innerHeight - 100,
 );
 window.addEventListener("mousedown", (e) => {
-  const x = e.clientX;
-  const y = e.clientY;
+  const x = e.pageX;
+  const y = e.pageY;
   const mouse = Vector.create(x, y);
   console.log(x, Bodies);
 
@@ -139,8 +139,8 @@ window.addEventListener("mousedown", (e) => {
 });
 
 window.addEventListener("mouseup", (e) => {
-  const x = e.clientX;
-  const y = e.clientY;
+  const x = e.pageX;
+  const y = e.pageY;
   const mouse = Vector.create(x, y);
 
   if (Vector.magnitude(Vector.sub(leftThrusterButtonPos, mouse)) <= 80) {

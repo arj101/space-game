@@ -37,8 +37,27 @@ const complexBody = Bodies.fromVertices(400, 10, [
   ],
 ]);
 
-const ship = Bodies.rectangle(300, window.innerHeight - 160, 250, 87, {});
-ship.render.sprite.texture = "./shiptexture.png";
+const shipBody = Bodies.rectangle(300, window.innerHeight - 160, 250, 87, {});
+const shipLThrust = Bodies.rectangle(
+  300 - 125 - 15,
+  window.innerHeight - 140,
+  30,
+  60,
+  {},
+);
+const shipRThrust = Bodies.rectangle(
+  300 + 125 + 15,
+  window.innerHeight - 140,
+  30,
+  60,
+  {},
+);
+
+shipBody.render.sprite = "./shiptexture.png";
+const ship = Body.create({
+  parts: [shipBody, shipLThrust, shipRThrust],
+});
+
 let shipHealth = 100;
 
 const ground = Bodies.rectangle(

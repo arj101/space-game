@@ -16,11 +16,21 @@ const render = Render.create({
   },
 });
 
-Render.setSize(render, window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio);
+const pRatio = window.devicePixelRatio;
 
-window.onresize = () => {
-  Render.setSize(render, window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio);
-};
+console.log(render.canvas)
+
+window.innerHeight *= window.devicePixelRatio;
+window.innerWidth *= window.devicePixelRatio;
+
+Render.setSize(render, window.innerWidth, window.innerHeight);
+
+// render.canvas.offsetWidth  = window.innerHeight * window.devicePixelRatio;
+// render.canvas.offsetHeight = window.innerWidth * window.devicePixelRatio;
+
+// window.onresize = () => {
+//   Render.setSize(render, window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio);
+// };
 
 engine.gravity.scale = 0.0001;
 
@@ -165,8 +175,8 @@ const rightThrusterButtonPos = Vector.create(
   window.innerHeight - 100,
 );
 window.addEventListener("pointerdown", (e) => {
-  const x = e.pageX;
-  const y = e.pageY;
+  const x = e.pageX * window.devicePixelRatio;
+  const y = e.pageY * window.devicePixelRatio;
   const mouse = Vector.create(x, y);
   console.log(x, Bodies);
 
@@ -180,8 +190,8 @@ window.addEventListener("pointerdown", (e) => {
 });
 
 window.addEventListener("pointerup", (e) => {
-  const x = e.pageX;
-  const y = e.pageY;
+  const x = e.pageX *window.devicePixelRatio;
+  const y = e.pageY* window.devicePixelRatio;
   const mouse = Vector.create(x, y);
 
   if (Vector.magnitude(Vector.sub(leftThrusterButtonPos, mouse)) <= 80) {
@@ -274,7 +284,7 @@ function run(t) {
   ctx.strokeStyle = `rgba(255, 255, 255, ${rightThruster ? 0.7 : 0.2})`;
   ctx.lineWidth = rightThruster ? 20 : 4;
   ctx.beginPath();
-  ctx.arc(window.innerWidth - 100, window.innerHeight - 100, 80, 0, 2 * PI);
+  ctx.arc(window.innerWidth - 100, window.innerHeight - 100, 80 * , 0, 2 * PI);
   ctx.stroke();
   ctx.closePath();
 

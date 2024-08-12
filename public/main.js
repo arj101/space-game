@@ -16,10 +16,10 @@ const render = Render.create({
   },
 });
 
-Render.setSize(render, window.innerWidth, window.innerHeight);
+Render.setSize(render, window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio);
 
 window.onresize = () => {
-  Render.setSize(render, window.innerWidth, window.innerHeight);
+  Render.setSize(render, window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio);
 };
 
 engine.gravity.scale = 0.0001;

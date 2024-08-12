@@ -18,7 +18,7 @@ const render = Render.create({
 
 const pRatio = window.devicePixelRatio;
 
-console.log(render.canvas)
+console.log(render.canvas);
 
 window.innerHeight *= window.devicePixelRatio;
 window.innerWidth *= window.devicePixelRatio;
@@ -53,14 +53,14 @@ const shipLThrust = Bodies.rectangle(
   window.innerHeight - 140,
   30,
   60,
-  {},
+  {}
 );
 const shipRThrust = Bodies.rectangle(
   300 + 125 + 15,
   window.innerHeight - 140,
   30,
   60,
-  {},
+  {}
 );
 
 shipBody.render.sprite = "./shiptexture.png";
@@ -75,7 +75,7 @@ const ground = Bodies.rectangle(
   window.innerHeight - 30,
   window.innerWidth,
   60,
-  { isStatic: true },
+  { isStatic: true }
 );
 
 const leftWall = Bodies.rectangle(
@@ -85,14 +85,14 @@ const leftWall = Bodies.rectangle(
   window.innerHeight,
   {
     isStatic: true,
-  },
+  }
 );
 const rightWall = Bodies.rectangle(
   window.innerWidth - 10,
   window.innerHeight / 2,
   20,
   window.innerHeight,
-  { isStatic: true },
+  { isStatic: true }
 );
 
 const upperWall = Bodies.rectangle(
@@ -100,7 +100,7 @@ const upperWall = Bodies.rectangle(
   0,
   window.innerWidth,
   20,
-  { isStatic: true },
+  { isStatic: true }
 );
 
 const midGround = Bodies.rectangle(
@@ -108,7 +108,7 @@ const midGround = Bodies.rectangle(
   window.innerHeight / 2,
   window.innerWidth / 2,
   30,
-  { isStatic: true },
+  { isStatic: true }
 );
 
 const finishPlatform = Bodies.rectangle(
@@ -116,7 +116,7 @@ const finishPlatform = Bodies.rectangle(
   window.innerHeight / 2 - 20,
   300,
   20,
-  { isStatic: true },
+  { isStatic: true }
 );
 
 finishPlatform.render.fillStyle = "rgba(252, 215, 3, 1)";
@@ -169,10 +169,13 @@ let prevT = 0;
 
 const collissionMap = {};
 
-const leftThrusterButtonPos = Vector.create(100, window.innerHeight - 100);
+const leftThrusterButtonPos = Vector.create(
+  100 * pRatio,
+  window.innerHeight - 100 * pRatio
+);
 const rightThrusterButtonPos = Vector.create(
-  window.innerWidth - 100,
-  window.innerHeight - 100,
+  window.innerWidth - 100 * pRatio,
+  window.innerHeight - 100 * pRatio
 );
 window.addEventListener("pointerdown", (e) => {
   const x = e.pageX * window.devicePixelRatio;
@@ -180,25 +183,37 @@ window.addEventListener("pointerdown", (e) => {
   const mouse = Vector.create(x, y);
   console.log(x, Bodies);
 
-  if (Vector.magnitude(Vector.sub(leftThrusterButtonPos, mouse)) <= 80) {
+  if (
+    Vector.magnitude(Vector.sub(leftThrusterButtonPos, mouse)) <=
+    80 * pRatio
+  ) {
     leftThruster = true;
   }
 
-  if (Vector.magnitude(Vector.sub(rightThrusterButtonPos, mouse)) <= 80) {
+  if (
+    Vector.magnitude(Vector.sub(rightThrusterButtonPos, mouse)) <=
+    80 * pRatio
+  ) {
     rightThruster = true;
   }
 });
 
 window.addEventListener("pointerup", (e) => {
-  const x = e.pageX *window.devicePixelRatio;
-  const y = e.pageY* window.devicePixelRatio;
+  const x = e.pageX * window.devicePixelRatio;
+  const y = e.pageY * window.devicePixelRatio;
   const mouse = Vector.create(x, y);
 
-  if (Vector.magnitude(Vector.sub(leftThrusterButtonPos, mouse)) <= 80) {
+  if (
+    Vector.magnitude(Vector.sub(leftThrusterButtonPos, mouse)) <=
+    80 * pRatio
+  ) {
     leftThruster = false;
   }
 
-  if (Vector.magnitude(Vector.sub(rightThrusterButtonPos, mouse)) <= 80) {
+  if (
+    Vector.magnitude(Vector.sub(rightThrusterButtonPos, mouse)) <=
+    80 * pRatio
+  ) {
     rightThruster = false;
   }
 });
@@ -222,7 +237,7 @@ function run(t) {
       Vector.create(0, -100),
       ship.angle -
         (leftThruster ? 1 : 0) * PI_2 +
-        (rightThruster ? 1 : 0) * PI_2,
+        (rightThruster ? 1 : 0) * PI_2
     );
 
     const forceMag = leftThruster && rightThruster ? 0.02 : 0.01;
@@ -277,34 +292,48 @@ function run(t) {
   ctx.strokeStyle = `rgba(255, 255, 255, ${leftThruster ? 0.7 : 0.2})`;
   ctx.lineWidth = leftThruster ? 20 : 4;
   render.context.beginPath();
-  ctx.arc(100, window.innerHeight - 100, 80, 0, 2 * PI);
+  ctx.arc(
+    100 * pRatio,
+    window.innerHeight - 100 * pRatio,
+    80 * pRatio,
+    0,
+    2 * PI
+  );
   ctx.stroke();
   render.context.closePath();
 
   ctx.strokeStyle = `rgba(255, 255, 255, ${rightThruster ? 0.7 : 0.2})`;
   ctx.lineWidth = rightThruster ? 20 : 4;
   ctx.beginPath();
-  ctx.arc(window.innerWidth - 100, window.innerHeight - 100, 80 * , 0, 2 * PI);
+  ctx.arc(
+    window.innerWidth - 100 * pRatio,
+    window.innerHeight - 100 * pRatio,
+    80 * pRatio,
+    0,
+    2 * PI
+  );
   ctx.stroke();
   ctx.closePath();
 
   if (landed) {
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.4 + ((t - landTime) / 4000) * 0.6})`;
+    ctx.fillStyle = `rgba(255, 255, 255, ${
+      0.4 + ((t - landTime) / 4000) * 0.6
+    })`;
     ctx.fillRect(
       window.innerWidth / 2 - 125,
       window.innerHeight / 2 - 100,
       ((t - landTime) / 4000) * 250,
-      30,
+      30
     );
   }
   render.context.save();
   render.context.translate(
     window.innerWidth / 2 - camPos.x,
-    window.innerHeight / 2 - camPos.y,
+    window.innerHeight / 2 - camPos.y
   );
 
   const dp = Vector.sub(ship.position, camPos);
-  let accel = (collided ? 0.1 : 0.05) * Vector.magnitude(dp);
+  let accel = (collided ? 0.1 : 0.02) * Vector.magnitude(dp);
 
   const norm_dp = Vector.normalise(dp);
 

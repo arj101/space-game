@@ -53,14 +53,14 @@ const shipLThrust = Bodies.rectangle(
   window.innerHeight - 140,
   30,
   60,
-  {}
+  {},
 );
 const shipRThrust = Bodies.rectangle(
   300 + 125 + 15,
   window.innerHeight - 140,
   30,
   60,
-  {}
+  {},
 );
 
 shipBody.render.sprite = "./shiptexture.png";
@@ -75,7 +75,7 @@ const ground = Bodies.rectangle(
   window.innerHeight - 30,
   window.innerWidth,
   60,
-  { isStatic: true }
+  { isStatic: true },
 );
 
 const leftWall = Bodies.rectangle(
@@ -85,14 +85,14 @@ const leftWall = Bodies.rectangle(
   window.innerHeight,
   {
     isStatic: true,
-  }
+  },
 );
 const rightWall = Bodies.rectangle(
   window.innerWidth - 10,
   window.innerHeight / 2,
   20,
   window.innerHeight,
-  { isStatic: true }
+  { isStatic: true },
 );
 
 const upperWall = Bodies.rectangle(
@@ -100,7 +100,7 @@ const upperWall = Bodies.rectangle(
   0,
   window.innerWidth,
   20,
-  { isStatic: true }
+  { isStatic: true },
 );
 
 const midGround = Bodies.rectangle(
@@ -108,7 +108,7 @@ const midGround = Bodies.rectangle(
   window.innerHeight / 2,
   window.innerWidth / 2,
   30,
-  { isStatic: true }
+  { isStatic: true },
 );
 
 const finishPlatform = Bodies.rectangle(
@@ -116,7 +116,7 @@ const finishPlatform = Bodies.rectangle(
   window.innerHeight / 2 - 20,
   300,
   20,
-  { isStatic: true }
+  { isStatic: true },
 );
 
 finishPlatform.render.fillStyle = "rgba(252, 215, 3, 1)";
@@ -171,11 +171,11 @@ const collissionMap = {};
 
 const leftThrusterButtonPos = Vector.create(
   100 * pRatio,
-  window.innerHeight - 100 * pRatio
+  window.innerHeight - 100 * pRatio,
 );
 const rightThrusterButtonPos = Vector.create(
   window.innerWidth - 100 * pRatio,
-  window.innerHeight - 100 * pRatio
+  window.innerHeight - 100 * pRatio,
 );
 window.addEventListener("pointerdown", (e) => {
   const x = e.pageX * window.devicePixelRatio;
@@ -237,7 +237,7 @@ function run(t) {
       Vector.create(0, -100),
       ship.angle -
         (leftThruster ? 1 : 0) * PI_2 +
-        (rightThruster ? 1 : 0) * PI_2
+        (rightThruster ? 1 : 0) * PI_2,
     );
 
     const forceMag = leftThruster && rightThruster ? 0.02 : 0.01;
@@ -267,8 +267,10 @@ function run(t) {
     landedCollission != null &&
     landedCollission.supports.length >= 2 &&
     ship.angularSpeed < 1e-6 &&
-    ship.speed < 1e-1
+    ship.speed < 1e-1 &&
+    Vector.magnitude(Vector.sub(ship.position, finishPlatform.position)) <= 100
   ) {
+    console.log();
     if (!landed) {
       landed = true;
       landTime = t;
@@ -297,7 +299,7 @@ function run(t) {
     window.innerHeight - 100 * pRatio,
     80 * pRatio,
     0,
-    2 * PI
+    2 * PI,
   );
   ctx.stroke();
   render.context.closePath();
@@ -310,7 +312,7 @@ function run(t) {
     window.innerHeight - 100 * pRatio,
     80 * pRatio,
     0,
-    2 * PI
+    2 * PI,
   );
   ctx.stroke();
   ctx.closePath();
@@ -323,13 +325,13 @@ function run(t) {
       window.innerWidth / 2 - 125,
       window.innerHeight / 2 - 100,
       ((t - landTime) / 4000) * 250,
-      30
+      30,
     );
   }
   render.context.save();
   render.context.translate(
     window.innerWidth / 2 - camPos.x,
-    window.innerHeight / 2 - camPos.y
+    window.innerHeight / 2 - camPos.y,
   );
 
   const dp = Vector.sub(ship.position, camPos);

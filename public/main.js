@@ -82,7 +82,7 @@ function buildTerrain(vertices) {
 
 engine.gravity.scale = 0.0001;
 
-const boxA = Bodies.rectangle(600, 1000, 80, 80);
+const boxA = Bodies.rectangle(1180, 500, 80, 80);
 const boxB = Bodies.rectangle(300, 50, 80, 80);
 
 const complexBody = Bodies.fromVertices(400, 10, [
@@ -167,6 +167,7 @@ const otherBodies = [
   // finishPlatform,
   startPlatform,
   finishPlatform,
+  ...terrain
 ];
 
 let bodies = [boxA, ship, startPlatform, finishPlatform];
@@ -290,7 +291,7 @@ function run(t) {
     const collission = Matter.Collision.collides(ship, other);
 
     if (collission != null && collissionMap[other.id] != true) {
-      shipHealth -= collission.depth * 10;
+      shipHealth -= collission.depth * 30;
       collissionMap[other.id] = true;
       collided = true;
     } else if (collissionMap[other.id] == true && collission == null) {
@@ -347,7 +348,7 @@ function run(t) {
   ctx.beginPath();
   ctx.arc(
     100 * pixelRatio,
-    window.innerHeight - 100 * pixelRatio,
+    height - 100 * pixelRatio,
     80 * pixelRatio,
     0,
     2 * PI + 0.1,

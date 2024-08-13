@@ -27,9 +27,62 @@ window.onresize = () => {
   height = window.innerHeight * pixelRatio;
 };
 
+const terrainVertices = [
+  { x: 316, y: 1455 },
+  { x: 840, y: 1455 },
+  { x: 890, y: 1288 },
+  { x: 981, y: 1156 },
+  { x: 1212, y: 1129 },
+  { x: 1281, y: 1143 },
+  { x: 1643, y: 1288 },
+  { x: 1680, y: 1441 },
+  { x: 2031, y: 1441 },
+  { x: 2096, y: 1328 },
+  { x: 2070, y: 1143 },
+  { x: 2070, y: 989 },
+  { x: 2265, y: 755 },
+  { x: 2179, y: 598 },
+  { x: 1860, y: 482 },
+  { x: 1630, y: 552 },
+  { x: 1547, y: 554 },
+  { x: 1096, y: 341 },
+  { x: 768, y: 391 },
+  { x: 612, y: 587 },
+  { x: 400, y: 778 },
+  { x: 437, y: 928 },
+  { x: 352, y: 1175 },
+  { x: 316, y: 1455 },
+];
+
+const bg = new Image();
+bg.src = "./Level.png";
+bg.width = 2581;
+bg.height = 1799;
+
+function buildTerrain(vertices) {
+  let bodies = [];
+
+  for (let i = 0; i < vertices.length - 1; i++) {
+    const v1 = vertices[i];
+    const v2 = vertices[i + 1];
+
+    const outsideNormal = Vector.normalise(Vector.perp(Vector.sub(v2, v1)));
+
+    const v3 = Vector.add(v2, Vector.mult(outsideNormal, 10));
+    const v4 = Vector.add(v1, Vector.mult(outsideNormal, 10));
+
+    const verticesG = [[v1, v2, v3, v4]];
+    const cx = (v1.x + v2.x + v3.x + v4.x) / 4;
+    const cy = (v1.y + v2.y + v3.y + v4.y) / 4;
+    bodies.push(Bodies.fromVertices(cx, cy, verticesG, { isStatic: true }));
+  }
+
+  return bodies;
+}
+
 engine.gravity.scale = 0.0001;
 
-const boxA = Bodies.rectangle(200, 200, 80, 80);
+const boxA = Bodies.rectangle(600, 1000, 80, 80);
 const boxB = Bodies.rectangle(300, 50, 80, 80);
 
 const complexBody = Bodies.fromVertices(400, 10, [
@@ -42,9 +95,22 @@ const complexBody = Bodies.fromVertices(400, 10, [
   ],
 ]);
 
-const shipBody = Bodies.rectangle(300, height - 160, 250, 87, {});
-const shipLThrust = Bodies.rectangle(300 - 125 - 15, height - 140, 30, 60, {});
-const shipRThrust = Bodies.rectangle(300 + 125 + 15, height - 140, 30, 60, {});
+const shipPos = { x: 600, y: 1322 };
+const shipBody = Bodies.rectangle(shipPos.x, shipPos.y, 250, 87, {});
+const shipLThrust = Bodies.rectangle(
+  shipPos.x - 125 - 15,
+  shipPos.y + 17,
+  30,
+  60,
+  {},
+);
+const shipRThrust = Bodies.rectangle(
+  shipPos.x + 125 + 15,
+  shipPos.y + 17,
+  30,
+  60,
+  {},
+);
 
 shipBody.render.sprite = "./shiptexture.png";
 const ship = Body.create({
@@ -74,40 +140,39 @@ const midGround = Bodies.rectangle(width * 0.75, height / 2, width / 2, 30, {
   isStatic: true,
 });
 
+const startPlatform = Bodies.rectangle(400 + 382 / 2, 1376 + 44 / 2, 382, 44, {
+  isStatic: true,
+});
+
 const finishPlatform = Bodies.rectangle(
-  width * 0.75,
-  height / 2 - 20,
-  300,
-  20,
+  1670 + 383 / 2,
+  1362 + 44 / 2,
+  383,
+  44,
   { isStatic: true },
 );
 
 finishPlatform.render.fillStyle = "rgba(252, 215, 3, 1)";
 
+const terrain = buildTerrain(terrainVertices);
 const otherBodies = [
   boxA,
   // boxB,
-  ground,
-  // complexBody,
-  leftWall,
-  rightWall,
-  upperWall,
-  midGround,
+  // ground,
+  // // complexBody,
+  // leftWall,
+  // rightWall,
+  // upperWall,
+  // midGround,
+  // finishPlatform,
+  startPlatform,
   finishPlatform,
 ];
 
-Composite.add(engine.world, [
-  boxA,
-  // boxB,
-  ground,
-  // complexBody,
-  ship,
-  leftWall,
-  rightWall,
-  upperWall,
-  midGround,
-  finishPlatform,
-]);
+let bodies = [boxA, ship, startPlatform, finishPlatform];
+bodies.push(...terrain);
+
+Composite.add(engine.world, bodies);
 
 const PI = Math.PI;
 const PI_2 = Math.PI / 2;
@@ -264,6 +329,14 @@ function run(t) {
   Engine.update(engine, dt);
 
   ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "rgb(12, 13, 14)";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.translate(width / 2 - camPos.x, height / 2 - camPos.y);
+
+  ctx.drawImage(bg, 0, 0, 2581, 1779);
+  ctx.restore();
 
   ctx.fillStyle = "white";
   ctx.font = "30px serif";
@@ -318,15 +391,23 @@ function run(t) {
   camVel = Vector.sub(camVel, Vector.mult(camVel, collided ? 0.05 : 0.4));
   camPos = Vector.add(camPos, Vector.mult(camVel, dt));
 
-  ctx.strokeStyle = "white";
-  ctx.lineWidth = 2;
-  for (const body of engine.world.bodies) {
-    if (body.id == ship.id) continue;
-    ctx.beginPath();
-    for (const v of body.vertices) ctx.lineTo(v.x, v.y);
-    ctx.closePath();
-    ctx.stroke();
+  // ctx.strokeStyle = "white";
+  // ctx.lineWidth = 2;
+  // for (const body of engine.world.bodies) {
+  //   if (body.id == ship.id) continue;
+  //   ctx.beginPath();
+  //   for (const v of body.vertices) ctx.lineTo(v.x, v.y);
+  //   ctx.closePath();
+  //   ctx.stroke();
+  // }
+
+  ctx.fillStyle = "rgb(34, 168, 230)";
+  ctx.beginPath();
+  for (const v of boxA.vertices) {
+    ctx.lineTo(v.x, v.y);
   }
+  ctx.closePath();
+  ctx.fill();
 
   ctx.save();
   ctx.translate(shipBody.position.x, shipBody.position.y);

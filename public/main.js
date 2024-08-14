@@ -319,6 +319,15 @@
     uniform vec2 shipSize;
 
     uniform sampler2D img;
+    uniform sampler2D flame;
+
+    uniform vec2 lr;
+
+
+    uniform float u_time;
+    mat2 rot(float angle) {
+      return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+    }
 
     void main() {
 
@@ -331,6 +340,39 @@
 
  //   vec4 color = vec4(1.0 - smoothstep( 0.08, 0.09, distance(position.xy, vec2(0.) )), 1., 1., 1.);
     gl_FragColor = color;
+
+    // gl_FragColor.xw += step(distance(texPos, vec2(0.05, 0.1)), 0.1);
+    // gl_FragColor.xw += step(distance(texPos, vec2(1.-0.05, 0.1)), 0.1);
+
+    vec2 t1 = vec2(0.00, 0.1);
+    vec2 t2 = vec2(1.-0.09, 0.1);
+
+
+    vec2 ft1 = texPos - t1;
+    vec2 ft2 = texPos - t2;
+
+    ft1 *= rot(sin(u_time * 70.) * 0.02);
+    ft1.y /= abs(sin(u_time * 70.)* (0.03 + lr.x * 0.05) + 1.);
+
+    ft1.y /= abs(sin(u_time * 70. * (20. * lr.x))* (0.03 + lr.x * 0.05) + 1.);
+    ft2.y /= abs(sin(u_time * 70. * (20. * lr.y))* (0.03 + lr.y * 0.05) + 1.);
+
+
+    ft1 /= 0.1 ;
+    ft2 /= 0.1;
+
+    ft1.y *= 0.3 / (lr.x * 0.5 + 0.5);
+    ft2.y *= 0.3 / (lr.y *0.5 + 0.5);
+
+    ft1.y = 0.8 + ft1.y;
+    ft2.y = 0.85 + ft2.y;
+
+    vec4 ft1c = texture2D(flame, ft1);
+    vec4 ft2c = texture2D(flame, ft2);
+
+    gl_FragColor += ft1c;
+    gl_FragColor += ft2c;
+
     }
     `,
   );
@@ -382,12 +424,19 @@
   const shipTexImage = new Image();
   shipTexImage.src = "shipwhole.png";
 
+  const flame = new Image();
+  flame.src = "flame.png";
+
   await new Promise((resolve, _) => {
     bg.onload = resolve;
   });
 
   await new Promise((resolve, _) => {
     shipTexImage.onload = resolve;
+  });
+
+  await new Promise((resolve, _) => {
+    flame.onload = resolve;
   });
 
   gl.useProgram(pg);
@@ -438,16 +487,30 @@
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
+  gl.activeTexture(gl.TEXTURE2);
+  const flameTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, flameTex);
+
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, flame);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
   const shipTexU = gl.getUniformLocation(shipg, "img");
   gl.uniform1i(shipTexU, 1);
+
+  const flameU = gl.getUniformLocation(shipg, "flame");
+  gl.uniform1i(flameU, 2);
 
   const shipvbuf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, shipvbuf);
   let shipvs = [];
 
   for (const v of ship.vertices) {
+    const y = screenToClipY(v.y) - screenToClipY(ship.position.y);
     shipvs.push(
-      screenToClipY(v.y) - screenToClipY(ship.position.y),
+      y < 0 ? y - 100 / width : y,
       screenToClipX(v.x) - screenToClipX(ship.position.x),
     );
   }
@@ -474,10 +537,17 @@
   );
 
   const shipWidth = 250 + 30 + 30;
-  const shipHeight = 89;
+  const shipHeight = 94.5;
 
   const shipSize = gl.getUniformLocation(shipg, "shipSize");
+
   gl.uniform2f(shipSize, shipWidth / width / 2, shipHeight / height / 2);
+
+  const u_time = gl.getUniformLocation(shipg, "u_time");
+  gl.uniform1f(u_time, 0 / 1000);
+
+  const lr = gl.getUniformLocation(shipg, "lr");
+  gl.uniform2f(lr, leftThruster ? 1 : 0, rightThruster ? 1 : 0);
 
   run(0);
   function run(t) {
@@ -493,8 +563,6 @@
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(pg);
 
-    gl.activeTexture(gl.TEXTURE0);
-
     gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
     gl.vertexAttribPointer(vattrib, 2, gl.FLOAT, false, 0, 0);
 
@@ -502,7 +570,6 @@
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 5);
 
     gl.useProgram(shipg);
-    gl.activeTexture(gl.TEXTURE1);
     gl.bindBuffer(gl.ARRAY_BUFFER, shipvbuf);
     // shipvs = [];
     // for (const v of ship.vertices) {
@@ -520,6 +587,8 @@
       screenToClipX(ship.position.x),
       screenToClipY(ship.position.y),
     );
+    gl.uniform2f(lr, leftThruster ? 1 : 0, rightThruster ? 1 : 0);
+    gl.uniform1f(u_time, t / 1000);
 
     gl.drawArrays(gl.TRIANGLE_FAN, 0, shipvs.length / 2);
 

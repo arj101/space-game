@@ -167,6 +167,7 @@
     // finishPlatform,
     startPlatform,
     finishPlatform,
+    ...terrain,
   ];
 
   let bodies = [ship, startPlatform, finishPlatform];
@@ -634,7 +635,6 @@
       Vector.magnitude(Vector.sub(ship.position, finishPlatform.position)) <=
         100
     ) {
-      console.log();
       if (!landed) {
         landed = true;
         landTime = t;
@@ -648,10 +648,10 @@
     }
 
     const dp = Vector.sub(ship.position, camPos);
-    let accel = (collided ? 0.1 : 0.02) * Vector.magnitude(dp);
+    let accel = (collided ? 0.06 : 0.02) * Vector.magnitude(dp);
     const norm_dp = Vector.normalise(dp);
     camVel = Vector.add(camVel, Vector.mult(norm_dp, accel));
-    camVel = Vector.sub(camVel, Vector.mult(camVel, collided ? 0.05 : 0.4));
+    camVel = Vector.sub(camVel, Vector.mult(camVel, collided ? 0.03 : 0.4));
     camPos = Vector.add(camPos, Vector.mult(camVel, dt));
   }
 })();

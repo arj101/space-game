@@ -89,7 +89,7 @@
     ],
   ]);
 
-  const shipPos = { x: 600, y: 1322 };
+  const shipPos = { x: width / 2, y: 400 };
   const shipBody = Bodies.rectangle(shipPos.x, shipPos.y, 250, 87, {});
   const shipLThrust = Bodies.rectangle(
     shipPos.x - 125 - 15,
@@ -109,6 +109,7 @@
   const ship = Body.create({
     parts: [shipBody, shipLThrust, shipRThrust],
   });
+  setInterval(() => console.log(ship.position), 300);
 
   let shipHealth = 100;
 
@@ -119,21 +120,6 @@
     60,
     { isStatic: true },
   );
-
-  const leftWall = Bodies.rectangle(0, height / 2, 20, height, {
-    isStatic: true,
-  });
-  const rightWall = Bodies.rectangle(width - 10, height / 2, 20, height, {
-    isStatic: true,
-  });
-
-  const upperWall = Bodies.rectangle(width / 2, 0, width, 20, {
-    isStatic: true,
-  });
-
-  const midGround = Bodies.rectangle(width * 0.75, height / 2, width / 2, 30, {
-    isStatic: true,
-  });
 
   const startPlatform = Bodies.rectangle(
     400 + 382 / 2,
@@ -156,6 +142,38 @@
   finishPlatform.render.fillStyle = "rgba(252, 215, 3, 1)";
 
   const terrain = buildTerrain(terrainVertices);
+
+  const collissionText = await loadText("./terrain-collission.obj");
+  let collissionObjs = parseOBJCollissionData(collissionText);
+
+  collissionObjs = collissionObjs.map((collissionObj) =>
+    scaleOBJ(0.2, 0.2, collissionObj),
+  );
+
+  const cvs = collissionObjs.map((collissionObj) => {
+    let s = collissionObj.center;
+    let sx = (s.x + 1.0) * 0.5 * height;
+    let sy = (s.y + 1) * 0.5 * height;
+
+    return {
+      center: { x: sx, y: sy },
+      vertices: collissionObj.vertices.map(([x, y]) => {
+        return {
+          x: (x + 1.0) * 0.5 * height,
+          y: (y + 1.0) * 0.5 * height,
+        };
+      }),
+    };
+  });
+
+  console.log(cvs);
+  let ci = 0;
+  const collissionBodies = cvs.map((cv) => {
+    return Bodies.fromVertices(cv.center.x, cv.center.y, [cv.vertices], {
+      isStatic: true,
+    });
+  });
+
   const otherBodies = [
     // boxB,
     // ground,
@@ -167,11 +185,11 @@
     // finishPlatform,
     startPlatform,
     finishPlatform,
-    ...terrain,
+    ...collissionBodies,
   ];
 
   let bodies = [ship, startPlatform, finishPlatform];
-  bodies.push(...terrain);
+  bodies.push(...collissionBodies);
 
   Composite.add(engine.world, bodies);
 
@@ -253,6 +271,8 @@
 
   let camPos = Vector.create(ship.position.x, ship.position.y);
   let camVel = Vector.create(0, 0);
+
+  // ship.frictionAir = 0.0;
 
   engine.gravity.scale = 0.0001;
 
@@ -406,6 +426,14 @@
     `,
   );
 
+  const objText = await loadText("./terrain.obj");
+
+  let terrainObj = parseOBJ(objText);
+
+  terrainObj = scaleOBJ(0.2, 0.2, terrainObj);
+  terrainObj = scaleOBJ(height / width, 1, terrainObj);
+  // console.log(terrainObj);
+
   const pg = createProgram(gl, vshader, pshader);
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
@@ -518,7 +546,7 @@
 
   shipvs.reverse();
   shipvs.push(shipvs[0], shipvs[1]);
-  console.log(shipvs);
+  // console.log(shipvs);
 
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shipvs), gl.STATIC_DRAW);
   const shipva = gl.getAttribLocation(shipg, "v_position");
@@ -549,6 +577,63 @@
 
   const lr = gl.getUniformLocation(shipg, "lr");
   gl.uniform2f(lr, leftThruster ? 1 : 0, rightThruster ? 1 : 0);
+
+  //----terrain setup------->
+
+  const terrainPg = createProgram(
+    gl,
+    createShader(gl, gl.VERTEX_SHADER, terrainShader.vertex),
+    createShader(gl, gl.FRAGMENT_SHADER, terrainShader.fragment),
+  );
+  gl.useProgram(terrainPg);
+
+  const terrainTexImage = new Image();
+  terrainTexImage.src = "./terrain.png";
+
+  await new Promise((res) => {
+    terrainTexImage.onload = res;
+  });
+
+  gl.activeTexture(gl.TEXTURE3);
+  const terrainTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, terrainTex);
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    terrainTexImage,
+  );
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  const terrainTexU = gl.getUniformLocation(terrainPg, "texture");
+  gl.uniform1i(terrainTexU, 3);
+
+  const tvs = terrainObj.vertices.flat();
+  const tuvs = terrainObj.texcoords.flat();
+
+  const allbuf = objToVAttributes(terrainObj);
+
+  gl.useProgram(terrainPg);
+  const tvPos = gl.getAttribLocation(terrainPg, "position");
+  const tuvPos = gl.getAttribLocation(terrainPg, "uv");
+
+  const tvaBuf = gl.createBuffer();
+
+  gl.enableVertexAttribArray(tvPos);
+  gl.enableVertexAttribArray(tuvPos);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, tvaBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(allbuf), gl.STATIC_DRAW);
+
+  gl.vertexAttribPointer(tvPos, 2, gl.FLOAT, false, 4 * 4, 0);
+  gl.vertexAttribPointer(tuvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
+
+  //<----terrain setup-------
 
   run(0);
   function run(t) {
@@ -592,6 +677,21 @@
     gl.uniform1f(u_time, t / 1000);
 
     gl.drawArrays(gl.TRIANGLE_FAN, 0, shipvs.length / 2);
+
+    gl.useProgram(terrainPg);
+    // gl.bindBuffer(gl.ARRAY_BUFFER, tvBuf);
+    // gl.vertexAttribPointer(tvPos, 2, gl.FLOAT, false, 0, 0);
+    // gl.bindBuffer(gl.ARRAY_BUFFER, tuvBuf);
+    // gl.vertexAttribPointer(tuvPos, 2, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, tvaBuf);
+    gl.vertexAttribPointer(tvPos, 2, gl.FLOAT, false, 4 * 4, 0);
+    gl.vertexAttribPointer(tuvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
+    setUniform(gl, terrainPg, "center", [
+      screenToClipX(camPos.x),
+      screenToClipY(camPos.y),
+    ]);
+    gl.drawArrays(gl.TRIANGLES, 0, tvs.length / 2);
 
     //other logics
 

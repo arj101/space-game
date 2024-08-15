@@ -296,7 +296,9 @@
   let camPos = Vector.create(ship.position.x, ship.position.y);
   let camVel = Vector.create(0, 0);
 
-  // ship.frictionAir = 0.0;
+  // ship.frictionAir = 0.0; //make the game unplayable
+
+  ship.frictionAir = 0.0001; //make the game less unplayable
 
   engine.gravity.scale = 0.0001;
 

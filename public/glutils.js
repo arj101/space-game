@@ -51,7 +51,7 @@ function parseOBJCollissionData(source) {
 
     if (line.startsWith("v ")) {
       let [_, x, __, z] = line.split(" ");
-      vs.push([parseFloat(x), -parseFloat(z)]);
+      vs.push([parseFloat(x), parseFloat(z)]);
       n++;
       sx += parseFloat(x);
       sy += parseFloat(z);
@@ -61,15 +61,15 @@ function parseOBJCollissionData(source) {
       if (i == lines.length - 1)
         shapes[shapeI].vertices.push(vs[parseInt(b) - 1]);
     } else if (line.startsWith("f ")) {
-      let vs = line.split(" ").slice(1);
-      for (let j = 0; j < vs.length - 1; j++) {
-        let a = parseInt(vs[j]) - 1;
-        let b = parseInt(vs[j + 1]) - 1;
+      let fvs = line.split(" ").slice(1);
+      for (let j = 0; j < fvs.length / 2; j++) {
+        let a = parseInt(fvs[j * 2]) - 1;
+        let b = parseInt(fvs[j * 2 + 1]) - 1;
         shapes[shapeI].vertices.push(vs[a]);
         shapes[shapeI].vertices.push(vs[b]);
-        sx += parseFloat(vs[a]);
-        sy += parseFloat(vs[b]);
-        n++;
+        // sx += parseFloat(vs[a]);
+        // sy += parseFloat(vs[b]);
+        // n++;
       }
     } else if (line.startsWith("o ")) {
       let [_, name] = line.split(" ");
@@ -83,6 +83,11 @@ function parseOBJCollissionData(source) {
       shapes.push({ name, vertices: [], center: { x: 0, y: 0 } });
     }
   }
+  if (shapeI >= 0) {
+    shapes[shapeI].center = { x: sx / n, y: sy / n };
+  }
+
+  console.log(shapes);
 
   return shapes;
 }
@@ -100,7 +105,7 @@ function parseOBJ(source) {
 
     if (line.startsWith("v ")) {
       let [_, x, __, z] = line.split(" ");
-      vs.push([parseFloat(x), -parseFloat(z)]);
+      vs.push([parseFloat(x), parseFloat(z)]);
       //we dont need the height because its a 2D game :) (shouldve used x and y instead)
     } else if (line.startsWith("vt ")) {
       let [_, u, v] = line.split(" ");

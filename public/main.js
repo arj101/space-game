@@ -191,7 +191,6 @@
     let centerx = (v1.x + v2.x + v3.x + v4.x) / 4;
     let centery = (v1.y + v2.y + v3.y + v4.y) / 4;
 
-    console.log(width, height, angle);
     // return Bodies.fromVertices(centerx, centery, [cv.vertices], {
     //   isStatic: true,
     // });
@@ -442,18 +441,51 @@
 
     uniform sampler2D img;
 
+    float rand(float n){return fract(sin(n) * 43758.5453123);}
+    float rand(vec2 n) {
+	return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+    }
+    float noise(float p){
+	float fl = floor(p);
+      float fc = fract(p);
+	return mix(rand(fl), rand(fl + 1.0), fc);
+    }
+    float noise(vec2 n) {
+	const vec2 d = vec2(0.0, 1.0);
+      vec2 b = floor(n), f = smoothstep(vec2(0.0), vec2(1.0), fract(n));
+	return mix(mix(rand(b), rand(b + d.yx), f.x), mix(rand(b + d.xy), rand(b + d.yy), f.x), f.y);
+    }
+    // http://www.fractalforums.com/new-theories-and-research/very-simple-formula-for-fractal-patterns/
+    float field(vec3 p,float s) {
+	float strength = 7. + .03 * log(1.e-6 + fract(4373.11));
+	float accum = s/4.;
+	float prev = 0.;
+	float tw = 0.;
+	for (int i = 0; i < 26; ++i) {
+		float mag = dot(p, p);
+		p = abs(p) / mag + vec3(-.5, -.4, -1.5);
+		float w = exp(-float(i) / 7.);
+		accum += w * exp(-strength * pow(abs(mag - prev), 2.2));
+		tw += w;
+		prev = mag;
+	}
+	return max(0., 5. * accum / tw - .7);
+    }
+
     void main() {
-      vec2 texPos = position.xy  + center;
-      texPos = vec2(texPos.x + 1., 1. - texPos.y);
 
-      texPos.x *= ${width.toFixed(1)}/img_size.x;
-      texPos.y *= ${height.toFixed(1)}/img_size.y;
-      texPos.y = 1. - texPos.y;
+    vec2 st = position.xy + center.xy  *0.8;
+    st.y *= ${height.toFixed(1)}/${width.toFixed(1)};
 
-      vec4 texColor = texture2D(img, texPos);
+    float n1 = field(st.xyy, 0.5);;
+    float n2 = noise(st * 12.0);
+
+    vec3 color = vec3(n1 * n2);
 
 
-      gl_FragColor = vec4(texColor.xyz, 1.);
+
+      gl_FragColor.xyz = color * 0.1;
+      gl_FragColor.w = 1.;
     }
     `,
   );
@@ -681,11 +713,11 @@
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(pg);
 
-    // gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
-    // gl.vertexAttribPointer(vattrib, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+    gl.vertexAttribPointer(vattrib, 2, gl.FLOAT, false, 0, 0);
 
-    // gl.uniform2f(center, screenToClipX(camPos.x), screenToClipY(camPos.y));
-    // gl.drawArrays(gl.TRIANGLE_STRIP, 0, 5);
+    gl.uniform2f(center, screenToClipX(camPos.x), screenToClipY(camPos.y));
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 5);
 
     gl.useProgram(shipg);
     gl.bindBuffer(gl.ARRAY_BUFFER, shipvbuf);

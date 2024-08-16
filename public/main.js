@@ -139,15 +139,21 @@
     { isStatic: true },
   );
 
+  const GLOBAL_OBJ_SCALE = 0.4;
+
   finishPlatform.render.fillStyle = "rgba(252, 215, 3, 1)";
 
   const terrain = buildTerrain(terrainVertices);
 
-  const collissionText = await loadText("./terrain-collission.obj");
+  const collissionText = await loadText("./level1-collission.obj");
   let collissionObjs = parseOBJCollissionData(collissionText);
 
   collissionObjs = collissionObjs.map((collissionObj) =>
-    scaleOBJ((0.2 * height) / width, 0.2, collissionObj),
+    scaleOBJ(
+      (GLOBAL_OBJ_SCALE * height) / width,
+      GLOBAL_OBJ_SCALE,
+      collissionObj,
+    ),
   );
 
   const cvs = collissionObjs.map((collissionObj) => {
@@ -452,11 +458,11 @@
     `,
   );
 
-  const objText = await loadText("./terrain.obj");
+  const objText = await loadText("./level1.obj");
 
   let terrainObj = parseOBJ(objText);
 
-  terrainObj = scaleOBJ(0.2, 0.2, terrainObj);
+  terrainObj = scaleOBJ(GLOBAL_OBJ_SCALE, GLOBAL_OBJ_SCALE, terrainObj);
   terrainObj = scaleOBJ(height / width, 1, terrainObj);
   // console.log(terrainObj);
 
@@ -614,7 +620,7 @@
   gl.useProgram(terrainPg);
 
   const terrainTexImage = new Image();
-  terrainTexImage.src = "./terrain.png";
+  terrainTexImage.src = "./level1tex.png";
 
   await new Promise((res) => {
     terrainTexImage.onload = res;
@@ -632,7 +638,7 @@
     terrainTexImage,
   );
 
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
@@ -675,11 +681,11 @@
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(pg);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
-    gl.vertexAttribPointer(vattrib, 2, gl.FLOAT, false, 0, 0);
+    // gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+    // gl.vertexAttribPointer(vattrib, 2, gl.FLOAT, false, 0, 0);
 
-    gl.uniform2f(center, screenToClipX(camPos.x), screenToClipY(camPos.y));
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 5);
+    // gl.uniform2f(center, screenToClipX(camPos.x), screenToClipY(camPos.y));
+    // gl.drawArrays(gl.TRIANGLE_STRIP, 0, 5);
 
     gl.useProgram(shipg);
     gl.bindBuffer(gl.ARRAY_BUFFER, shipvbuf);

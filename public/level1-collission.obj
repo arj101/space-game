@@ -1,6 +1,6 @@
 # Blender 4.2.0
 # www.blender.org
-mtllib terrain-collission.mtl
+mtllib level1-collission.mtl
 o Plane.001
 v -2.926197 0.000000 8.842325
 v -6.169445 0.000000 10.665071

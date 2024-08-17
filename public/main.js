@@ -33,7 +33,6 @@
   document.body.appendChild(overlayCanvas);
 
   const ctx = overlayCanvas.getContext("2d");
-
   const gl = canvas.getContext("webgl");
 
   if (gl == null) {
@@ -774,12 +773,16 @@
 
 
   //<-----finsih platform
+  let startTime = 0;
 
 
   run(0);
   function run(t) {
     window.requestAnimationFrame(run);
-    if (prevT == 0) prevT = t;
+    if (prevT == 0) {
+      prevT = t;
+      startTime = t;
+    }
     const dt = Math.min(t - prevT, 1000 / 60); //deltaTime should never be too high, it will result in low accuracy
     prevT = t;
     Engine.update(engine, dt);
@@ -875,8 +878,47 @@
 
     ctx.fillRect(50, 50,Math.max(0, shipHealth * 3), 20);
     ctx.fillStyle = "rgba(255, 255, 255, 1)";
-    ctx.font = "20px sans-serif";
+    ctx.font = "20px Orbitron";
     ctx.fillText("Health", 50, 90);
+
+    //display timer
+    const time = t - startTime;
+    const minutes = Math.floor(time / 60000).toString();
+    const seconds = Math.floor((time % 60000) / 1000).toString();
+    const millis = Math.floor((time/10) % 100).toString();
+
+    ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+    ctx.fillStyle= "rgba(255, 255, 255, 1)";
+    ctx.lineWidth = 2;
+
+    ctx.strokeStyle= "rgba(0, 0, 0, 1)"
+
+    ctx.font = "600 50px Orbitron";
+    const millisText = millis.length == 1 ? "0" + millis : millis;
+    const secondsText = seconds.length == 1 ? "0" + seconds : seconds;
+
+    const segmentWidth = ctx.measureText("00").width + 4;
+    const colonWidth = ctx.measureText(":").width + 4;
+
+
+    //render one by one 
+    let currRight = width - 50 - segmentWidth;
+    
+    ctx.fillText(millisText, currRight, 80);
+    currRight -= colonWidth;
+    ctx.fillText(':', currRight, 80)
+    currRight -= ctx.measureText(secondsText).width;
+    ctx.fillText(secondsText, currRight, 80)
+    currRight -= colonWidth;
+    if (minutes > 0) {
+    ctx.fillText(':', currRight, 80)
+    currRight -= ctx.measureText(minutes).width;
+    ctx.fillText(minutes, currRight, 80)
+    }
+
+
+
+
 
 
     //display landed progress bar and text

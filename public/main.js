@@ -122,7 +122,6 @@
   const ship = Body.create({
     parts: [shipBody, shipLThrust, shipRThrust],
   });
-  setInterval(() => console.log(ship.position), 300);
 
   let shipHealth = 100;
 
@@ -144,17 +143,9 @@
     },
   );
 
-  const finishPlatform = Bodies.rectangle(
-    1670 + 383 / 2,
-    1362 + 44 / 2,
-    383,
-    44,
-    { isStatic: true },
-  );
 
   const GLOBAL_OBJ_SCALE = 0.4;
 
-  finishPlatform.render.fillStyle = "rgba(252, 215, 3, 1)";
 
   const terrain = buildTerrain(terrainVertices);
 
@@ -169,6 +160,8 @@
     ),
   );
 
+
+
   const cvs = collissionObjs.map((collissionObj) => {
     let s = collissionObj.center;
     let sx = (s.x + 1.0) * 0.5 * width;
@@ -179,6 +172,7 @@
 
     return {
       center: { x: sx, y: sy },
+      name: collissionObj.name,
       vertices: collissionObj.vertices.map(([x, y]) => {
         return {
           x: (x + 1.0) * 0.5 * width,
@@ -190,6 +184,8 @@
 
   console.log(cvs);
   let ci = 0;
+
+  let finishPlatform;
   const collissionBodies = cvs.map((cv) => {
     let v1 = cv.vertices[0];
     let v2 = cv.vertices[1];
@@ -208,10 +204,17 @@
     //   isStatic: true,
     // });
 
-    return Bodies.rectangle(centerx, centery, width, height, {
+    let b = Bodies.rectangle(centerx, centery, width, height, {
       isStatic: true,
       angle: -angle,
     });
+
+    if (cv.name == 'finish') {
+      finishPlatform = b;
+      console.log("Found finish platform in collission data")
+    }
+
+    return b;
   });
 
   console.log(collissionBodies);
@@ -687,8 +690,8 @@
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-  const terrainTexU = gl.getUniformLocation(terrainPg, "texture");
-  gl.uniform1i(terrainTexU, 3);
+  const terraintexu = gl.getUniformLocation(terrainPg, "texture");
+  gl.uniform1i(terraintexu, 3);
 
   const tvs = terrainObj.vertices.flat();
   const tuvs = terrainObj.texcoords.flat();
@@ -710,7 +713,64 @@
   gl.vertexAttribPointer(tvPos, 2, gl.FLOAT, false, 4 * 4, 0);
   gl.vertexAttribPointer(tuvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
 
+
+
   //<----terrain setup-------
+
+
+  //---- finish platform ---->
+  const finishPlatformPg = createProgram(
+    gl,
+    createShader(gl, gl.VERTEX_SHADER, terrainShader.vertex),
+    createShader(gl, gl.FRAGMENT_SHADER, terrainShader.fragment),
+  );
+
+  const platformImg = new Image();
+  platformImg.src = "./landtex.png";
+
+  await new Promise((res) => {
+    platformImg.onload = res;
+  });
+
+  gl.activeTexture(gl.TEXTURE4);
+  const platformTex = gl.createTexture();
+
+  gl.bindTexture(gl.TEXTURE_2D, platformTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, platformImg);
+
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+
+  let finishObj = parseOBJ(await loadText("./level1finish.obj"));
+  finishObj = scaleOBJ(GLOBAL_OBJ_SCALE, GLOBAL_OBJ_SCALE, finishObj);
+  finishObj = scaleOBJ(height / width, 1, finishObj);
+  console.log(finishObj)
+
+  const finishBuf = objToVAttributes(finishObj);
+  gl.useProgram(finishPlatformPg);
+
+  const fvPos = gl.getAttribLocation(finishPlatformPg, "position");
+  const fuvPos = gl.getAttribLocation(finishPlatformPg, "uv");
+
+  const fvaBuf = gl.createBuffer();
+
+  gl.enableVertexAttribArray(fvPos);
+  gl.enableVertexAttribArray(fuvPos);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, fvaBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(finishBuf), gl.STATIC_DRAW);
+
+  gl.vertexAttribPointer(fvPos, 2, gl.FLOAT, false, 4 * 4, 0);
+  gl.vertexAttribPointer(fuvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
+
+  const finishU = gl.getUniformLocation(finishPlatformPg, "texture");
+  gl.uniform1i(finishU, 4);
+
+
+  //<-----finsih platform
 
   run(0);
   function run(t) {
@@ -771,6 +831,22 @@
     gl.drawArrays(gl.TRIANGLES, 0, tvs.length / 2);
 
 
+    gl.useProgram(finishPlatformPg);
+    // gl.bindBuffer(gl.ARRAY_BUFFER, tvBuf);
+    // gl.vertexAttribPointer(tvPos, 2, gl.FLOAT, false, 0, 0);
+    // gl.bindBuffer(gl.ARRAY_BUFFER, tuvBuf);
+    // gl.vertexAttribPointer(tuvPos, 2, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, fvaBuf);
+    gl.vertexAttribPointer(fvPos, 2, gl.FLOAT, false, 4 * 4, 0);
+    gl.vertexAttribPointer(fuvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
+    setUniform(gl, finishPlatformPg, "center", [
+      screenToClipX(camPos.x),
+      screenToClipY(camPos.y),
+    ]);
+    gl.drawArrays(gl.TRIANGLES, 0, finishObj.vertices.length);;
+
+
 
     
     const shakeOffsetX = Math.max(-50 /0.3,  Math.min(200, -(camPos.x - ship.position.x))) * 0.3;
@@ -790,6 +866,28 @@
     octx.fillStyle = "rgba(255, 255, 255, 1)";
     octx.font = "20px sans-serif";
     octx.fillText("Health", 50, 90);
+
+    const landDt = t - landTime;
+
+    if (landed) {
+      octx.strokeStyle = "rgba(255, 255, 255, 1)";
+      octx.lineWidth = 2;
+      const shipScreenX = width / 2 + (ship.position.x - camPos.x);
+      const shipScreenY = height / 2 + (ship.position.y - camPos.y);
+      console.log(shipScreenX, shipScreenY)
+      octx.strokeRect(shipScreenX - shipWidth/2, shipScreenY - shipHeight , shipWidth, 30);
+      octx.fillStyle = "rgba(255, 255, 255, 1)";
+      octx.fillRect(shipScreenX - shipWidth/2, shipScreenY - shipHeight , shipWidth * landDt/4000, 30);
+
+    }
+
+    if (landed && landDt > 4000) {
+      octx.fillStyle = "rgba(255, 255, 255, 1)";
+      octx.font = "40px sans-serif";
+      const ltext  = "You have landed!";
+      octx.fillText(ltext, width / 2 - octx.measureText(ltext).width / 2, height / 2);
+    }
+
     octx.restore();
 
     //other logics

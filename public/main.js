@@ -1001,9 +1001,8 @@
 
       if (collission != null && collissionMap[other.id] != true) {
         const movingBody = collission.bodyA.isStatic ? collission.bodyB : collission.bodyA
-        const collidingVelocity = Math.abs(Vector.dot(movingBody.velocity, collission.normal));
+        const collidingVelocity = Vector.magnitude(movingBody.velocity) * 0.3 + Math.abs(Vector.dot(movingBody.velocity, collission.normal)) * 0.7;
         shipHealth -= collidingVelocity*3;
-        console.log(collidingVelocity)
         collissionMap[other.id] = true;
         collided = true;
       } else if (collissionMap[other.id] == true && collission == null) {

@@ -716,7 +716,7 @@ mat2 rot(float a) {
   const terrainPg = createProgram(
     gl,
     createShader(gl, gl.VERTEX_SHADER, terrainShader.vertex),
-    createShader(gl, gl.FRAGMENT_SHADER, terrainShader.fragment),
+    createShader(gl, gl.FRAGMENT_SHADER, terrainShader.fragmentProc),
   );
   gl.useProgram(terrainPg);
 

@@ -365,6 +365,7 @@
     attribute vec4 v_position;
     uniform vec2 center;
     varying vec4 position;
+    uniform float t;
 
     void main() {
 
@@ -457,52 +458,100 @@
     uniform vec2 img_size;
     uniform vec2 center;
 
+    uniform float t;
+
     uniform sampler2D img;
 
-    float rand(float n){return fract(sin(n) * 43758.5453123);}
-    float rand(vec2 n) {
-	return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
-    }
-    float noise(float p){
-	float fl = floor(p);
-      float fc = fract(p);
-	return mix(rand(fl), rand(fl + 1.0), fc);
-    }
-    float noise(vec2 n) {
-	const vec2 d = vec2(0.0, 1.0);
-      vec2 b = floor(n), f = smoothstep(vec2(0.0), vec2(1.0), fract(n));
-	return mix(mix(rand(b), rand(b + d.yx), f.x), mix(rand(b + d.xy), rand(b + d.yy), f.x), f.y);
-    }
-    // http://www.fractalforums.com/new-theories-and-research/very-simple-formula-for-fractal-patterns/
-    float field(vec3 p,float s) {
-	float strength = 7. + .03 * log(1.e-6 + fract(4373.11));
-	float accum = s/4.;
-	float prev = 0.;
-	float tw = 0.;
-	for (int i = 0; i < 26; ++i) {
-		float mag = dot(p, p);
-		p = abs(p) / mag + vec3(-.5, -.4, -1.5);
-		float w = exp(-float(i) / 7.);
-		accum += w * exp(-strength * pow(abs(mag - prev), 2.2));
-		tw += w;
-		prev = mag;
-	}
-	return max(0., 5. * accum / tw - .7);
-    }
+ 
+
+
+mat3 rotz(float a) {
+  return mat3(
+      cos(a), -sin(a), 0.,
+      sin(a), cos(a), 0., 
+      0., 0., 1.0
+  );
+}
+
+mat2 rot(float a) {
+  return mat2(
+      cos(a), -sin(a),
+      sin(a), cos(a)
+  );
+}
+
+    float noise(vec2 p) {
+      return fract(0.35353 * abs(dot(p, vec2(235658.35, 544646.464))));
+  }
+  
+  float noise2(vec2 p) {
+       return fract(abs(dot(p, vec2(4648.35, 2926.464))));
+  }
+  
+  float noise3(vec2 p) {
+       return fract(0.136477 * abs(dot(p, vec2(4648.35, 2926.464))));
+  }
+  
+    vec3 star(vec2 id, vec2 f) {
+      vec2 sp = vec2(0.5, 0.5) - (rotz(noise(id) * 3.14)*vec3(0.6, 0., 0.)).xy;
+      vec2 c = sp - f;
+      
+      float size = noise3(id);
+      
+      float intensity = (0.1 * size)/distance(sp, f);
+      
+  
+      intensity += min(0.1, 0.00001/(abs(c.y) * abs(c.x))) * 0.1/length(c);
+      
+      vec2 cr = c * rot(3.14/4.0);
+      
+      intensity += min(0.1, 0.002/(abs(cr.y) * abs(cr.x))) * 0.1/length(c);
+      intensity = max(0., intensity - 0.01);
+      
+      float red = smoothstep(0.4, 0.9, size) * size;
+      float green = smoothstep(0.2, 0.3, size) * size;
+      float blue = smoothstep(0., 0.01, size) * size;
+  
+      
+      vec3 sc = vec3(red,  green, blue) * intensity;
+      
+      if (noise3(1.0 + id*0.0000001) > 1000.0) {
+          float blink = fract(2555.4255252 * noise3(53535.22552 + id * 0.0000001));
+          sc *= 1.0 - step(0.99, blink);
+      }
+      
+      return sc;
+  }
 
     void main() {
+       vec2 st = position.xy + center.xy  *0.01;
+      st.y *= ${height.toFixed(1)}/${width.toFixed(1)};
 
-    vec2 st = position.xy + center.xy  *0.8;
-    st.y *= ${height.toFixed(1)}/${width.toFixed(1)};
-
-    float n1 = field(st.xyy, 0.5);;
-    float n2 = noise(st * 12.0);
-
-    vec3 color = vec3(n1 * n2);
+      vec3 color = vec3(0.);
 
 
+      const int cutoff = 2;
+      const float scale = 10.;
+      const float star_prob = 0.4;
+      for (int x = -cutoff; x <= cutoff; x++) {
+          for (int y = -cutoff; y <= cutoff; y++) {
+             
+              vec2 offset = vec2(x, y);
+              vec2 id = floor(st*scale ) + offset;
+              
+               if (noise2(id) > star_prob) continue;
+            
+              vec2 f = fract(st*scale) - offset  ;
+              color += star(id , f);;
+          }
+      }
 
-      gl_FragColor.xyz = color * 0.1;
+      color *= 0.01;
+      color = clamp(color, 0., 1.);
+   
+
+
+      gl_FragColor.xyz = color;
       gl_FragColor.w = 1.;
     }
     `,
@@ -516,7 +565,6 @@
   terrainObj = scaleOBJ(height / width, 1, terrainObj);
   // console.log(terrainObj);
 
-  const pg = createProgram(gl, vshader, pshader);
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
   gl.enable(gl.SAMPLE_COVERAGE);
@@ -550,6 +598,7 @@
     flame.onload = resolve;
   });
 
+  const pg = createProgram(gl, vshader, pshader);
   gl.useProgram(pg);
 
   const bgTex = gl.createTexture();
@@ -570,6 +619,8 @@
   gl.uniform2f(imgSizeU, (bg.width * 5162) / 2048, (bg.height * 5162) / 2048);
 
   const center = gl.getUniformLocation(pg, "center");
+    let tloc = gl.getUniformLocation(pg, "img");
+    console.log(tloc);
   gl.uniform2f(center, screenToClipX(camPos.x), screenToClipY(camPos.y));
 
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pos), gl.STATIC_DRAW);

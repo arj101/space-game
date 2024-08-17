@@ -937,7 +937,7 @@
 
     if (landed && landDt > 4000) {
       ctx.fillStyle = "rgba(255, 255, 255, 1)";
-      ctx.font = "40px sans-serif";
+      ctx.font = "40px Orbitron";
       const ltext  = "You have landed!";
       ctx.fillText(ltext, width / 2 - ctx.measureText(ltext).width / 2, height / 2);
     }
@@ -1001,7 +1001,9 @@
 
       if (collission != null && collissionMap[other.id] != true) {
         const movingBody = collission.bodyA.isStatic ? collission.bodyB : collission.bodyA
-        shipHealth -= Vector.magnitude(movingBody.velocity)*1;
+        const collidingVelocity = Math.abs(Vector.dot(movingBody.velocity, collission.normal));
+        shipHealth -= collidingVelocity*3;
+        console.log(collidingVelocity)
         collissionMap[other.id] = true;
         collided = true;
       } else if (collissionMap[other.id] == true && collission == null) {

@@ -438,8 +438,11 @@
     vec4 ft1c = texture2D(flame, ft1);
     vec4 ft2c = texture2D(flame, ft2);
 
-    gl_FragColor += ft1c;
-    gl_FragColor += ft2c;
+    float thrustFrac = 1.0 - smoothstep(0.0, 0.1, gl_FragColor.w);
+    
+
+    gl_FragColor += ft1c * pow(ft1.y , 2.) * 2. * thrustFrac;
+    gl_FragColor += ft2c * pow(ft2.y , 2.) * 2. * thrustFrac;
 
     }
     `,
@@ -778,7 +781,7 @@
     if (prevT == 0) prevT = t;
     const dt = Math.min(t - prevT, 1000 / 60); //deltaTime should never be too high, it will result in low accuracy
     prevT = t;
-    Engine.update(engine, 1000/60);
+    Engine.update(engine, dt);
 
     //rendering
 

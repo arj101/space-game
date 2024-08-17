@@ -861,10 +861,18 @@
     ctx.translate(shakeOffsetX, shakeOffsetY);
 
     //display health
-    ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+    ctx.fillStyle =  shipHealth > 50 ? "rgba(255, 255, 255, 1)" : `rgb(255, 255, 0)`;
+
+
+    if (shipHealth < 25) {
+      ctx.fillStyle = `rgba(${100 + ((1 + Math.sin(t/300)) * 0.5 * 155)}, 0, 0, 1)`;
+    }
+
+    ctx.strokeStyle  = ctx.fillStyle;
     ctx.lineWidth = 2;
     ctx.strokeRect(50, 50, 300, 20);
-    ctx.fillStyle = "rgba(255, 255, 255, 1)";
+
+
     ctx.fillRect(50, 50,Math.max(0, shipHealth * 3), 20);
     ctx.fillStyle = "rgba(255, 255, 255, 1)";
     ctx.font = "20px sans-serif";
@@ -946,8 +954,12 @@
     let collided = false;
     for (const other of otherBodies) {
       const collission = Matter.Collision.collides(ship, other);
+
+
+
       if (collission != null && collissionMap[other.id] != true) {
-        shipHealth -= collission.depth * 10;
+        const movingBody = collission.bodyA.isStatic ? collission.bodyB : collission.bodyA
+        shipHealth -= Vector.magnitude(movingBody.velocity)*1;
         collissionMap[other.id] = true;
         collided = true;
       } else if (collissionMap[other.id] == true && collission == null) {

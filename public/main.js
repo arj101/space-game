@@ -32,7 +32,7 @@
   overlayCanvas.style.left = "0";
   document.body.appendChild(overlayCanvas);
 
-  const octx = overlayCanvas.getContext("2d");
+  const ctx = overlayCanvas.getContext("2d");
 
   const gl = canvas.getContext("webgl");
 
@@ -775,6 +775,7 @@
 
   //<-----finsih platform
 
+
   run(0);
   function run(t) {
     window.requestAnimationFrame(run);
@@ -854,44 +855,77 @@
     
     const shakeOffsetX = Math.max(-50 /0.3,  Math.min(200, -(camPos.x - ship.position.x))) * 0.3;
     const shakeOffsetY = Math.max(-50 /0.3, Math.min(200, -(camPos.y - ship.position.y))) * 0.3;
-    octx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, width, height);
 
-    octx.save();
-    octx.translate(shakeOffsetX, shakeOffsetY);
+    ctx.save();
+    ctx.translate(shakeOffsetX, shakeOffsetY);
 
     //display health
-    octx.strokeStyle = "rgba(255, 255, 255, 1)";
-    octx.lineWidth = 2;
-    octx.strokeRect(50, 50, 300, 20);
-    //light green fill
-    octx.fillStyle = "rgba(255, 255, 255, 1)";
-    octx.fillRect(50, 50,Math.max(0, shipHealth * 3), 20);
-    octx.fillStyle = "rgba(255, 255, 255, 1)";
-    octx.font = "20px sans-serif";
-    octx.fillText("Health", 50, 90);
+    ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(50, 50, 300, 20);
+    ctx.fillStyle = "rgba(255, 255, 255, 1)";
+    ctx.fillRect(50, 50,Math.max(0, shipHealth * 3), 20);
+    ctx.fillStyle = "rgba(255, 255, 255, 1)";
+    ctx.font = "20px sans-serif";
+    ctx.fillText("Health", 50, 90);
 
+
+    //display landed progress bar and text
     const landDt = t - landTime;
-
     if (landed) {
-      octx.strokeStyle = "rgba(255, 255, 255, 1)";
-      octx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+      ctx.lineWidth = 2;
       const shipScreenX = width / 2 + (ship.position.x - camPos.x);
       const shipScreenY = height / 2 + (ship.position.y - camPos.y);
       console.log(shipScreenX, shipScreenY)
-      octx.strokeRect(shipScreenX - shipWidth/2, shipScreenY - shipHeight , shipWidth, 30);
-      octx.fillStyle = "rgba(255, 255, 255, 1)";
-      octx.fillRect(shipScreenX - shipWidth/2, shipScreenY - shipHeight , shipWidth * landDt/4000, 30);
+      ctx.strokeRect(shipScreenX - shipWidth/2, shipScreenY - shipHeight , shipWidth, 30);
+      ctx.fillStyle = "rgba(255, 255, 255, 1)";
+      ctx.fillRect(shipScreenX - shipWidth/2, shipScreenY - shipHeight , shipWidth * landDt/4000, 30);
 
     }
 
     if (landed && landDt > 4000) {
-      octx.fillStyle = "rgba(255, 255, 255, 1)";
-      octx.font = "40px sans-serif";
+      ctx.fillStyle = "rgba(255, 255, 255, 1)";
+      ctx.font = "40px sans-serif";
       const ltext  = "You have landed!";
-      octx.fillText(ltext, width / 2 - octx.measureText(ltext).width / 2, height / 2);
+      ctx.fillText(ltext, width / 2 - ctx.measureText(ltext).width / 2, height / 2);
     }
 
-    octx.restore();
+    //display target location pointer
+    const screenTarget = Vector.sub(finishPlatform.position, camPos);
+
+
+    if (screenTarget.x < -width/2 || screenTarget.y < -height/2 || screenTarget.x > width/2 || screenTarget.y > height/2) {
+      ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+
+      const dir = Vector.angle(camPos, finishPlatform.position);
+
+      const edgeDist = Math.max(width/2, height/2);
+      const edgeLoc = Vector.mult(Vector.normalise(screenTarget), edgeDist);
+      edgeLoc.y = Math.max(-height/2 + 5, Math.min(height/2 - 5, edgeLoc.y));
+      edgeLoc.x = Math.max(-width/2 + 5, Math.min(width/2 - 5, edgeLoc.x));
+    
+      ctx.save();
+      ctx.translate(width/2 +edgeLoc.x , height/2 + edgeLoc.y);
+      ctx.rotate(dir);
+
+      ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.lineTo(-40, -40);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(-40, 40);
+      
+      ctx.closePath();
+      ctx.stroke();
+
+
+      ctx.restore();
+
+    }
+
+    ctx.restore();
 
     //other logics
 

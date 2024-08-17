@@ -168,7 +168,7 @@ void main() {
 
   color.xyz *= 1.0 - smoothstep(0.5, 0.8, texColor.x) * voronoi_color2 ;
 
-  // gl_FragColor.xyz += smoothstep( 0.95, 1.0, color.x) ;
+  // gl_FragColor.xyz += smoothstep( 0.95, 1.0, color.y) ;
 
   gl_FragColor = color;
 
@@ -176,7 +176,7 @@ void main() {
   gl_FragColor.y = max(0., gl_FragColor.y);
   gl_FragColor.z = max(0., gl_FragColor.z);
 
-  gl_FragColor.xyz += vec3(smoothstep(0.95, 0.95, texColor.x));
+  gl_FragColor.xyz += vec3(smoothstep(0.95, 0.95, texColor.y));
 
 
 }

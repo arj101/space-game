@@ -149,21 +149,24 @@ void main() {
   // gl_FragColor.xyz = mix(gl_FragColor.xyz, vec3(noise(texcoord * 500.0)), color.x * 0.05);
 
   vec2 tileCoord = fract(texcoord *20.);
+  vec2 idOff = noisev(floor(texcoord * 20.));
   vec2 tileCoord2 = fract(texcoord *100.);
+  vec2 idOff2 = noisev(floor(texcoord * 100.));
 
-  const float scale = 4.0;
+  const float scale = 10.0;
 
-  vec2 id = floor(tileCoord * scale);
-  vec2 f = fract(tileCoord * scale);
+  vec2 id = floor(tileCoord * scale) + idOff;
+  vec2 f = fract(tileCoord * scale) ;
   vec3 voronoi_color = voronoi(id, f);
   voronoi_color = 1.0 - voronoi_color;
-  color.xyz *= voronoi_color ;
+  color.xyz *= (0.4 + 1.0 - smoothstep(0.1, 0.1, texColor.x)) * voronoi_color ;
 
-  vec2 id2 = floor(tileCoord2 * scale);
+  vec2 id2 = floor(tileCoord2 * scale) + idOff2;
   vec2 f2 = fract(tileCoord2 * scale);
   vec3 voronoi_color2 = voronoi(id2, f2);
-  voronoi_color2 = 1.0 - voronoi_color2;
-  color.xyz *= voronoi_color2 ;
+  // voronoi_color2 = 1.0 - voronoi_color2;
+
+  color.xyz *= 1.0 - smoothstep(0.5, 0.8, texColor.x) * voronoi_color2 ;
 
   // gl_FragColor.xyz += smoothstep( 0.95, 1.0, color.x) ;
 

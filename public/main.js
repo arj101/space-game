@@ -21,6 +21,19 @@
   canvas.style.height = window.innerHeight + "px";
   document.body.appendChild(canvas);
 
+
+  const overlayCanvas =  document.createElement("canvas")
+  overlayCanvas.width = width;
+  overlayCanvas.height = height;
+  overlayCanvas.style.width = window.innerWidth + "px";
+  overlayCanvas.style.height = window.innerHeight + "px";
+  overlayCanvas.style.position = "absolute";
+  overlayCanvas.style.top = "0";
+  overlayCanvas.style.left = "0";
+  document.body.appendChild(overlayCanvas);
+
+  const octx = overlayCanvas.getContext("2d");
+
   const gl = canvas.getContext("webgl");
 
   if (gl == null) {
@@ -705,7 +718,7 @@
     if (prevT == 0) prevT = t;
     const dt = Math.min(t - prevT, 1000 / 60); //deltaTime should never be too high, it will result in low accuracy
     prevT = t;
-    Engine.update(engine, dt);
+    Engine.update(engine, 1000/60);
 
     //rendering
 
@@ -757,9 +770,30 @@
     ]);
     gl.drawArrays(gl.TRIANGLES, 0, tvs.length / 2);
 
+
+
+    
+    const shakeOffsetX = Math.max(-50 /0.3,  Math.min(200, -(camPos.x - ship.position.x))) * 0.3;
+    const shakeOffsetY = Math.max(-50 /0.3, Math.min(200, -(camPos.y - ship.position.y))) * 0.3;
+    octx.clearRect(0, 0, width, height);
+
+    octx.save();
+    octx.translate(shakeOffsetX, shakeOffsetY);
+
+    //display health
+    octx.strokeStyle = "rgba(255, 255, 255, 1)";
+    octx.lineWidth = 2;
+    octx.strokeRect(50, 50, 300, 20);
+    //light green fill
+    octx.fillStyle = "rgba(255, 255, 255, 1)";
+    octx.fillRect(50, 50,Math.max(0, shipHealth * 3), 20);
+    octx.fillStyle = "rgba(255, 255, 255, 1)";
+    octx.font = "20px sans-serif";
+    octx.fillText("Health", 50, 90);
+    octx.restore();
+
     //other logics
 
-    Engine.update(engine, 1000 / 60);
 
     if (leftThruster || rightThruster) {
       let forceOrigin = Vector.create(ship.position.x, ship.position.y);

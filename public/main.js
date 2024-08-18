@@ -132,6 +132,19 @@ async function main(
   let collissionBodies = levelResources.collissionBodies;
   const finishPlatform = levelResources.finishPlatformBody;
 
+  let eventListeners = [];
+
+  function destroyListeners() {
+    eventListeners.forEach((listener) => {
+      window.removeEventListener(listener.event, listener.callback);
+    });
+  }
+
+  function addEventListener(event, callback) {
+    eventListeners.push({ event, callback });
+    window.addEventListener(event, callback);
+  }
+
   const otherBodies = [
     // boxB,
     // ground,
@@ -156,7 +169,7 @@ async function main(
 
   let leftThruster, rightThruster;
 
-  window.addEventListener("keydown", (e) => {
+  addEventListener("keydown", (e) => {
     if (
       (e.key == "Enter" || e.key == "e") &&
       scrollableMenu.enterClickStart < 0
@@ -170,7 +183,7 @@ async function main(
     rightThruster = e.key == "d" || e.key == "ArrowRight" || rightThruster;
   });
 
-  window.addEventListener("keyup", (e) => {
+  addEventListener("keyup", (e) => {
     if (e.key == "a" || e.key == "ArrowLeft") {
       leftThruster = false;
       scrollableMenu.scrollLeft();
@@ -442,12 +455,12 @@ async function main(
     };
   });
 
-  window.addEventListener("mousemove", (e) => {
+  addEventListener("mousemove", (e) => {
     mouseX = e.pageX * window.devicePixelRatio;
     mouseY = e.pageY * window.devicePixelRatio;
   });
 
-  window.addEventListener("pointerdown", (e) => {
+  addEventListener("pointerdown", (e) => {
     mouseDown = true;
     const x = e.pageX * window.devicePixelRatio;
     const y = e.pageY * window.devicePixelRatio;
@@ -478,7 +491,7 @@ async function main(
     }
   });
 
-  window.addEventListener("pointerup", (e) => {
+  addEventListener("pointerup", (e) => {
     mouseDown = false;
     const x = e.pageX * window.devicePixelRatio;
     const y = e.pageY * window.devicePixelRatio;
@@ -760,6 +773,7 @@ async function main(
   function run(t) {
     if (!shouldStopInstanceCallBack()) window.requestAnimationFrame(run);
     else {
+      destroyListeners();
       onStopInstance();
       return;
     }

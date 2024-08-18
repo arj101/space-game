@@ -61,17 +61,19 @@ async function main(
   { width, height, ctx, gl },
   globalResources,
   {
-    shouldStopCallback = () => false,
+    shouldStopInstanceCallBack = () => false,
     restartCallback = () => {},
     finishCallback = (gameStats) => {},
     frameCallback = () => {},
     shouldStopPlay = () => {},
+    onStopInstance = () => {},
   } = {
-    shouldStopCallback: () => false,
+    shouldStopInstanceCallback: () => false,
     restartCallback: () => {},
     finishCallback: () => {},
     frameCallback: () => {},
     shouldStopPlay: () => {},
+    onStopInstance: () => {},
   },
 ) {
   const Engine = Matter.Engine,
@@ -177,7 +179,17 @@ async function main(
     height - 100 * pixelRatio,
   );
 
+  let mouseX = 0,
+    mouseY = 0,
+    mouseDown = false;
+
+  window.addEventListener("mousemove", (e) => {
+    mouseX = e.pageX * window.devicePixelRatio;
+    mouseY = e.pageY * window.devicePixelRatio;
+  });
+
   window.addEventListener("pointerdown", (e) => {
+    mouseDown = true;
     if (shouldStopPlay()) return;
     const x = e.pageX * window.devicePixelRatio;
     const y = e.pageY * window.devicePixelRatio;
@@ -205,6 +217,7 @@ async function main(
   });
 
   window.addEventListener("pointerup", (e) => {
+    mouseDown = false;
     const x = e.pageX * window.devicePixelRatio;
     const y = e.pageY * window.devicePixelRatio;
     const mouse = Vector.create(x, y);
@@ -476,7 +489,11 @@ async function main(
 
   run(0);
   function run(t) {
-    if (!shouldStopCallback()) window.requestAnimationFrame(run);
+    if (!shouldStopInstanceCallBack()) window.requestAnimationFrame(run);
+    else {
+      onStopInstance();
+      return;
+    }
 
     const stopPlay = shouldStopPlay();
 
@@ -674,6 +691,38 @@ async function main(
         width / 2 - ctx.measureText(ltext).width / 2,
         height / 2,
       );
+
+      const restartText = "Restart";
+      const restartTextSize = ctx.measureText(restartText);
+      ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+      ctx.lineWidth = 2;
+
+      const hoff = 100;
+      ctx.strokeRect(
+        width / 2 - restartTextSize.width / 2 - 50,
+        height / 2 - 20 - 40 + hoff,
+        restartTextSize.width + 100,
+        20 + 40,
+      );
+      ctx.stroke();
+      ctx.fillText(
+        restartText,
+        width / 2 - restartTextSize.width / 2,
+        height / 2 - 20 + hoff,
+      );
+
+      const widthS = window.innerWidth * window.devicePixelRatio;
+      const heightS = window.innerHeight * window.devicePixelRatio;
+      if (
+        mouseDown
+        // mouseX > widthS / 2 - restartTextSize.width / 2 - 40 &&
+        // mouseX < widthS / 2 + restartTextSize.width / 2 + 50 &&
+        // mouseY > heightS / 2 - 20 - 40 + hoff &&
+        // mouseY < heightS / 2 + 20 + 40 + hoff
+      ) {
+        restartCallback();
+        console.log("restarting...");
+      }
     }
 
     //display target location pointer
@@ -790,12 +839,18 @@ async function main(
 }
 
 loadGlobalResources().then((resources) => {
-  let shipStats = {
-    health: 100,
-    running: true,
-    failed: false,
-    finished: false,
-  };
+  let shipStats = {};
+
+  function resetStats() {
+    shipStats.health = 100;
+    shipStats.running = true;
+    shipStats.failed = false;
+    shipStats.finished = false;
+    shipStats.requiresRestart = false;
+  }
+
+  resetStats();
+
   const renderers = setupCanvas();
 
   function onFrame(t, landed, landTime, shipHealth, ship) {
@@ -820,10 +875,31 @@ loadGlobalResources().then((resources) => {
     }
   }
 
-  main(levels["1"].filePrefix, renderers, resources, {
-    // shouldStopCallback: shouldStopFn,
-    shouldStopPlay: shouldStopFn,
-    frameCallback: onFrame,
-    finishCallback: onFinish,
-  });
+  function shouldStopIntance() {
+    return shipStats.requiresRestart;
+  }
+
+  function onRestart() {
+    shipStats.requiresRestart = true;
+  }
+
+  function onStopInstance() {
+    if (shipStats.requiresRestart) {
+      shipStats.requiresRestart = false;
+      resetStats();
+      startInstance();
+    }
+  }
+
+  function startInstance() {
+    shipStats.instance = main(levels["1"].filePrefix, renderers, resources, {
+      shouldStopInstanceCallBack: shouldStopIntance,
+      shouldStopPlay: shouldStopFn,
+      frameCallback: onFrame,
+      finishCallback: onFinish,
+      restartCallback: onRestart,
+      onStopInstance,
+    });
+  }
+  startInstance();
 });

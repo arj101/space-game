@@ -140,44 +140,152 @@ vec3 voronoi(vec2 id, vec2 f) {
   return color;
 }
 
+
+//	Classic Perlin 2D Noise 
+//	by Stefan Gustavson (https://github.com/stegu/webgl-noise)
+//
+vec2 fade(vec2 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
+vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
+float cnoise(vec2 P){
+  vec4 Pi = floor(P.xyxy) + vec4(0.0, 0.0, 1.0, 1.0);
+  vec4 Pf = fract(P.xyxy) - vec4(0.0, 0.0, 1.0, 1.0);
+  Pi = mod(Pi, 289.0); // To avoid truncation effects in permutation
+  vec4 ix = Pi.xzxz;
+  vec4 iy = Pi.yyww;
+  vec4 fx = Pf.xzxz;
+  vec4 fy = Pf.yyww;
+  vec4 i = permute(permute(ix) + iy);
+  vec4 gx = 2.0 * fract(i * 0.0243902439) - 1.0; // 1/41 = 0.024...
+  vec4 gy = abs(gx) - 0.5;
+  vec4 tx = floor(gx + 0.5);
+  gx = gx - tx;
+  vec2 g00 = vec2(gx.x,gy.x);
+  vec2 g10 = vec2(gx.y,gy.y);
+  vec2 g01 = vec2(gx.z,gy.z);
+  vec2 g11 = vec2(gx.w,gy.w);
+  vec4 norm = 1.79284291400159 - 0.85373472095314 * 
+    vec4(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11));
+  g00 *= norm.x;
+  g01 *= norm.y;
+  g10 *= norm.z;
+  g11 *= norm.w;
+  float n00 = dot(g00, vec2(fx.x, fy.x));
+  float n10 = dot(g10, vec2(fx.y, fy.y));
+  float n01 = dot(g01, vec2(fx.z, fy.z));
+  float n11 = dot(g11, vec2(fx.w, fy.w));
+  vec2 fade_xy = fade(Pf.xy);
+  vec2 n_x = mix(vec2(n00, n01), vec2(n10, n11), fade_xy.x);
+  float n_xy = mix(n_x.x, n_x.y, fade_xy.y);
+  return 2.3 * n_xy;
+}
+
+// Cellular noise ("Worley noise") in 2D in GLSL.
+// Copyright (c) Stefan Gustavson 2011-04-19. All rights reserved.
+// This code is released under the conditions of the MIT license.
+// See LICENSE file for details.
+// https://github.com/stegu/webgl-noise
+
+// Modulo 289 without a division (only multiplications)
+vec3 mod289(vec3 x) {
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+vec2 mod289(vec2 x) {
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+// Modulo 7 without a division
+vec3 mod7(vec3 x) {
+  return x - floor(x * (1.0 / 7.0)) * 7.0;
+}
+
+// Permutation polynomial: (34x^2 + 6x) mod 289
+vec3 permute(vec3 x) {
+  return mod289((34.0 * x + 10.0) * x);
+}
+
+
+// Modulo 7 without a division
+vec4 mod7(vec4 x) {
+  return x - floor(x * (1.0 / 7.0)) * 7.0;
+}
+
+
+// Cellular noise, returning F1 and F2 in a vec2.
+// Speeded up by using 2x2 search window instead of 3x3,
+// at the expense of some strong pattern artifacts.
+// F2 is often wrong and has sharp discontinuities.
+// If you need a smooth F2, use the slower 3x3 version.
+// F1 is sometimes wrong, too, but OK for most purposes.
+vec2 cellular2x2(vec2 P) {
+#define K 0.142857142857 // 1/7
+#define K2 0.0714285714285 // K/2
+#define jitter 0.74 // jitter 1.0 makes F1 wrong more often
+	vec2 Pi = mod289(floor(P));
+ 	vec2 Pf = fract(P);
+	vec4 Pfx = Pf.x + vec4(-0.5, -1.5, -0.5, -1.5);
+	vec4 Pfy = Pf.y + vec4(-0.5, -0.5, -1.5, -1.5);
+	vec4 p = permute(Pi.x + vec4(0.0, 1.0, 0.0, 1.0));
+	p = permute(p + Pi.y + vec4(0.0, 0.0, 1.0, 1.0));
+	vec4 ox = mod7(p)*K+K2;
+	vec4 oy = mod7(floor(p*K))*K+K2;
+	vec4 dx = Pfx + jitter*ox;
+	vec4 dy = Pfy + jitter*oy;
+	vec4 d = dx * dx + dy * dy; // d11, d12, d21 and d22, squared
+	// Sort out the two smallest distances
+#if 0
+	// Cheat and pick only F1
+	d.xy = min(d.xy, d.zw);
+	d.x = min(d.x, d.y);
+	return vec2(sqrt(d.x)); // F1 duplicated, F2 not computed
+#else
+	// Do it right and find both F1 and F2
+	d.xy = (d.x < d.y) ? d.xy : d.yx; // Swap if smaller
+	d.xz = (d.x < d.z) ? d.xz : d.zx;
+	d.xw = (d.x < d.w) ? d.xw : d.wx;
+	d.y = min(d.y, d.z);
+	d.y = min(d.y, d.w);
+	return sqrt(d.xy);
+#endif
+}
+
+
 void main() {
   vec4 texColor = texture2D(texture, texcoord);
    vec4 color = texture2D(texture, texcoord);
    color *= color;
 
-  
-  // gl_FragColor.xyz = mix(gl_FragColor.xyz, vec3(noise(texcoord * 500.0)), color.x * 0.05);
+ 
+   float scale = 6.0;
 
-  vec2 tileCoord = fract(texcoord *20.);
-  vec2 idOff = noisev(floor(texcoord * 20.));
-  vec2 tileCoord2 = fract(texcoord *100.);
-  vec2 idOff2 = noisev(floor(texcoord * 100.));
+  vec2 st = texcoord * scale;
+  st *= 20.0;
+  float cn = cnoise(st);
+  vec2 offset = rot(cn) * vec2(0., 0.290);
 
-  const float scale = 10.0;
+  vec2 f1f2 = cellular2x2(st + offset);
+  float intensity = f1f2.y - f1f2.x;
 
-  vec2 id = floor(tileCoord * scale) + idOff;
-  vec2 f = fract(tileCoord * scale) ;
-  vec3 voronoi_color = voronoi(id, f);
-  voronoi_color = 1.0 - voronoi_color;
-  color.xyz *= (0.4 + 1.0 - smoothstep(0.1, 0.1, texColor.x)) * voronoi_color ;
+  intensity = smoothstep(0.01, 0.1, intensity) - smoothstep(0.1, 0.2, intensity);
+   intensity += (cn - 0.5) ;
+    
+    intensity +=  (cnoise(st*19.0)) ;
 
-  vec2 id2 = floor(tileCoord2 * scale) + idOff2;
-  vec2 f2 = fract(tileCoord2 * scale);
-  vec3 voronoi_color2 = voronoi(id2, f2);
-  // voronoi_color2 = 1.0 - voronoi_color2;
+    	
+    // color /= 9.0;
+    // color = clamp(color, 0., 1.);
+    // color.x = color.y = color.z = color.y;
 
-  color.xyz *= 1.0 - smoothstep(0.5, 0.8, texColor.x) * voronoi_color2 ;
 
-  // gl_FragColor.xyz += smoothstep( 0.95, 1.0, color.y) ;
+    intensity = clamp(intensity, 0., 1.);
 
-  gl_FragColor = color;
+    intensity += smoothstep(0.95, 1., texColor.x);
 
-  gl_FragColor.x = max(0., gl_FragColor.x);
-  gl_FragColor.y = max(0., gl_FragColor.y);
-  gl_FragColor.z = max(0., gl_FragColor.z);
+    color *= intensity;
 
-  gl_FragColor.xyz += vec3(smoothstep(0.95, 0.95, texColor.y));
+ 
 
+  gl_FragColor = vec4(color.xyz, 1.0);
 
 }
 `,

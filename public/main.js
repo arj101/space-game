@@ -157,6 +157,13 @@ async function main(
   let leftThruster, rightThruster;
 
   window.addEventListener("keydown", (e) => {
+    if (
+      (e.key == "Enter" || e.key == "e") &&
+      scrollableMenu.enterClickStart < 0
+    ) {
+      scrollableMenu.enterKeyDown();
+    }
+
     if (shouldStopPlay()) return;
 
     leftThruster = e.key == "a" || e.key == "ArrowLeft" || leftThruster;
@@ -164,8 +171,19 @@ async function main(
   });
 
   window.addEventListener("keyup", (e) => {
-    if (e.key == "a" || e.key == "ArrowLeft") leftThruster = false;
-    if (e.key == "d" || e.key == "ArrowRight") rightThruster = false;
+    if (e.key == "a" || e.key == "ArrowLeft") {
+      leftThruster = false;
+      scrollableMenu.scrollLeft();
+    }
+
+    if (e.key == "d" || e.key == "ArrowRight") {
+      rightThruster = false;
+      scrollableMenu.scrollRight();
+    }
+
+    if (e.key == "Enter" || e.key == "e") {
+      scrollableMenu.enterKeyUp();
+    }
   });
 
   const collissionMap = {};
@@ -183,6 +201,209 @@ async function main(
     mouseY = 0,
     mouseDown = false;
 
+  const scrollableMenu = {
+    items: [],
+    selected: -1,
+    enabled: false,
+
+    message: "",
+
+    leftClickStart: -1,
+    rightClickStart: -1,
+    enterClickStart: -1,
+
+    selectTime: 1500,
+    maxClickTime: 600,
+
+    selectComplete: () => {
+      if (!scrollableMenu.enabled) return;
+      const itemIdx = scrollableMenu.selected;
+      if (itemIdx < 0) return;
+      if (itemIdx > scrollableMenu.items.length - 1) return;
+
+      scrollableMenu.onSelectComplete(scrollableMenu.items[itemIdx]);
+    },
+
+    onSelectComplete: () => {},
+
+    scrollLeft: () => {
+      if (!scrollableMenu.enabled) return;
+
+      scrollableMenu.selected -= 1;
+      if (scrollableMenu.selected < 0) {
+        scrollableMenu.selected = scrollableMenu.items.length - 1;
+      }
+    },
+    scrollRight: () => {
+      if (!scrollableMenu.enabled) return;
+
+      scrollableMenu.selected += 1;
+      if (scrollableMenu.selected > scrollableMenu.items.length - 1) {
+        scrollableMenu.selected = 0;
+      }
+    },
+
+    getChoice: () => {
+      if (!scrollableMenu.enabled) return null;
+      return scrollableMenu.items[scrollableMenu.selected];
+    },
+
+    enterKeyDown: () => {
+      if (!scrollableMenu.enabled) return;
+      scrollableMenu.enterClickStart = Date.now();
+    },
+
+    enterKeyUp: () => {
+      if (!scrollableMenu.enabled) return;
+
+      const time = Date.now() - scrollableMenu.enterClickStart;
+      if (time > scrollableMenu.selectTime) {
+        scrollableMenu.selectComplete();
+      }
+      scrollableMenu.enterClickStart = -1;
+    },
+
+    leftPointerDown: () => {
+      if (!scrollableMenu.enabled) return;
+      scrollableMenu.leftClickStart = Date.now();
+    },
+
+    leftPointerUp: () => {
+      if (!scrollableMenu.enabled) return;
+      const time = Date.now() - scrollableMenu.leftClickStart;
+      if (time < scrollableMenu.maxClickTime) {
+        scrollableMenu.scrollLeft();
+      } else if (time > scrollableMenu.selectTime) {
+        scrollableMenu.selectComplete();
+      }
+      scrollableMenu.leftClickStart = -1;
+    },
+
+    rightPointerDown: () => {
+      if (!scrollableMenu.enabled) return;
+      scrollableMenu.rightClickStart = Date.now();
+    },
+
+    rightPointerUp: () => {
+      if (!scrollableMenu.enabled) return;
+      const time = Date.now() - scrollableMenu.rightClickStart;
+      if (time < scrollableMenu.maxClickTime) {
+        scrollableMenu.scrollRight();
+      } else if (time > scrollableMenu.selectTime) {
+        scrollableMenu.selectComplete();
+      }
+      scrollableMenu.rightClickStart = -1;
+    },
+
+    draw: (yoff = 0) => {
+      const menuHeight = 200;
+      const gap = 50;
+
+      let bottomY = height / 2 + yoff + 90 - menuHeight / 2;
+
+      let totalWidth = 0;
+      ctx.font = "500 30px Orbitron";
+      for (let i = 0; i < scrollableMenu.items.length; i++) {
+        const item = scrollableMenu.items[i];
+        totalWidth += ctx.measureText(item).width;
+        if (i < scrollableMenu.items.length - 1) totalWidth += gap;
+      }
+      const message = scrollableMenu.message;
+
+      let bgWidth = totalWidth;
+
+      if (message.length > 0) {
+        ctx.font = "900 50px Orbitron";
+        const messageWidth = ctx.measureText(message).width;
+        bgWidth = Math.max(bgWidth, messageWidth);
+      }
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+      ctx.lineWidth = 5;
+
+      const xPadding = 70;
+      ctx.fillRect(
+        width / 2 - bgWidth / 2 - xPadding,
+        height / 2 - menuHeight / 2,
+        bgWidth + xPadding * 2,
+        menuHeight,
+      );
+      ctx.strokeRect(
+        width / 2 - bgWidth / 2 - xPadding,
+        height / 2 - menuHeight / 2,
+        bgWidth + xPadding * 2,
+        menuHeight,
+      );
+
+      ctx.fillStyle = "rgba(255, 255, 255, 1)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+
+      if (message.length > 0) {
+        ctx.font = "900 50px Orbitron";
+
+        ctx.fillText(
+          message,
+          width / 2 - ctx.measureText(message).width / 2,
+          bottomY,
+        );
+
+        bottomY += 50;
+      }
+
+      ctx.font = "500 30px Orbitron";
+
+      let leftX = width / 2 - totalWidth / 2;
+
+      for (let i = 0; i < scrollableMenu.items.length; i++) {
+        const item = scrollableMenu.items[i];
+        const itemWidth = ctx.measureText(item).width;
+        ctx.fillText(item, leftX, bottomY);
+
+        if (i == scrollableMenu.selected) {
+          let rectY = bottomY + 10;
+
+          let rectWidth = itemWidth;
+
+          let tNow = Date.now();
+          let leftClickStart = scrollableMenu.leftClickStart;
+          let rightClickStart = scrollableMenu.rightClickStart;
+          let enterClickStart = scrollableMenu.enterClickStart;
+
+          if (
+            leftClickStart > -1 &&
+            tNow - leftClickStart > scrollableMenu.maxClickTime
+          ) {
+            rectWidth *= (tNow - leftClickStart) / scrollableMenu.selectTime;
+          } else if (
+            rightClickStart > -1 &&
+            tNow - rightClickStart > scrollableMenu.maxClickTime
+          ) {
+            rectWidth *= (tNow - rightClickStart) / scrollableMenu.selectTime;
+          }
+
+          if (
+            enterClickStart > -1 &&
+            tNow - enterClickStart > scrollableMenu.maxClickTime
+          ) {
+            rectWidth *= (tNow - enterClickStart) / scrollableMenu.selectTime;
+          }
+
+          rectWidth = Math.min(itemWidth, rectWidth);
+
+          if (rectWidth < itemWidth) {
+            ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(leftX, rectY, rectWidth, 10);
+          } else {
+            ctx.fillRect(leftX, rectY, rectWidth, 10);
+          }
+        }
+        leftX += itemWidth + gap;
+      }
+    },
+  };
+
   window.addEventListener("mousemove", (e) => {
     mouseX = e.pageX * window.devicePixelRatio;
     mouseY = e.pageY * window.devicePixelRatio;
@@ -190,7 +411,6 @@ async function main(
 
   window.addEventListener("pointerdown", (e) => {
     mouseDown = true;
-    if (shouldStopPlay()) return;
     const x = e.pageX * window.devicePixelRatio;
     const y = e.pageY * window.devicePixelRatio;
     const mouse = Vector.create(x, y);
@@ -203,7 +423,9 @@ async function main(
       x <
       width / 2 - width * 0.125
     ) {
-      leftThruster = true;
+      if (!shouldStopPlay()) leftThruster = true;
+
+      scrollableMenu.leftPointerDown();
     }
 
     if (
@@ -212,7 +434,9 @@ async function main(
       x >
       width / 2 + width * 0.125
     ) {
-      rightThruster = true;
+      if (!shouldStopPlay()) rightThruster = true;
+
+      scrollableMenu.rightPointerDown();
     }
   });
 
@@ -230,6 +454,8 @@ async function main(
       width / 2 - width * 0.125
     ) {
       leftThruster = false;
+
+      scrollableMenu.leftPointerUp();
     }
 
     if (
@@ -239,6 +465,8 @@ async function main(
       width / 2 + width * 0.125
     ) {
       rightThruster = false;
+
+      scrollableMenu.rightPointerUp();
     }
   });
 
@@ -252,6 +480,9 @@ async function main(
   engine.gravity.scale = 0.0001;
 
   let landed = false;
+  let landingComplete = false;
+  let failed = false;
+
   let landTime = 0;
   let prevT = 0;
 
@@ -671,58 +902,97 @@ async function main(
     }
 
     if (landed && landDt > 4000) {
-      ctx.fillStyle = "rgba(255, 255, 255, 1)";
-      ctx.font = "40px Orbitron";
-      const ltext = "You have landed!";
-      ctx.fillText(
-        ltext,
-        width / 2 - ctx.measureText(ltext).width / 2,
-        height / 2,
-      );
-      finishCallback(GAME_FINISH_REASONS.LEVEL_COMPLETE);
+      // ctx.fillStyle = "rgba(255, 255, 255, 1)";
+      // ctx.font = "40px Orbitron";
+      // const ltext = "You have landed!";
+
+      // //background
+      // ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+
+      // ctx.fillRect(0, height / 2 - 50, width, 100);
+
+      // ctx.fillText(
+      //   ltext,
+      //   width / 2 - ctx.measureText(ltext).width / 2,
+      //   height / 2,
+      // );
+      if (!landingComplete) {
+        finishCallback(GAME_FINISH_REASONS.LEVEL_COMPLETE);
+        landingComplete = true;
+
+        scrollableMenu.items = ["Retry", "Next", "Exit to menu"];
+        scrollableMenu.selected = 1;
+        scrollableMenu.enabled = true;
+        scrollableMenu.message = "You have landed!";
+
+        scrollableMenu.onSelectComplete = (item) => {
+          if (item == "Retry") {
+            restartCallback();
+            console.log("Restarting...");
+          }
+        };
+      }
+
+      scrollableMenu.draw(0);
     }
 
     if (shipHealth <= 0) {
-      ctx.fillStyle = "rgba(255, 255, 255, 1)";
-      ctx.font = "40px Orbitron";
-      const ltext = "You failed! We'll get em next time";
-      ctx.fillText(
-        ltext,
-        width / 2 - ctx.measureText(ltext).width / 2,
-        height / 2,
-      );
+      // ctx.fillStyle = "rgba(255, 255, 255, 1)";
+      // ctx.font = "40px Orbitron";
+      // const ltext = "You failed! We'll get em next time";
+      // ctx.fillText(
+      //   ltext,
+      //   width / 2 - ctx.measureText(ltext).width / 2,
+      //   height / 2,
+      // );
 
-      const restartText = "Restart";
-      const restartTextSize = ctx.measureText(restartText);
-      ctx.strokeStyle = "rgba(255, 255, 255, 1)";
-      ctx.lineWidth = 2;
+      // const restartText = "Restart";
+      // const restartTextSize = ctx.measureText(restartText);
+      // ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+      // ctx.lineWidth = 2;
 
-      const hoff = 100;
-      ctx.strokeRect(
-        width / 2 - restartTextSize.width / 2 - 50,
-        height / 2 - 20 - 40 + hoff,
-        restartTextSize.width + 100,
-        20 + 40,
-      );
-      ctx.stroke();
-      ctx.fillText(
-        restartText,
-        width / 2 - restartTextSize.width / 2,
-        height / 2 - 20 + hoff,
-      );
+      // const hoff = 100;
+      // ctx.strokeRect(
+      //   width / 2 - restartTextSize.width / 2 - 50,
+      //   height / 2 - 20 - 40 + hoff,
+      //   restartTextSize.width + 100,
+      //   20 + 40,
+      // );
+      // ctx.stroke();
+      // ctx.fillText(
+      //   restartText,
+      //   width / 2 - restartTextSize.width / 2,
+      //   height / 2 - 20 + hoff,
+      // );
 
-      const widthS = window.innerWidth * window.devicePixelRatio;
-      const heightS = window.innerHeight * window.devicePixelRatio;
-      if (
-        mouseDown
-        // mouseX > widthS / 2 - restartTextSize.width / 2 - 40 &&
-        // mouseX < widthS / 2 + restartTextSize.width / 2 + 50 &&
-        // mouseY > heightS / 2 - 20 - 40 + hoff &&
-        // mouseY < heightS / 2 + 20 + 40 + hoff
-      ) {
-        restartCallback();
-        console.log("restarting...");
+      // const widthS = window.innerWidth * window.devicePixelRatio;
+      // const heightS = window.innerHeight * window.devicePixelRatio;
+      // if (
+      //   mouseDown
+      //   // mouseX > widthS / 2 - restartTextSize.width / 2 - 40 &&
+      //   // mouseX < widthS / 2 + restartTextSize.width / 2 + 50 &&
+      //   // mouseY > heightS / 2 - 20 - 40 + hoff &&
+      //   // mouseY < heightS / 2 + 20 + 40 + hoff
+      // ) {
+      //   restartCallback();
+      //   console.log("restarting...");
+      // }
+
+      if (!failed) {
+        failed = true;
+        scrollableMenu.items = ["Retry", "Exit to menu"];
+        scrollableMenu.enabled = true;
+        scrollableMenu.message = "You failed! We'll get em next time";
+        scrollableMenu.selected = 0;
+
+        scrollableMenu.onSelectComplete = (item) => {
+          if (item == "Retry") {
+            restartCallback();
+            console.log("restarting...");
+          }
+        };
       }
+      scrollableMenu.draw();
     }
 
     //display target location pointer

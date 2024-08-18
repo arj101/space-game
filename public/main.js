@@ -283,7 +283,7 @@ const main = async () => {
     const y = e.pageY * window.devicePixelRatio;
     const mouse = Vector.create(x, y);
 
-    const width = window.innerWidth;
+    const width = window.innerWidth * window.devicePixelRatio;
     if (
       //   Vector.magnitude(Vector.sub(leftThrusterButtonPos, mouse)) <=
 
@@ -309,7 +309,7 @@ const main = async () => {
     const y = e.pageY * window.devicePixelRatio;
     const mouse = Vector.create(x, y);
 
-    const width = window.innerWidth;
+    const width = window.innerWidth * window.devicePixelRatio;
     if (
       // Vector.magnitude(Vector.sub(leftThrusterButtonPos, mouse)) <=
       // 80 * pixelRatio

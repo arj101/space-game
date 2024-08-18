@@ -35,6 +35,16 @@ function loadText(url) {
   });
 }
 
+function loadImage(url) {
+  return new Promise(async (resolve, reject) => {
+    let image = new Image();
+    image.onload = () => {
+      resolve(image);
+    };
+    image.src = url;
+  });
+}
+
 function parseOBJCollissionData(source) {
   let lines = source.split("\n");
   let vs = [];

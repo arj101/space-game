@@ -26,6 +26,10 @@
             <image id="fullscreen_img" src="./fullscreen.svg"></image>
         </button>
 
+        <button id="menu">
+            <image id="menu_img" src="./menu.svg"></image>
+        </button>
+
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
@@ -88,6 +92,25 @@
                 cursor: pointer;
                 display: grid;
                 place-items: center;
+            }
+
+            #menu {
+                position: absolute;
+                bottom: 0.5rem;
+                right: 0.5rem;
+                z-index: 100;
+                background-color: transparent;
+                color: white;
+                border: none;
+                padding: 0.3rem;
+                cursor: pointer;
+                display: grid;
+                place-items: center;
+            }
+
+            #menu img {
+                width: 4rem;
+                height: 4rem;
             }
 
             #fullscreen img {

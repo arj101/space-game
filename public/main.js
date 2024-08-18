@@ -1,4 +1,4 @@
-(async () => {
+const main = async () => {
   const Engine = Matter.Engine,
     Render = Matter.Render,
     Runner = Matter.Runner,
@@ -281,6 +281,7 @@ const heightIsSmaller = aspectRatioDesired < aspectRatio;
     width - 100 * pixelRatio,
     height - 100 * pixelRatio,
   );
+
   window.addEventListener("pointerdown", (e) => {
     const x = e.pageX * window.devicePixelRatio;
     const y = e.pageY * window.devicePixelRatio;
@@ -596,25 +597,26 @@ mat2 rot(float a) {
   let pos = [-1, 1, 1, 1, 1, -1, -1, -1, -1, 1];
 
   const bg = new Image();
-  bg.src = "Level.png";
 
   const shipTexImage = new Image();
-  shipTexImage.src = "shipwhole.png";
 
   const flame = new Image();
-  flame.src = "flame.png";
 
   await new Promise((resolve, _) => {
+  bg.src = "Level.png";
     bg.onload = resolve;
   });
-
   await new Promise((resolve, _) => {
+  shipTexImage.src = "shipwhole.png";
     shipTexImage.onload = resolve;
   });
 
   await new Promise((resolve, _) => {
+  flame.src = "flame.png";
     flame.onload = resolve;
   });
+
+
 
   const pg = createProgram(gl, vshader, bgfragShader);
   gl.useProgram(pg);
@@ -848,6 +850,7 @@ mat2 rot(float a) {
 
   run(0);
   function run(t) {
+    console.log(t);
     window.requestAnimationFrame(run);
 
     if (prevT == 0) {
@@ -1114,4 +1117,6 @@ mat2 rot(float a) {
     camVel = Vector.sub(camVel, Vector.mult(camVel, collided ? 0.03 : 0.4));
     camPos = Vector.add(camPos, Vector.mult(camVel, dt));
   }
-})();
+};
+
+window.onload = main;

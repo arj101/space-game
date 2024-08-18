@@ -488,7 +488,7 @@ mat2 rot(float a) {
   }
   
     vec3 star(vec2 id, vec2 f) {
-      vec2 sp = vec2(0.5, 0.5) - (rotz(noise(id) * 3.14)*vec3(0.6, 0., 0.)).xy;
+      vec2 sp = vec2(0.5, 0.5) - rot(noise(id) * 3.14)*vec2(0.6, 0.);
       vec2 c = sp - f;
       
       float size = noise3(id);
@@ -530,7 +530,7 @@ mat2 rot(float a) {
       vec3 color = vec3(0.);
 
 
-      const int cutoff = 2;
+      const int cutoff = 1;
       const float scale = 6.;
       const float star_prob = 0.9;
       for (int x = -cutoff; x <= cutoff; x++) {

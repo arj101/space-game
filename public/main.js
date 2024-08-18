@@ -14,23 +14,40 @@
   let width = 1928,
     height = 1080;
 
+  const canvasContainer = document.getElementById("container")
+
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  canvas.style.width =  "100%";
-  canvas.style.height = "auto";
-  document.body.appendChild(canvas);
 
+//assume landscape
+const aspectRatioDesired = 16/9;
+const aspectRatio = window.innerWidth / window.innerHeight;
+
+const heightIsSmaller = aspectRatioDesired < aspectRatio;
+
+  canvas.style.width =  heightIsSmaller ? "auto" : "100%";
+  canvas.style.height = heightIsSmaller ? "100%" : "auto";
+  canvasContainer.appendChild(canvas);
 
   const overlayCanvas =  document.createElement("canvas")
   overlayCanvas.width = width;
   overlayCanvas.height = height;
-  overlayCanvas.style.width = "100%";
-  overlayCanvas.style.height = "auto";
+  overlayCanvas.style.width = heightIsSmaller ? "auto" : "100%";
+  overlayCanvas.style.height = heightIsSmaller ? "100%" : "auto";
   overlayCanvas.style.position = "absolute";
-  overlayCanvas.style.top = "0";
-  overlayCanvas.style.left = "0";
-  document.body.appendChild(overlayCanvas);
+  // overlayCanvas.style.top = "auto";
+  // overlayCanvas.style.left = "auto";
+  canvasContainer.appendChild(overlayCanvas);
+
+  window.onresize = () => {
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    const heightIsSmaller = aspectRatioDesired < aspectRatio;
+    canvas.style.width =  heightIsSmaller ? "auto" : "100%";
+    canvas.style.height = heightIsSmaller ? "100%" : "auto";
+    overlayCanvas.style.width = heightIsSmaller ? "auto" : "100%";
+    overlayCanvas.style.height = heightIsSmaller ? "100%" : "auto";
+  }
 
   const ctx = overlayCanvas.getContext("2d");
   const gl = canvas.getContext("webgl");

@@ -1138,4 +1138,4 @@ mat2 rot(float a) {
   }
 };
 
-window.onload = main;
+main();

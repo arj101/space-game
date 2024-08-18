@@ -5,6 +5,24 @@
             name="viewport"
             content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
         />
+        <!-- full screen button-->
+
+        <button id="fullscreen" onclick="(
+            function () {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().then (() => {
+                    document.getElementById('fullscreen_img').src = './closefullscreen.svg';
+                })
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen().then(() => {
+                    document.getElementById('fullscreen_img').src = './fullscreen.svg';
+                })
+            }
+
+        })()">
+            <image id="fullscreen_img" src="./fullscreen.svg"></image>
+        </button>
+
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Bungee+Inline&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
@@ -49,6 +67,25 @@
             canvas {
                 width: 100%;
                 height: 100%;
+            }
+
+            #fullscreen {
+                position: absolute;
+                top: 0.1rem;
+                right: 0.1rem;
+                z-index: 100;
+                background-color: transparent;
+                color: white;
+                border: none;
+                padding: 0.3px;
+                cursor: pointer;
+                display:grid;
+                place-items: center;
+            }
+
+            #fullscreen img {
+                width: 2rem;
+                height: 2rem;
             }
         </style>
     </body>

@@ -11,22 +11,22 @@
 
   const pixelRatio = window.devicePixelRatio;
 
-  let width = window.innerWidth * pixelRatio,
-    height = window.innerHeight * pixelRatio;
+  let width = 1928,
+    height = 1080;
 
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  canvas.style.width = window.innerWidth + "px";
-  canvas.style.height = window.innerHeight + "px";
+  canvas.style.width =  "100%";
+  canvas.style.height = "auto";
   document.body.appendChild(canvas);
 
 
   const overlayCanvas =  document.createElement("canvas")
   overlayCanvas.width = width;
   overlayCanvas.height = height;
-  overlayCanvas.style.width = window.innerWidth + "px";
-  overlayCanvas.style.height = window.innerHeight + "px";
+  overlayCanvas.style.width = "100%";
+  overlayCanvas.style.height = "auto";
   overlayCanvas.style.position = "absolute";
   overlayCanvas.style.top = "0";
   overlayCanvas.style.left = "0";

@@ -216,6 +216,24 @@ async function main(
     selectTime: 1500,
     maxClickTime: 600,
 
+    openMenu: () => {
+      scrollableMenu.enabled = true;
+      scrollable.leftClickStart = -1;
+      scrollable.rightClickStart = -1;
+      scrollable.enterClickStart = -1;
+    },
+
+    closeMenu: () => {
+      scrollableMenu.enabled = false;
+      scrollableMenu.selected = -1;
+      scrollableMenu.items = [];
+      scrollableMenu.message = "";
+
+      scrollableMenu.leftClickStart = -1;
+      scrollableMenu.rightClickStart = -1;
+      scrollableMenu.enterClickStart = -1;
+    },
+
     selectComplete: () => {
       if (!scrollableMenu.enabled) return;
       const itemIdx = scrollableMenu.selected;
@@ -413,7 +431,7 @@ async function main(
     ctx.canvas.focus();
 
     if (scrollableMenu.enabled) {
-      scrollableMenu.enabled = false;
+      scrollableMenu.closeMenu();
       return;
     }
 
@@ -422,13 +440,14 @@ async function main(
     if (Math.random() > 0.5) {
       scrollableMenu.items.push("Cheat >:)");
     }
-    scrollableMenu.enabled = true;
     scrollableMenu.selected = 2;
 
     scrollableMenu.message = "Mid game menu for losers";
+    scrollableMenu.openMenu();
 
     scrollableMenu.onSelectComplete = (item) => {
       if (item == "Retry") {
+        scrollableMenu.closeMenu();
         restartCallback();
         console.log("Restarting...");
       }
@@ -962,8 +981,8 @@ async function main(
 
         scrollableMenu.items = ["Retry", "Next", "Exit to menu"];
         scrollableMenu.selected = 1;
-        scrollableMenu.enabled = true;
         scrollableMenu.message = "You have landed!";
+        scrollableMenu.openMenu();
 
         scrollableMenu.onSelectComplete = (item) => {
           if (item == "Retry") {
@@ -1019,12 +1038,13 @@ async function main(
       if (!failed) {
         failed = true;
         scrollableMenu.items = ["Retry", "Exit to menu"];
-        scrollableMenu.enabled = true;
         scrollableMenu.message = "You failed! We'll get em next time";
         scrollableMenu.selected = 0;
+        scrollableMenu.openMenu();
 
         scrollableMenu.onSelectComplete = (item) => {
           if (item == "Retry") {
+            scrollableMenu.closeMenu();
             restartCallback();
             console.log("restarting...");
           }

@@ -57,67 +57,6 @@ const main = async () => {
     return;
   }
 
-  const terrainVertices = [
-    { x: 316, y: 1455 },
-    { x: 840, y: 1455 },
-    { x: 890, y: 1288 },
-    { x: 981, y: 1156 },
-    { x: 1212, y: 1129 },
-    { x: 1281, y: 1143 },
-    { x: 1643, y: 1288 },
-    { x: 1680, y: 1441 },
-    { x: 2031, y: 1441 },
-    { x: 2096, y: 1328 },
-    { x: 2070, y: 1143 },
-    { x: 2070, y: 989 },
-    { x: 2265, y: 755 },
-    { x: 2179, y: 598 },
-    { x: 1860, y: 482 },
-    { x: 1630, y: 552 },
-    { x: 1547, y: 554 },
-    { x: 1096, y: 341 },
-    { x: 768, y: 391 },
-    { x: 612, y: 587 },
-    { x: 400, y: 778 },
-    { x: 437, y: 928 },
-    { x: 352, y: 1175 },
-    { x: 316, y: 1455 },
-  ];
-
-  function buildTerrain(vertices) {
-    let bodies = [];
-
-    for (let i = 0; i < vertices.length - 1; i++) {
-      const v1 = vertices[i];
-      const v2 = vertices[i + 1];
-
-      const outsideNormal = Vector.normalise(Vector.perp(Vector.sub(v2, v1)));
-
-      const v3 = Vector.add(v2, Vector.mult(outsideNormal, 10));
-      const v4 = Vector.add(v1, Vector.mult(outsideNormal, 10));
-
-      const verticesG = [[v1, v2, v3, v4]];
-      const cx = (v1.x + v2.x + v3.x + v4.x) / 4;
-      const cy = (v1.y + v2.y + v3.y + v4.y) / 4;
-      bodies.push(Bodies.fromVertices(cx, cy, verticesG, { isStatic: true }));
-    }
-
-    return bodies;
-  }
-
-  const boxA = Bodies.rectangle(600, 1000, 80, 80);
-  const boxB = Bodies.rectangle(300, 50, 80, 80);
-
-  const complexBody = Bodies.fromVertices(400, 10, [
-    [
-      { x: 0, c: 100 },
-      { x: 95, y: 30 },
-      { x: 60, y: -80 },
-      { x: -60, y: -80 },
-      { x: -95, y: 30 },
-    ],
-  ]);
-
   const shipPos = { x: width / 2, y: 400 };
   const shipBody = Bodies.rectangle(shipPos.x, shipPos.y, 250, 87, {});
   const shipLThrust = Bodies.rectangle(
@@ -159,77 +98,15 @@ const main = async () => {
     },
   );
 
-  const GLOBAL_OBJ_SCALE = 0.4;
-
-  const terrain = buildTerrain(terrainVertices);
-
-  const collissionText = await loadText("./level1-collission.obj");
-  let collissionObjs = parseOBJCollissionData(collissionText);
-
-  collissionObjs = collissionObjs.map((collissionObj) =>
-    scaleOBJ(
-      (GLOBAL_OBJ_SCALE * height) / width,
-      GLOBAL_OBJ_SCALE,
-      collissionObj,
-    ),
+  const levelResources = await loadLevelResources(
+    levels["1"].filePrefix,
+    width,
+    height,
   );
+  const globalResources = await loadGlobalResources();
 
-  const cvs = collissionObjs.map((collissionObj) => {
-    let s = collissionObj.center;
-    let sx = (s.x + 1.0) * 0.5 * width;
-    let sy = (1.0 - s.y) * 0.5 * height;
-
-    // sx = 0;
-    // sy = 0;
-
-    return {
-      center: { x: sx, y: sy },
-      name: collissionObj.name,
-      vertices: collissionObj.vertices.map(([x, y]) => {
-        return {
-          x: (x + 1.0) * 0.5 * width,
-          y: (1.0 - y) * 0.5 * height,
-        };
-      }),
-    };
-  });
-
-  console.log(cvs);
-  let ci = 0;
-
-  let finishPlatform;
-  const collissionBodies = cvs.map((cv) => {
-    let v1 = cv.vertices[0];
-    let v2 = cv.vertices[1];
-    let v3 = cv.vertices[2];
-    let v4 = cv.vertices[3];
-
-    let width = Vector.magnitude(Vector.sub(v1, v2));
-    let height = Vector.magnitude(Vector.sub(v2, v3));
-
-    let angle = Math.atan2(-(v2.y - v1.y), v2.x - v1.x);
-
-    let centerx = (v1.x + v2.x + v3.x + v4.x) / 4;
-    let centery = (v1.y + v2.y + v3.y + v4.y) / 4;
-
-    // return Bodies.fromVertices(centerx, centery, [cv.vertices], {
-    //   isStatic: true,
-    // });
-
-    let b = Bodies.rectangle(centerx, centery, width, height, {
-      isStatic: true,
-      angle: -angle,
-    });
-
-    if (cv.name == "finish") {
-      finishPlatform = b;
-      console.log("Found finish platform in collission data");
-    }
-
-    return b;
-  });
-
-  console.log(collissionBodies);
+  let collissionBodies = levelResources.collissionBodies;
+  const finishPlatform = levelResources.finishPlatformBody;
 
   const otherBodies = [
     // boxB,
@@ -350,13 +227,7 @@ const main = async () => {
     return (0.5 - y / height) * 2;
   }
 
-  const objText = await loadText("./level1.obj");
-
-  let terrainObj = parseOBJ(objText);
-
-  terrainObj = scaleOBJ(GLOBAL_OBJ_SCALE, GLOBAL_OBJ_SCALE, terrainObj);
-  terrainObj = scaleOBJ(height / width, 1, terrainObj);
-  // console.log(terrainObj);
+  let terrainObj = levelResources.terrainObj;
 
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
@@ -364,47 +235,20 @@ const main = async () => {
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.sampleCoverage(1, false);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
   const posBuf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
 
   let pos = [-1, 1, 1, 1, 1, -1, -1, -1, -1, 1];
 
-  const bg = new Image();
+  const shipTexImage = globalResources.shipImage;
 
-  const shipTexImage = new Image();
+  const flame = globalResources.flameImage;
 
-  const flame = new Image();
-  const platformImg = new Image();
+  const platformImg = levelResources.finishPlatformImage;
 
-  const terrainTexImage = new Image();
-
-  const loaders = [
-    new Promise((resolve, _) => {
-      bg.src = "Level.png";
-      bg.onload = resolve;
-    }),
-    new Promise((resolve, _) => {
-      shipTexImage.src = "shipwhole.png";
-      shipTexImage.onload = resolve;
-    }),
-
-    new Promise((resolve, _) => {
-      flame.src = "flame.png";
-      flame.onload = resolve;
-    }),
-
-    new Promise((res) => {
-      platformImg.src = "./landtex.png";
-      platformImg.onload = res;
-    }),
-    new Promise((res) => {
-      terrainTexImage.src = "./level1tex.png";
-      terrainTexImage.onload = res;
-    }),
-  ];
-
-  await Promise.all(loaders);
+  const terrainTexImage = levelResources.terrainImage;
 
   const shaderPrograms = compileShaders(gl, getShaders(width, height));
 
@@ -415,22 +259,8 @@ const main = async () => {
 
   console.log("loc", gl.getUniformLocation(pg, "center"));
 
-  const bgTex = gl.createTexture();
-
-  gl.activeTexture(gl.TEXTURE0);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-  gl.bindTexture(gl.TEXTURE_2D, bgTex);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bg);
-
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-  const texU = gl.getUniformLocation(pg, "img");
-  gl.uniform1i(texU, 0);
-
-  const imgSizeU = gl.getUniformLocation(pg, "img_size");
-  gl.uniform2f(imgSizeU, (bg.width * 5162) / 2048, (bg.height * 5162) / 2048);
+  // const imgSizeU = gl.getUniformLocation(pg, "img_size");
+  // gl.uniform2f(imgSizeU, (bg.width * 5162) / 2048, (bg.height * 5162) / 2048);
 
   const center = gl.getUniformLocation(pg, "center");
   let tloc = gl.getUniformLocation(pg, "img");
@@ -595,9 +425,7 @@ const main = async () => {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-  let finishObj = parseOBJ(await loadText("./level1finish.obj"));
-  finishObj = scaleOBJ(GLOBAL_OBJ_SCALE, GLOBAL_OBJ_SCALE, finishObj);
-  finishObj = scaleOBJ(height / width, 1, finishObj);
+  finishObj = levelResources.finishPlatformObj;
   console.log(finishObj);
 
   const finishBuf = objToVAttributes(finishObj);

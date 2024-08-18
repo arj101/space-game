@@ -145,19 +145,7 @@ async function main(
     window.addEventListener(event, callback);
   }
 
-  const otherBodies = [
-    // boxB,
-    // ground,
-    // // complexBody,
-    // leftWall,
-    // rightWall,
-    // upperWall,
-    // midGround,
-    // finishPlatform,
-    startPlatform,
-    finishPlatform,
-    ...collissionBodies,
-  ];
+  const otherBodies = [startPlatform, finishPlatform, ...collissionBodies];
 
   let bodies = [ship, startPlatform, finishPlatform];
   bodies.push(...collissionBodies);

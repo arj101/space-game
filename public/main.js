@@ -283,6 +283,7 @@ const main = async () => {
     const y = e.pageY * window.devicePixelRatio;
     const mouse = Vector.create(x, y);
 
+    const width = window.innerWidth;
     if (
       //   Vector.magnitude(Vector.sub(leftThrusterButtonPos, mouse)) <=
 
@@ -308,6 +309,7 @@ const main = async () => {
     const y = e.pageY * window.devicePixelRatio;
     const mouse = Vector.create(x, y);
 
+    const width = window.innerWidth;
     if (
       // Vector.magnitude(Vector.sub(leftThrusterButtonPos, mouse)) <=
       // 80 * pixelRatio
@@ -851,7 +853,6 @@ mat2 rot(float a) {
 
   run(0);
   function run(t) {
-    console.log(t);
     window.requestAnimationFrame(run);
 
     if (prevT == 0) {

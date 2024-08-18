@@ -265,11 +265,13 @@ async function main(
 
     leftPointerDown: () => {
       if (!scrollableMenu.enabled) return;
+
       scrollableMenu.leftClickStart = Date.now();
     },
 
     leftPointerUp: () => {
       if (!scrollableMenu.enabled) return;
+
       const time = Date.now() - scrollableMenu.leftClickStart;
       if (time < scrollableMenu.maxClickTime) {
         scrollableMenu.scrollLeft();

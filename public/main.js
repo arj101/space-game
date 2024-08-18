@@ -12,7 +12,7 @@ const main = async () => {
   const pixelRatio = window.devicePixelRatio;
 
   let width = 1928,
-    height = 1080;
+    height = 980;
 
   const canvasContainer = document.getElementById("container");
 
@@ -21,7 +21,7 @@ const main = async () => {
   canvas.height = height;
 
   //assume landscape
-  const aspectRatioDesired = 16 / 9;
+  const aspectRatioDesired = width / height;
   const aspectRatio = window.innerWidth / window.innerHeight;
 
   const heightIsSmaller = aspectRatioDesired < aspectRatio;
@@ -125,14 +125,14 @@ const main = async () => {
     shipPos.y + 17,
     30,
     60,
-    {}
+    {},
   );
   const shipRThrust = Bodies.rectangle(
     shipPos.x + 125 + 15,
     shipPos.y + 17,
     30,
     60,
-    {}
+    {},
   );
 
   const ship = Body.create({
@@ -146,7 +146,7 @@ const main = async () => {
     window.innerHeight - 30,
     window.innerWidth,
     60,
-    { isStatic: true }
+    { isStatic: true },
   );
 
   const startPlatform = Bodies.rectangle(
@@ -156,7 +156,7 @@ const main = async () => {
     44,
     {
       isStatic: true,
-    }
+    },
   );
 
   const GLOBAL_OBJ_SCALE = 0.4;
@@ -170,8 +170,8 @@ const main = async () => {
     scaleOBJ(
       (GLOBAL_OBJ_SCALE * height) / width,
       GLOBAL_OBJ_SCALE,
-      collissionObj
-    )
+      collissionObj,
+    ),
   );
 
   const cvs = collissionObjs.map((collissionObj) => {
@@ -271,11 +271,11 @@ const main = async () => {
 
   const leftThrusterButtonPos = Vector.create(
     100 * pixelRatio,
-    height - 100 * pixelRatio
+    height - 100 * pixelRatio,
   );
   const rightThrusterButtonPos = Vector.create(
     width - 100 * pixelRatio,
-    height - 100 * pixelRatio
+    height - 100 * pixelRatio,
   );
 
   window.addEventListener("pointerdown", (e) => {
@@ -350,230 +350,6 @@ const main = async () => {
     return (0.5 - y / height) * 2;
   }
 
-  const shipvshader = createShader(
-    gl,
-    gl.VERTEX_SHADER,
-    `
-    attribute vec4 v_position;
-    uniform vec2 center;
-    varying vec4 position;
-    uniform float angle;
-    uniform vec2 shipCenter;
-
-    void main() {
-       vec2 ppos = v_position.xy;
-       ppos.y *= ${height.toFixed(1)}/${width.toFixed(1)};
-      vec2 pos = mat2(cos(angle), -sin(angle), sin(angle) , cos(angle)) * ppos.xy;
-      pos.y /= ${height.toFixed(1)}/${width.toFixed(1)};
-      gl_Position = vec4(pos.xy + shipCenter - center, 0., 1.);
-
-      position = v_position;
-    }
-
-    `
-  );
-
-  const vshader = createShader(
-    gl,
-    gl.VERTEX_SHADER,
-    `
-
-    attribute vec4 v_position;
-    uniform vec3 center;
-    varying vec4 position;
-    uniform float u_time;
-
-    void main() {
-
-      gl_Position = vec4(v_position.xy, v_position.zw);
-      position = v_position;
-    }
-
-    `
-  );
-
-  const shippshader = createShader(
-    gl,
-    gl.FRAGMENT_SHADER,
-    `
-    precision highp float;
-    varying vec4 position;
-    uniform vec2 shipCenter;
-    uniform vec2 center;
-    uniform vec2 shipSize;
-
-    uniform float u_time;
-    uniform sampler2D img;
-    uniform sampler2D flame;
-
-    uniform vec2 lr;
-
-
-    mat2 rot(float angle) {
-      return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
-    }
-
-    void main() {
-
-    vec2 pos = position.xy;
-    vec2 texPos = (pos.xy/shipSize.xy/2. + 1.0) * 0.5;
-
-
-
-    vec4 color = texture2D(img, texPos);
-
- //   vec4 color = vec4(1.0 - smoothstep( 0.08, 0.09, distance(position.xy, vec2(0.) )), 1., 1., 1.);
-    gl_FragColor = color;
-
-    // gl_FragColor.xw += step(distance(texPos, vec2(0.05, 0.1)), 0.1);
-    // gl_FragColor.xw += step(distance(texPos, vec2(1.-0.05, 0.1)), 0.1);
-
-    vec2 t1 = vec2(0.00, 0.1);
-    vec2 t2 = vec2(1.-0.09, 0.1);
-
-
-    vec2 ft1 = texPos - t1;
-    vec2 ft2 = texPos - t2;
-
-    ft1 *= rot(sin(u_time * 70.) * 0.02);
-    ft2 *= rot(sin(u_time * 70.) * 0.02);
-
-    ft1.y /= abs(sin(u_time * 70. * (20. * lr.x))* (0.03 + lr.x * 0.05) + 1.);
-    ft2.y /= abs(sin(u_time * 70. * (20. * lr.y))* (0.03 + lr.y * 0.05) + 1.);
-
-
-    ft1 /= 0.1 ;
-    ft2 /= 0.1;
-
-    ft1.y *= 0.3 / (lr.x * 0.5 + 0.5);
-    ft2.y *= 0.3 / (lr.y *0.5 + 0.5);
-
-    ft1.y = 0.8 + ft1.y;
-    ft2.y = 0.85 + ft2.y;
-
-    vec4 ft1c = texture2D(flame, ft1);
-    vec4 ft2c = texture2D(flame, ft2);
-
-    float thrustFrac = 1.0 - smoothstep(0.0, 0.1, gl_FragColor.w);
-    
-
-    gl_FragColor += ft1c * pow(ft1.y , 2.) * 2. * thrustFrac;
-    gl_FragColor += ft2c * pow(ft2.y , 2.) * 2. * thrustFrac;
-
-    }
-    `
-  );
-
-  const bgfragShader = createShader(
-    gl,
-    gl.FRAGMENT_SHADER,
-    `
-    precision highp float;
-    varying vec4 position;
-    uniform vec3 center;
-    uniform sampler2D img;
-
- 
-
-
-mat3 rotz(float a) {
-  return mat3(
-      cos(a), -sin(a), 0.,
-      sin(a), cos(a), 0., 
-      0., 0., 1.0
-  );
-}
-
-mat2 rot(float a) {
-  return mat2(
-      cos(a), -sin(a),
-      sin(a), cos(a)
-  );
-}
-
-    float noise(vec2 p) {
-      return fract(0.35353 * abs(dot(p, vec2(235658.35, 544646.464))));
-  }
-  
-  float noise2(vec2 p) {
-       return fract(abs(dot(p, vec2(4648.35, 2926.464))));
-  }
-  
-  float noise3(vec2 p) {
-       return fract(0.136477 * abs(dot(p, vec2(4648.35, 2926.464))));
-  }
-  
-    vec3 star(vec2 id, vec2 f) {
-      vec2 sp = vec2(0.5, 0.5) - rot(noise(id) * 3.14)*vec2(0.6, 0.);
-      vec2 c = sp - f;
-      
-      float size = noise3(id);
-      
-      float intensity = (0.1 * size)/distance(sp, f);
-      
-  
-      float invlength = 0.3/length(c);
-      intensity += min(0.8, 0.002/(abs(c.y * c.x))) *  invlength;
-      
-      vec2 cr = c * rot(0.785);
-      
-      intensity += min(0.4, 0.002/(abs(cr.y * cr.x))) *invlength;
-      intensity = max(0., intensity - 0.01);
-      
-      float red = smoothstep(0.4, 0.9, size) * size;
-      float green = smoothstep(0.2, 0.3, size) * size;
-      float blue = smoothstep(0., 0.01, size) * size;
-  
-      
-      vec3 sc = vec3(red,  green, blue) * intensity;
-    
-      float u_time = center.z;
-
-      float blink = fract(u_time *0.05  + 353663.0* noise3(id));
-      sc *= 1.0 - step(0.98, blink);
-      
-      return sc;
-  }
-
-    void main() {
-       vec2 st = position.xy + center.xy  *0.01 ;
-      st.y *= ${height.toFixed(1)}/${width.toFixed(1)};
-
-      float u_time = center.z;
-
-      st -= u_time*0.0001;
-
-      vec3 color = vec3(0.);
-
-
-      const int cutoff = 1;
-      const float scale = 6.;
-      const float star_prob = 0.9;
-      for (int x = -cutoff; x <= cutoff; x++) {
-          for (int y = -cutoff; y <= cutoff; y++) {
-             
-              vec2 offset = vec2(x, y);
-              vec2 id = floor(st*scale ) + offset;
-              
-               if (noise2(id) > star_prob) continue;
-            
-              vec2 f = fract(st*scale) - offset  ;
-              color += star(id , f);;
-          }
-      }
-
-      color *= 0.01;
-      color = clamp(color, 0., 1.);
-   
-
-
-      gl_FragColor.xyz = color;
-      // gl_FragColor.x = sin(u_time);
-      gl_FragColor.w = 1.;
-    }
-    `
-  );
-
   const objText = await loadText("./level1.obj");
 
   let terrainObj = parseOBJ(objText);
@@ -630,7 +406,11 @@ mat2 rot(float a) {
 
   await Promise.all(loaders);
 
-  const pg = createProgram(gl, vshader, bgfragShader);
+  const shaderPrograms = compileShaders(gl, getShaders(width, height));
+
+  console.log(shaderPrograms);
+
+  const pg = shaderPrograms.bgShader;
   gl.useProgram(pg);
 
   console.log("loc", gl.getUniformLocation(pg, "center"));
@@ -658,7 +438,7 @@ mat2 rot(float a) {
     center,
     screenToClipX(camPos.x),
     screenToClipY(camPos.y),
-    Math.PI / 2
+    Math.PI / 2,
   );
 
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pos), gl.STATIC_DRAW);
@@ -667,7 +447,7 @@ mat2 rot(float a) {
   gl.vertexAttribPointer(vattrib, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(vattrib);
 
-  const shipg = createProgram(gl, shipvshader, shippshader);
+  const shipg = shaderPrograms.shipShader;
   gl.useProgram(shipg);
 
   gl.activeTexture(gl.TEXTURE1);
@@ -680,7 +460,7 @@ mat2 rot(float a) {
     gl.RGBA,
     gl.RGBA,
     gl.UNSIGNED_BYTE,
-    shipTexImage
+    shipTexImage,
   );
 
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -711,7 +491,7 @@ mat2 rot(float a) {
     const y = screenToClipY(v.y) - screenToClipY(ship.position.y);
     shipvs.push(
       y < 0 ? y - 100 / width : y,
-      screenToClipX(v.x) - screenToClipX(ship.position.x)
+      screenToClipX(v.x) - screenToClipX(ship.position.x),
     );
   }
 
@@ -733,7 +513,7 @@ mat2 rot(float a) {
   gl.uniform2f(
     shipCenter,
     screenToClipX(ship.position.x - camPos.x + width / 2),
-    screenToClipY(ship.position.y - camPos.y + height / 2)
+    screenToClipY(ship.position.y - camPos.y + height / 2),
   );
 
   const shipWidth = 250 + 30 + 30;
@@ -751,11 +531,7 @@ mat2 rot(float a) {
 
   //----terrain setup------->
 
-  const terrainPg = createProgram(
-    gl,
-    createShader(gl, gl.VERTEX_SHADER, terrainShader.vertex),
-    createShader(gl, gl.FRAGMENT_SHADER, terrainShader.fragmentProc)
-  );
+  const terrainPg = shaderPrograms.terrainShader;
   gl.useProgram(terrainPg);
 
   gl.activeTexture(gl.TEXTURE3);
@@ -767,7 +543,7 @@ mat2 rot(float a) {
     gl.RGBA,
     gl.RGBA,
     gl.UNSIGNED_BYTE,
-    terrainTexImage
+    terrainTexImage,
   );
 
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -800,11 +576,7 @@ mat2 rot(float a) {
   //<----terrain setup-------
 
   //---- finish platform ---->
-  const finishPlatformPg = createProgram(
-    gl,
-    createShader(gl, gl.VERTEX_SHADER, terrainShader.vertex),
-    createShader(gl, gl.FRAGMENT_SHADER, terrainShader.fragment)
-  );
+  const finishPlatformPg = shaderPrograms.finishPlatformShader;
 
   gl.activeTexture(gl.TEXTURE4);
   const platformTex = gl.createTexture();
@@ -816,7 +588,7 @@ mat2 rot(float a) {
     gl.RGBA,
     gl.RGBA,
     gl.UNSIGNED_BYTE,
-    platformImg
+    platformImg,
   );
 
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -877,7 +649,7 @@ mat2 rot(float a) {
       center,
       screenToClipX(camPos.x),
       screenToClipY(camPos.y),
-      t / 1000
+      t / 1000,
     );
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 5);
 
@@ -897,7 +669,7 @@ mat2 rot(float a) {
     gl.uniform2f(
       shipCenter,
       screenToClipX(ship.position.x),
-      screenToClipY(ship.position.y)
+      screenToClipY(ship.position.y),
     );
     gl.uniform2f(lr, leftThruster ? 1 : 0, rightThruster ? 1 : 0);
     gl.uniform1f(u_time, t / 1000);
@@ -1008,14 +780,14 @@ mat2 rot(float a) {
         shipScreenX - shipWidth / 2,
         shipScreenY - shipHeight,
         shipWidth,
-        30
+        30,
       );
       ctx.fillStyle = "rgba(255, 255, 255, 1)";
       ctx.fillRect(
         shipScreenX - shipWidth / 2,
         shipScreenY - shipHeight,
         (shipWidth * landDt) / 4000,
-        30
+        30,
       );
     }
 
@@ -1026,7 +798,7 @@ mat2 rot(float a) {
       ctx.fillText(
         ltext,
         width / 2 - ctx.measureText(ltext).width / 2,
-        height / 2
+        height / 2,
       );
     }
 
@@ -1047,7 +819,7 @@ mat2 rot(float a) {
       const edgeLoc = Vector.mult(Vector.normalise(screenTarget), edgeDist);
       edgeLoc.y = Math.max(
         -height / 2 + 5,
-        Math.min(height / 2 - 5, edgeLoc.y)
+        Math.min(height / 2 - 5, edgeLoc.y),
       );
       edgeLoc.x = Math.max(-width / 2 + 5, Math.min(width / 2 - 5, edgeLoc.x));
 
@@ -1078,7 +850,7 @@ mat2 rot(float a) {
         Vector.create(0, -100),
         ship.angle -
           (leftThruster ? 1 : 0) * PI_2 +
-          (rightThruster ? 1 : 0) * PI_2
+          (rightThruster ? 1 : 0) * PI_2,
       );
       const forceMag = leftThruster && rightThruster ? 0.02 : 0.01;
       const forceOriginOff = Vector.add(forceOrigin, fOriginOffset);

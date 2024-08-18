@@ -602,19 +602,22 @@ mat2 rot(float a) {
 
   const flame = new Image();
 
-  await new Promise((resolve, _) => {
+  const loaders = [new Promise((resolve, _) => {
+  
   bg.src = "Level.png";
     bg.onload = resolve;
-  });
-  await new Promise((resolve, _) => {
+  }),
+   new Promise((resolve, _) => {
   shipTexImage.src = "shipwhole.png";
     shipTexImage.onload = resolve;
-  });
+  }),
 
-  await new Promise((resolve, _) => {
+   new Promise((resolve, _) => {
   flame.src = "flame.png";
     flame.onload = resolve;
-  });
+  })];
+
+  await Promise.all(loaders);
 
 
 

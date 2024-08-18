@@ -1,18 +1,6 @@
-const main = async () => {
-  const Engine = Matter.Engine,
-    Render = Matter.Render,
-    Runner = Matter.Runner,
-    Bodies = Matter.Bodies,
-    Body = Matter.Body,
-    Composite = Matter.Composite,
-    Vector = Matter.Vector;
-
-  const engine = Engine.create();
-
-  const pixelRatio = window.devicePixelRatio;
-
-  let width = 1928,
-    height = 980;
+function setupCanvas() {
+  const width = 1928;
+  const height = 980;
 
   const canvasContainer = document.getElementById("container");
 
@@ -53,9 +41,31 @@ const main = async () => {
   const gl = canvas.getContext("webgl");
 
   if (gl == null) {
-    alert("Unable to initialize WebGL");
+    console.error("WebGL not supported");
+    alert(
+      "WebGL not supported on your devices. Please try on a different device.",
+    );
     return;
   }
+
+  return { ctx, gl, width, height };
+}
+
+async function main(
+  levelPrefix,
+  { width, height, ctx, gl },
+  globalResources,
+  shouldStop = () => false,
+) {
+  const Engine = Matter.Engine,
+    Bodies = Matter.Bodies,
+    Body = Matter.Body,
+    Composite = Matter.Composite,
+    Vector = Matter.Vector;
+
+  const engine = Engine.create();
+
+  const pixelRatio = window.devicePixelRatio;
 
   const shipPos = { x: width / 2, y: 400 };
   const shipBody = Bodies.rectangle(shipPos.x, shipPos.y, 250, 87, {});
@@ -98,12 +108,7 @@ const main = async () => {
     },
   );
 
-  const levelResources = await loadLevelResources(
-    levels["1"].filePrefix,
-    width,
-    height,
-  );
-  const globalResources = await loadGlobalResources();
+  const levelResources = await loadLevelResources(levelPrefix, width, height);
 
   let collissionBodies = levelResources.collissionBodies;
   const finishPlatform = levelResources.finishPlatformBody;
@@ -141,8 +146,6 @@ const main = async () => {
     if (e.key == "a" || e.key == "ArrowLeft") leftThruster = false;
     if (e.key == "d" || e.key == "ArrowRight") rightThruster = false;
   });
-
-  const runner = Runner.create();
 
   const collissionMap = {};
 
@@ -453,7 +456,7 @@ const main = async () => {
 
   run(0);
   function run(t) {
-    window.requestAnimationFrame(run);
+    if (!shouldStop()) window.requestAnimationFrame(run);
 
     if (prevT == 0) {
       prevT = t;
@@ -736,6 +739,8 @@ const main = async () => {
     camVel = Vector.sub(camVel, Vector.mult(camVel, collided ? 0.03 : 0.4));
     camPos = Vector.add(camPos, Vector.mult(camVel, dt));
   }
-};
+}
 
-main();
+loadGlobalResources().then((resources) => {
+  main(levels["1"].filePrefix, setupCanvas(), resources);
+});

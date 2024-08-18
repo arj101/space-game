@@ -363,9 +363,9 @@
     `
 
     attribute vec4 v_position;
-    uniform vec2 center;
+    uniform vec3 center;
     varying vec4 position;
-    uniform float t;
+    uniform float u_time;
 
     void main() {
 
@@ -386,13 +386,13 @@
     uniform vec2 center;
     uniform vec2 shipSize;
 
+    uniform float u_time;
     uniform sampler2D img;
     uniform sampler2D flame;
 
     uniform vec2 lr;
 
 
-    uniform float u_time;
     mat2 rot(float angle) {
       return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
     }
@@ -448,18 +448,13 @@
     `,
   );
 
-  const pshader = createShader(
+  const bgfragShader = createShader(
     gl,
     gl.FRAGMENT_SHADER,
     `
     precision highp float;
     varying vec4 position;
-
-    uniform vec2 img_size;
-    uniform vec2 center;
-
-    uniform float t;
-
+    uniform vec3 center;
     uniform sampler2D img;
 
  
@@ -501,11 +496,11 @@ mat2 rot(float a) {
       float intensity = (0.1 * size)/distance(sp, f);
       
   
-      intensity += min(0.1, 0.00001/(abs(c.y) * abs(c.x))) * 0.1/length(c);
+      intensity += min(0.8, 0.0005/(abs(c.y) * abs(c.x))) * 0.1/length(c);
       
       vec2 cr = c * rot(3.14/4.0);
       
-      intensity += min(0.1, 0.002/(abs(cr.y) * abs(cr.x))) * 0.1/length(c);
+      intensity += min(0.4, 0.002/(abs(cr.y) * abs(cr.x))) * 0.1/length(c);
       intensity = max(0., intensity - 0.01);
       
       float red = smoothstep(0.4, 0.9, size) * size;
@@ -514,11 +509,13 @@ mat2 rot(float a) {
   
       
       vec3 sc = vec3(red,  green, blue) * intensity;
-      
-      if (noise3(1.0 + id*0.0000001) > 1000.0) {
-          float blink = fract(2555.4255252 * noise3(53535.22552 + id * 0.0000001));
-          sc *= 1.0 - step(0.99, blink);
-      }
+    
+      float u_time = center.z;
+
+      if (noise3(vec2(sin(u_time))) > 0.6) {
+        float blink = fract(u_time  + 2555. * noise3(id));
+        sc *= 1.0 - step(0.97, blink);
+    }
       
       return sc;
   }
@@ -527,12 +524,14 @@ mat2 rot(float a) {
        vec2 st = position.xy + center.xy  *0.01;
       st.y *= ${height.toFixed(1)}/${width.toFixed(1)};
 
+      float u_time = center.z;
+
       vec3 color = vec3(0.);
 
 
       const int cutoff = 2;
-      const float scale = 10.;
-      const float star_prob = 0.4;
+      const float scale = 6.;
+      const float star_prob = 0.9;
       for (int x = -cutoff; x <= cutoff; x++) {
           for (int y = -cutoff; y <= cutoff; y++) {
              
@@ -552,6 +551,7 @@ mat2 rot(float a) {
 
 
       gl_FragColor.xyz = color;
+      // gl_FragColor.x = sin(u_time);
       gl_FragColor.w = 1.;
     }
     `,
@@ -598,8 +598,10 @@ mat2 rot(float a) {
     flame.onload = resolve;
   });
 
-  const pg = createProgram(gl, vshader, pshader);
+  const pg = createProgram(gl, vshader, bgfragShader);
   gl.useProgram(pg);
+
+  console.log("loc", gl.getUniformLocation(pg, "center"));
 
   const bgTex = gl.createTexture();
 
@@ -620,8 +622,7 @@ mat2 rot(float a) {
 
   const center = gl.getUniformLocation(pg, "center");
     let tloc = gl.getUniformLocation(pg, "img");
-    console.log(tloc);
-  gl.uniform2f(center, screenToClipX(camPos.x), screenToClipY(camPos.y));
+  gl.uniform3f(center, screenToClipX(camPos.x), screenToClipY(camPos.y), Math.PI/2);
 
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pos), gl.STATIC_DRAW);
 
@@ -830,11 +831,13 @@ mat2 rot(float a) {
   run(0);
   function run(t) {
     window.requestAnimationFrame(run);
+
     if (prevT == 0) {
       prevT = t;
       startTime = t;
     }
     const dt = Math.min(t - prevT, 1000 / 60); //deltaTime should never be too high, it will result in low accuracy
+
     prevT = t;
     Engine.update(engine, dt);
 
@@ -847,7 +850,7 @@ mat2 rot(float a) {
     gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
     gl.vertexAttribPointer(vattrib, 2, gl.FLOAT, false, 0, 0);
 
-    gl.uniform2f(center, screenToClipX(camPos.x), screenToClipY(camPos.y));
+    gl.uniform3f(center, screenToClipX(camPos.x), screenToClipY(camPos.y), t/1000);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 5);
 
     gl.useProgram(shipg);

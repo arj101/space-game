@@ -496,11 +496,12 @@ mat2 rot(float a) {
       float intensity = (0.1 * size)/distance(sp, f);
       
   
-      intensity += min(0.8, 0.0005/(abs(c.y) * abs(c.x))) * 0.1/length(c);
+      float invlength = 0.3/length(c);
+      intensity += min(0.8, 0.002/(abs(c.y * c.x))) *  invlength;
       
-      vec2 cr = c * rot(3.14/4.0);
+      vec2 cr = c * rot(0.785);
       
-      intensity += min(0.4, 0.002/(abs(cr.y) * abs(cr.x))) * 0.1/length(c);
+      intensity += min(0.4, 0.002/(abs(cr.y * cr.x))) *invlength;
       intensity = max(0., intensity - 0.01);
       
       float red = smoothstep(0.4, 0.9, size) * size;
@@ -512,19 +513,19 @@ mat2 rot(float a) {
     
       float u_time = center.z;
 
-      if (noise3(vec2(sin(u_time))) > 0.6) {
-        float blink = fract(u_time  + 2555. * noise3(id));
-        sc *= 1.0 - step(0.97, blink);
-    }
+      float blink = fract(u_time *0.05  + 353663.0* noise3(id));
+      sc *= 1.0 - step(0.98, blink);
       
       return sc;
   }
 
     void main() {
-       vec2 st = position.xy + center.xy  *0.01;
+       vec2 st = position.xy + center.xy  *0.01 ;
       st.y *= ${height.toFixed(1)}/${width.toFixed(1)};
 
       float u_time = center.z;
+
+      st -= u_time*0.0001;
 
       vec3 color = vec3(0.);
 

@@ -14,23 +14,23 @@ const main = async () => {
   let width = 1928,
     height = 1080;
 
-  const canvasContainer = document.getElementById("container")
+  const canvasContainer = document.getElementById("container");
 
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
 
-//assume landscape
-const aspectRatioDesired = 16/9;
-const aspectRatio = window.innerWidth / window.innerHeight;
+  //assume landscape
+  const aspectRatioDesired = 16 / 9;
+  const aspectRatio = window.innerWidth / window.innerHeight;
 
-const heightIsSmaller = aspectRatioDesired < aspectRatio;
+  const heightIsSmaller = aspectRatioDesired < aspectRatio;
 
-  canvas.style.width =  heightIsSmaller ? "auto" : "100%";
+  canvas.style.width = heightIsSmaller ? "auto" : "100%";
   canvas.style.height = heightIsSmaller ? "100%" : "auto";
   canvasContainer.appendChild(canvas);
 
-  const overlayCanvas =  document.createElement("canvas")
+  const overlayCanvas = document.createElement("canvas");
   overlayCanvas.width = width;
   overlayCanvas.height = height;
   overlayCanvas.style.width = heightIsSmaller ? "auto" : "100%";
@@ -43,11 +43,11 @@ const heightIsSmaller = aspectRatioDesired < aspectRatio;
   window.onresize = () => {
     const aspectRatio = window.innerWidth / window.innerHeight;
     const heightIsSmaller = aspectRatioDesired < aspectRatio;
-    canvas.style.width =  heightIsSmaller ? "auto" : "100%";
+    canvas.style.width = heightIsSmaller ? "auto" : "100%";
     canvas.style.height = heightIsSmaller ? "100%" : "auto";
     overlayCanvas.style.width = heightIsSmaller ? "auto" : "100%";
     overlayCanvas.style.height = heightIsSmaller ? "100%" : "auto";
-  }
+  };
 
   const ctx = overlayCanvas.getContext("2d");
   const gl = canvas.getContext("webgl");
@@ -125,14 +125,14 @@ const heightIsSmaller = aspectRatioDesired < aspectRatio;
     shipPos.y + 17,
     30,
     60,
-    {},
+    {}
   );
   const shipRThrust = Bodies.rectangle(
     shipPos.x + 125 + 15,
     shipPos.y + 17,
     30,
     60,
-    {},
+    {}
   );
 
   const ship = Body.create({
@@ -146,7 +146,7 @@ const heightIsSmaller = aspectRatioDesired < aspectRatio;
     window.innerHeight - 30,
     window.innerWidth,
     60,
-    { isStatic: true },
+    { isStatic: true }
   );
 
   const startPlatform = Bodies.rectangle(
@@ -156,12 +156,10 @@ const heightIsSmaller = aspectRatioDesired < aspectRatio;
     44,
     {
       isStatic: true,
-    },
+    }
   );
 
-
   const GLOBAL_OBJ_SCALE = 0.4;
-
 
   const terrain = buildTerrain(terrainVertices);
 
@@ -172,11 +170,9 @@ const heightIsSmaller = aspectRatioDesired < aspectRatio;
     scaleOBJ(
       (GLOBAL_OBJ_SCALE * height) / width,
       GLOBAL_OBJ_SCALE,
-      collissionObj,
-    ),
+      collissionObj
+    )
   );
-
-
 
   const cvs = collissionObjs.map((collissionObj) => {
     let s = collissionObj.center;
@@ -225,9 +221,9 @@ const heightIsSmaller = aspectRatioDesired < aspectRatio;
       angle: -angle,
     });
 
-    if (cv.name == 'finish') {
+    if (cv.name == "finish") {
       finishPlatform = b;
-      console.log("Found finish platform in collission data")
+      console.log("Found finish platform in collission data");
     }
 
     return b;
@@ -275,11 +271,11 @@ const heightIsSmaller = aspectRatioDesired < aspectRatio;
 
   const leftThrusterButtonPos = Vector.create(
     100 * pixelRatio,
-    height - 100 * pixelRatio,
+    height - 100 * pixelRatio
   );
   const rightThrusterButtonPos = Vector.create(
     width - 100 * pixelRatio,
-    height - 100 * pixelRatio,
+    height - 100 * pixelRatio
   );
 
   window.addEventListener("pointerdown", (e) => {
@@ -372,7 +368,7 @@ const heightIsSmaller = aspectRatioDesired < aspectRatio;
       position = v_position;
     }
 
-    `,
+    `
   );
 
   const vshader = createShader(
@@ -391,7 +387,7 @@ const heightIsSmaller = aspectRatioDesired < aspectRatio;
       position = v_position;
     }
 
-    `,
+    `
   );
 
   const shippshader = createShader(
@@ -463,7 +459,7 @@ const heightIsSmaller = aspectRatioDesired < aspectRatio;
     gl_FragColor += ft2c * pow(ft2.y , 2.) * 2. * thrustFrac;
 
     }
-    `,
+    `
   );
 
   const bgfragShader = createShader(
@@ -573,7 +569,7 @@ mat2 rot(float a) {
       // gl_FragColor.x = sin(u_time);
       gl_FragColor.w = 1.;
     }
-    `,
+    `
   );
 
   const objText = await loadText("./level1.obj");
@@ -601,25 +597,36 @@ mat2 rot(float a) {
   const shipTexImage = new Image();
 
   const flame = new Image();
+  const platformImg = new Image();
 
-  const loaders = [new Promise((resolve, _) => {
-  
-  bg.src = "Level.png";
-    bg.onload = resolve;
-  }),
-   new Promise((resolve, _) => {
-  shipTexImage.src = "shipwhole.png";
-    shipTexImage.onload = resolve;
-  }),
+  const terrainTexImage = new Image();
 
-   new Promise((resolve, _) => {
-  flame.src = "flame.png";
-    flame.onload = resolve;
-  })];
+  const loaders = [
+    new Promise((resolve, _) => {
+      bg.src = "Level.png";
+      bg.onload = resolve;
+    }),
+    new Promise((resolve, _) => {
+      shipTexImage.src = "shipwhole.png";
+      shipTexImage.onload = resolve;
+    }),
+
+    new Promise((resolve, _) => {
+      flame.src = "flame.png";
+      flame.onload = resolve;
+    }),
+
+    new Promise((res) => {
+      platformImg.src = "./landtex.png";
+      platformImg.onload = res;
+    }),
+    new Promise((res) => {
+      terrainTexImage.src = "./level1tex.png";
+      terrainTexImage.onload = res;
+    }),
+  ];
 
   await Promise.all(loaders);
-
-
 
   const pg = createProgram(gl, vshader, bgfragShader);
   gl.useProgram(pg);
@@ -644,8 +651,13 @@ mat2 rot(float a) {
   gl.uniform2f(imgSizeU, (bg.width * 5162) / 2048, (bg.height * 5162) / 2048);
 
   const center = gl.getUniformLocation(pg, "center");
-    let tloc = gl.getUniformLocation(pg, "img");
-  gl.uniform3f(center, screenToClipX(camPos.x), screenToClipY(camPos.y), Math.PI/2);
+  let tloc = gl.getUniformLocation(pg, "img");
+  gl.uniform3f(
+    center,
+    screenToClipX(camPos.x),
+    screenToClipY(camPos.y),
+    Math.PI / 2
+  );
 
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pos), gl.STATIC_DRAW);
 
@@ -666,7 +678,7 @@ mat2 rot(float a) {
     gl.RGBA,
     gl.RGBA,
     gl.UNSIGNED_BYTE,
-    shipTexImage,
+    shipTexImage
   );
 
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -697,7 +709,7 @@ mat2 rot(float a) {
     const y = screenToClipY(v.y) - screenToClipY(ship.position.y);
     shipvs.push(
       y < 0 ? y - 100 / width : y,
-      screenToClipX(v.x) - screenToClipX(ship.position.x),
+      screenToClipX(v.x) - screenToClipX(ship.position.x)
     );
   }
 
@@ -719,7 +731,7 @@ mat2 rot(float a) {
   gl.uniform2f(
     shipCenter,
     screenToClipX(ship.position.x - camPos.x + width / 2),
-    screenToClipY(ship.position.y - camPos.y + height / 2),
+    screenToClipY(ship.position.y - camPos.y + height / 2)
   );
 
   const shipWidth = 250 + 30 + 30;
@@ -740,16 +752,9 @@ mat2 rot(float a) {
   const terrainPg = createProgram(
     gl,
     createShader(gl, gl.VERTEX_SHADER, terrainShader.vertex),
-    createShader(gl, gl.FRAGMENT_SHADER, terrainShader.fragmentProc),
+    createShader(gl, gl.FRAGMENT_SHADER, terrainShader.fragmentProc)
   );
   gl.useProgram(terrainPg);
-
-  const terrainTexImage = new Image();
-  terrainTexImage.src = "./level1tex.png";
-
-  await new Promise((res) => {
-    terrainTexImage.onload = res;
-  });
 
   gl.activeTexture(gl.TEXTURE3);
   const terrainTex = gl.createTexture();
@@ -760,7 +765,7 @@ mat2 rot(float a) {
     gl.RGBA,
     gl.RGBA,
     gl.UNSIGNED_BYTE,
-    terrainTexImage,
+    terrainTexImage
   );
 
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -790,41 +795,36 @@ mat2 rot(float a) {
   gl.vertexAttribPointer(tvPos, 2, gl.FLOAT, false, 4 * 4, 0);
   gl.vertexAttribPointer(tuvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
 
-
-
   //<----terrain setup-------
-
 
   //---- finish platform ---->
   const finishPlatformPg = createProgram(
     gl,
     createShader(gl, gl.VERTEX_SHADER, terrainShader.vertex),
-    createShader(gl, gl.FRAGMENT_SHADER, terrainShader.fragment),
+    createShader(gl, gl.FRAGMENT_SHADER, terrainShader.fragment)
   );
-
-  const platformImg = new Image();
-  platformImg.src = "./landtex.png";
-
-  await new Promise((res) => {
-    platformImg.onload = res;
-  });
 
   gl.activeTexture(gl.TEXTURE4);
   const platformTex = gl.createTexture();
 
   gl.bindTexture(gl.TEXTURE_2D, platformTex);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, platformImg);
-
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    platformImg
+  );
 
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-
   let finishObj = parseOBJ(await loadText("./level1finish.obj"));
   finishObj = scaleOBJ(GLOBAL_OBJ_SCALE, GLOBAL_OBJ_SCALE, finishObj);
   finishObj = scaleOBJ(height / width, 1, finishObj);
-  console.log(finishObj)
+  console.log(finishObj);
 
   const finishBuf = objToVAttributes(finishObj);
   gl.useProgram(finishPlatformPg);
@@ -846,10 +846,8 @@ mat2 rot(float a) {
   const finishU = gl.getUniformLocation(finishPlatformPg, "texture");
   gl.uniform1i(finishU, 4);
 
-
   //<-----finsih platform
   let startTime = 0;
-
 
   run(0);
   function run(t) {
@@ -874,7 +872,12 @@ mat2 rot(float a) {
     gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
     gl.vertexAttribPointer(vattrib, 2, gl.FLOAT, false, 0, 0);
 
-    gl.uniform3f(center, screenToClipX(camPos.x), screenToClipY(camPos.y), t/1000);
+    gl.uniform3f(
+      center,
+      screenToClipX(camPos.x),
+      screenToClipY(camPos.y),
+      t / 1000
+    );
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 5);
 
     gl.useProgram(shipg);
@@ -893,7 +896,7 @@ mat2 rot(float a) {
     gl.uniform2f(
       shipCenter,
       screenToClipX(ship.position.x),
-      screenToClipY(ship.position.y),
+      screenToClipY(ship.position.y)
     );
     gl.uniform2f(lr, leftThruster ? 1 : 0, rightThruster ? 1 : 0);
     gl.uniform1f(u_time, t / 1000);
@@ -915,7 +918,6 @@ mat2 rot(float a) {
     ]);
     gl.drawArrays(gl.TRIANGLES, 0, tvs.length / 2);
 
-
     gl.useProgram(finishPlatformPg);
     // gl.bindBuffer(gl.ARRAY_BUFFER, tvBuf);
     // gl.vertexAttribPointer(tvPos, 2, gl.FLOAT, false, 0, 0);
@@ -929,32 +931,32 @@ mat2 rot(float a) {
       screenToClipX(camPos.x),
       screenToClipY(camPos.y),
     ]);
-    gl.drawArrays(gl.TRIANGLES, 0, finishObj.vertices.length);;
+    gl.drawArrays(gl.TRIANGLES, 0, finishObj.vertices.length);
 
-
-
-    
-    const shakeOffsetX = Math.max(-50 /0.3,  Math.min(200, -(camPos.x - ship.position.x))) * 0.3;
-    const shakeOffsetY = Math.max(-50 /0.3, Math.min(200, -(camPos.y - ship.position.y))) * 0.3;
+    const shakeOffsetX =
+      Math.max(-50 / 0.3, Math.min(200, -(camPos.x - ship.position.x))) * 0.3;
+    const shakeOffsetY =
+      Math.max(-50 / 0.3, Math.min(200, -(camPos.y - ship.position.y))) * 0.3;
     ctx.clearRect(0, 0, width, height);
 
     ctx.save();
     ctx.translate(shakeOffsetX, shakeOffsetY);
 
     //display health
-    ctx.fillStyle =  shipHealth > 50 ? "rgba(255, 255, 255, 1)" : `rgb(255, 255, 0)`;
-
+    ctx.fillStyle =
+      shipHealth > 50 ? "rgba(255, 255, 255, 1)" : `rgb(255, 255, 0)`;
 
     if (shipHealth < 25) {
-      ctx.fillStyle = `rgba(${100 + ((1 + Math.sin(t/300)) * 0.5 * 155)}, 0, 0, 1)`;
+      ctx.fillStyle = `rgba(${
+        100 + (1 + Math.sin(t / 300)) * 0.5 * 155
+      }, 0, 0, 1)`;
     }
 
-    ctx.strokeStyle  = ctx.fillStyle;
+    ctx.strokeStyle = ctx.fillStyle;
     ctx.lineWidth = 2;
     ctx.strokeRect(50, 50, 300, 20);
 
-
-    ctx.fillRect(50, 50,Math.max(0, shipHealth * 3), 20);
+    ctx.fillRect(50, 50, Math.max(0, shipHealth * 3), 20);
     ctx.fillStyle = "rgba(255, 255, 255, 1)";
     ctx.font = "20px Orbitron";
     ctx.fillText("Health", 50, 90);
@@ -963,13 +965,13 @@ mat2 rot(float a) {
     const time = t - startTime;
     const minutes = Math.floor(time / 60000).toString();
     const seconds = Math.floor((time % 60000) / 1000).toString();
-    const millis = Math.floor((time/10) % 100).toString();
+    const millis = Math.floor((time / 10) % 100).toString();
 
     ctx.strokeStyle = "rgba(255, 255, 255, 1)";
-    ctx.fillStyle= "rgba(255, 255, 255, 1)";
+    ctx.fillStyle = "rgba(255, 255, 255, 1)";
     ctx.lineWidth = 2;
 
-    ctx.strokeStyle= "rgba(0, 0, 0, 1)"
+    ctx.strokeStyle = "rgba(0, 0, 0, 1)";
 
     ctx.font = "600 50px Orbitron";
     const millisText = millis.length == 1 ? "0" + millis : millis;
@@ -978,26 +980,20 @@ mat2 rot(float a) {
     const segmentWidth = ctx.measureText("00").width + 4;
     const colonWidth = ctx.measureText(":").width + 4;
 
-
-    //render one by one 
+    //render one by one
     let currRight = width - 50 - segmentWidth;
-    
+
     ctx.fillText(millisText, currRight, 80);
     currRight -= colonWidth;
-    ctx.fillText(':', currRight, 80)
+    ctx.fillText(":", currRight, 80);
     currRight -= ctx.measureText(secondsText).width;
-    ctx.fillText(secondsText, currRight, 80)
+    ctx.fillText(secondsText, currRight, 80);
     currRight -= colonWidth;
     if (minutes > 0) {
-    ctx.fillText(':', currRight, 80)
-    currRight -= ctx.measureText(minutes).width;
-    ctx.fillText(minutes, currRight, 80)
+      ctx.fillText(":", currRight, 80);
+      currRight -= ctx.measureText(minutes).width;
+      ctx.fillText(minutes, currRight, 80);
     }
-
-
-
-
-
 
     //display landed progress bar and text
     const landDt = t - landTime;
@@ -1006,36 +1002,56 @@ mat2 rot(float a) {
       ctx.lineWidth = 2;
       const shipScreenX = width / 2 + (ship.position.x - camPos.x);
       const shipScreenY = height / 2 + (ship.position.y - camPos.y);
-      console.log(shipScreenX, shipScreenY)
-      ctx.strokeRect(shipScreenX - shipWidth/2, shipScreenY - shipHeight , shipWidth, 30);
+      console.log(shipScreenX, shipScreenY);
+      ctx.strokeRect(
+        shipScreenX - shipWidth / 2,
+        shipScreenY - shipHeight,
+        shipWidth,
+        30
+      );
       ctx.fillStyle = "rgba(255, 255, 255, 1)";
-      ctx.fillRect(shipScreenX - shipWidth/2, shipScreenY - shipHeight , shipWidth * landDt/4000, 30);
-
+      ctx.fillRect(
+        shipScreenX - shipWidth / 2,
+        shipScreenY - shipHeight,
+        (shipWidth * landDt) / 4000,
+        30
+      );
     }
 
     if (landed && landDt > 4000) {
       ctx.fillStyle = "rgba(255, 255, 255, 1)";
       ctx.font = "40px Orbitron";
-      const ltext  = "You have landed!";
-      ctx.fillText(ltext, width / 2 - ctx.measureText(ltext).width / 2, height / 2);
+      const ltext = "You have landed!";
+      ctx.fillText(
+        ltext,
+        width / 2 - ctx.measureText(ltext).width / 2,
+        height / 2
+      );
     }
 
     //display target location pointer
     const screenTarget = Vector.sub(finishPlatform.position, camPos);
 
-
-    if (screenTarget.x < -width/2 || screenTarget.y < -height/2 || screenTarget.x > width/2 || screenTarget.y > height/2) {
+    if (
+      screenTarget.x < -width / 2 ||
+      screenTarget.y < -height / 2 ||
+      screenTarget.x > width / 2 ||
+      screenTarget.y > height / 2
+    ) {
       ctx.strokeStyle = "rgba(255, 255, 255, 1)";
 
       const dir = Vector.angle(camPos, finishPlatform.position);
 
-      const edgeDist = Math.max(width/2, height/2);
+      const edgeDist = Math.max(width / 2, height / 2);
       const edgeLoc = Vector.mult(Vector.normalise(screenTarget), edgeDist);
-      edgeLoc.y = Math.max(-height/2 + 5, Math.min(height/2 - 5, edgeLoc.y));
-      edgeLoc.x = Math.max(-width/2 + 5, Math.min(width/2 - 5, edgeLoc.x));
-    
+      edgeLoc.y = Math.max(
+        -height / 2 + 5,
+        Math.min(height / 2 - 5, edgeLoc.y)
+      );
+      edgeLoc.x = Math.max(-width / 2 + 5, Math.min(width / 2 - 5, edgeLoc.x));
+
       ctx.save();
-      ctx.translate(width/2 +edgeLoc.x , height/2 + edgeLoc.y);
+      ctx.translate(width / 2 + edgeLoc.x, height / 2 + edgeLoc.y);
       ctx.rotate(dir);
 
       ctx.strokeStyle = "rgba(255, 255, 255, 1)";
@@ -1044,19 +1060,16 @@ mat2 rot(float a) {
       ctx.lineTo(-40, -40);
       ctx.lineTo(0, 0);
       ctx.lineTo(-40, 40);
-      
+
       ctx.closePath();
       ctx.stroke();
 
-
       ctx.restore();
-
     }
 
     ctx.restore();
 
     //other logics
-
 
     if (leftThruster || rightThruster) {
       let forceOrigin = Vector.create(ship.position.x, ship.position.y);
@@ -1064,7 +1077,7 @@ mat2 rot(float a) {
         Vector.create(0, -100),
         ship.angle -
           (leftThruster ? 1 : 0) * PI_2 +
-          (rightThruster ? 1 : 0) * PI_2,
+          (rightThruster ? 1 : 0) * PI_2
       );
       const forceMag = leftThruster && rightThruster ? 0.02 : 0.01;
       const forceOriginOff = Vector.add(forceOrigin, fOriginOffset);
@@ -1075,12 +1088,14 @@ mat2 rot(float a) {
     for (const other of otherBodies) {
       const collission = Matter.Collision.collides(ship, other);
 
-
-
       if (collission != null && collissionMap[other.id] != true) {
-        const movingBody = collission.bodyA.isStatic ? collission.bodyB : collission.bodyA
-        const collidingVelocity = Vector.magnitude(movingBody.velocity) * 0.3 + Math.abs(Vector.dot(movingBody.velocity, collission.normal)) * 0.7;
-        shipHealth -= collidingVelocity*3;
+        const movingBody = collission.bodyA.isStatic
+          ? collission.bodyB
+          : collission.bodyA;
+        const collidingVelocity =
+          Vector.magnitude(movingBody.velocity) * 0.3 +
+          Math.abs(Vector.dot(movingBody.velocity, collission.normal)) * 0.7;
+        shipHealth -= collidingVelocity * 3;
         collissionMap[other.id] = true;
         collided = true;
       } else if (collissionMap[other.id] == true && collission == null) {

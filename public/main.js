@@ -164,7 +164,7 @@ async function main(
       scrollableMenu.enterKeyDown();
     }
 
-    if (shouldStopPlay()) return;
+    if (shouldStopPlay() || scrollableMenu.enabled) return;
 
     leftThruster = e.key == "a" || e.key == "ArrowLeft" || leftThruster;
     rightThruster = e.key == "d" || e.key == "ArrowRight" || rightThruster;
@@ -298,6 +298,8 @@ async function main(
     },
 
     draw: (yoff = 0) => {
+      if (!scrollableMenu.enabled) return;
+
       const menuHeight = 200;
       const gap = 50;
 
@@ -406,6 +408,40 @@ async function main(
     },
   };
 
+  document.getElementById("menu").addEventListener("click", (e) => {
+    ctx.canvas.focus();
+
+    if (scrollableMenu.enabled) {
+      scrollableMenu.enabled = false;
+      return;
+    }
+
+    scrollableMenu.items = ["Retry", "Exit to menu", "Continue game"];
+
+    if (Math.random() > 0.5) {
+      scrollableMenu.items.push("Cheat >:)");
+    }
+    scrollableMenu.enabled = true;
+    scrollableMenu.selected = 2;
+
+    scrollableMenu.message = "Mid game menu for losers";
+
+    scrollableMenu.onSelectComplete = (item) => {
+      if (item == "Retry") {
+        restartCallback();
+        console.log("Restarting...");
+      }
+
+      if (item == "Continue game") {
+        scrollableMenu.enabled = false;
+      }
+
+      if (item == "Cheat >:)") {
+        window.location.href = "https://www.youtube.com/watch?v=xvFZjo5PgG0";
+      }
+    };
+  });
+
   window.addEventListener("mousemove", (e) => {
     mouseX = e.pageX * window.devicePixelRatio;
     mouseY = e.pageY * window.devicePixelRatio;
@@ -425,7 +461,7 @@ async function main(
       x <
       width / 2 - width * 0.125
     ) {
-      if (!shouldStopPlay()) leftThruster = true;
+      if (!shouldStopPlay() && !scrollableMenu.enabled) leftThruster = true;
 
       scrollableMenu.leftPointerDown();
     }
@@ -436,7 +472,7 @@ async function main(
       x >
       width / 2 + width * 0.125
     ) {
-      if (!shouldStopPlay()) rightThruster = true;
+      if (!shouldStopPlay() && !scrollableMenu.enabled) rightThruster = true;
 
       scrollableMenu.rightPointerDown();
     }
@@ -934,8 +970,6 @@ async function main(
           }
         };
       }
-
-      scrollableMenu.draw(0);
     }
 
     if (shipHealth <= 0) {
@@ -994,9 +1028,9 @@ async function main(
           }
         };
       }
-      scrollableMenu.draw();
     }
 
+    scrollableMenu.draw(0);
     //display target location pointer
     const screenTarget = Vector.sub(finishPlatform.position, camPos);
 

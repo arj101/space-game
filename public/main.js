@@ -273,7 +273,7 @@ async function main(
     },
 
     enterKeyUp: () => {
-      if (!scrollableMenu.enabled) return;
+      if (!scrollableMenu.enabled || scrollableMenu.enterClickStart < 0) return;
 
       const time = Date.now() - scrollableMenu.enterClickStart;
       if (time > scrollableMenu.selectTime) {
@@ -289,7 +289,7 @@ async function main(
     },
 
     leftPointerUp: () => {
-      if (!scrollableMenu.enabled) return;
+      if (!scrollableMenu.enabled || scrollableMenu.leftClickStart < 0) return;
 
       const time = Date.now() - scrollableMenu.leftClickStart;
       if (time < scrollableMenu.maxClickTime) {
@@ -306,7 +306,8 @@ async function main(
     },
 
     rightPointerUp: () => {
-      if (!scrollableMenu.enabled) return;
+      if (!scrollableMenu.enabled || scrollableMenu.rightClickStart < 0) return;
+
       const time = Date.now() - scrollableMenu.rightClickStart;
       if (time < scrollableMenu.maxClickTime) {
         scrollableMenu.scrollRight();

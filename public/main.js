@@ -51,11 +51,28 @@ function setupCanvas() {
   return { ctx, gl, width, height };
 }
 
+const GAME_FINISH_REASONS = {
+  HEALTH_ZERO: "health_zero",
+  LEVEL_COMPLETE: "level_complete",
+};
+
 async function main(
   levelPrefix,
   { width, height, ctx, gl },
   globalResources,
-  shouldStop = () => false,
+  {
+    shouldStopCallback = () => false,
+    restartCallback = () => {},
+    finishCallback = (gameStats) => {},
+    frameCallback = () => {},
+    shouldStopPlay = () => {},
+  } = {
+    shouldStopCallback: () => false,
+    restartCallback: () => {},
+    finishCallback: () => {},
+    frameCallback: () => {},
+    shouldStopPlay: () => {},
+  },
 ) {
   const Engine = Matter.Engine,
     Bodies = Matter.Bodies,
@@ -138,6 +155,8 @@ async function main(
   let leftThruster, rightThruster;
 
   window.addEventListener("keydown", (e) => {
+    if (shouldStopPlay()) return;
+
     leftThruster = e.key == "a" || e.key == "ArrowLeft" || leftThruster;
     rightThruster = e.key == "d" || e.key == "ArrowRight" || rightThruster;
   });
@@ -159,6 +178,7 @@ async function main(
   );
 
   window.addEventListener("pointerdown", (e) => {
+    if (shouldStopPlay()) return;
     const x = e.pageX * window.devicePixelRatio;
     const y = e.pageY * window.devicePixelRatio;
     const mouse = Vector.create(x, y);
@@ -259,8 +279,6 @@ async function main(
 
   const pg = shaderPrograms.bgShader;
   gl.useProgram(pg);
-
-  console.log("loc", gl.getUniformLocation(pg, "center"));
 
   // const imgSizeU = gl.getUniformLocation(pg, "img_size");
   // gl.uniform2f(imgSizeU, (bg.width * 5162) / 2048, (bg.height * 5162) / 2048);
@@ -454,9 +472,21 @@ async function main(
   //<-----finsih platform
   let startTime = 0;
 
+  let timerTime = 0;
+
   run(0);
   function run(t) {
-    if (!shouldStop()) window.requestAnimationFrame(run);
+    if (!shouldStopCallback()) window.requestAnimationFrame(run);
+
+    const stopPlay = shouldStopPlay();
+
+    if (shipHealth <= 0 && !stopPlay) {
+      finishCallback(GAME_FINISH_REASONS.HEALTH_ZERO);
+    }
+
+    if (!stopPlay) {
+      timerTime = t;
+    }
 
     if (prevT == 0) {
       prevT = t;
@@ -566,7 +596,7 @@ async function main(
     ctx.fillText("Health", 50, 90);
 
     //display timer
-    const time = t - startTime;
+    const time = timerTime - startTime;
     const minutes = Math.floor(time / 60000).toString();
     const seconds = Math.floor((time % 60000) / 1000).toString();
     const millis = Math.floor((time / 10) % 100).toString();
@@ -614,10 +644,11 @@ async function main(
         30,
       );
       ctx.fillStyle = "rgba(255, 255, 255, 1)";
+      const landDtfract = Math.min(1, landDt / 4000);
       ctx.fillRect(
         shipScreenX - shipWidth / 2,
         shipScreenY - shipHeight,
-        (shipWidth * landDt) / 4000,
+        shipWidth * landDtfract,
         30,
       );
     }
@@ -626,6 +657,18 @@ async function main(
       ctx.fillStyle = "rgba(255, 255, 255, 1)";
       ctx.font = "40px Orbitron";
       const ltext = "You have landed!";
+      ctx.fillText(
+        ltext,
+        width / 2 - ctx.measureText(ltext).width / 2,
+        height / 2,
+      );
+      finishCallback(GAME_FINISH_REASONS.LEVEL_COMPLETE);
+    }
+
+    if (shipHealth <= 0) {
+      ctx.fillStyle = "rgba(255, 255, 255, 1)";
+      ctx.font = "40px Orbitron";
+      const ltext = "You failed! We'll get em next time";
       ctx.fillText(
         ltext,
         width / 2 - ctx.measureText(ltext).width / 2,
@@ -707,29 +750,32 @@ async function main(
       }
     }
     const collides = Matter.Collision.collides;
-    let landedCollission =
-      collides(shipLThrust, finishPlatform) ||
-      collides(shipRThrust, finishPlatform) ||
-      collides(shipBody, finishPlatform);
-    if (
-      landedCollission != null &&
-      landedCollission.supports.length >= 2 &&
-      ship.angularSpeed < 1e-6 &&
-      ship.speed < 1e-1 &&
-      Math.abs(ship.angle) <= 0.1 &&
-      Vector.magnitude(Vector.sub(ship.position, finishPlatform.position)) <=
-        100
-    ) {
-      if (!landed) {
-        landed = true;
-        landTime = t;
+
+    if (!stopPlay) {
+      let landedCollission =
+        collides(shipLThrust, finishPlatform) ||
+        collides(shipRThrust, finishPlatform) ||
+        collides(shipBody, finishPlatform);
+      if (
+        landedCollission != null &&
+        landedCollission.supports.length >= 2 &&
+        ship.angularSpeed < 1e-6 &&
+        ship.speed < 1e-1 &&
+        Math.abs(ship.angle) <= 0.1 &&
+        Vector.magnitude(Vector.sub(ship.position, finishPlatform.position)) <=
+          100
+      ) {
+        if (!landed) {
+          landed = true;
+          landTime = t;
+        }
+        if (t - landTime > 4000) {
+          landTime = t - 4000;
+        }
+      } else {
+        landed = false;
+        landTime = -1;
       }
-      if (t - landTime > 4000) {
-        landTime = t - 4000;
-      }
-    } else {
-      landed = false;
-      landTime = -1;
     }
 
     const dp = Vector.sub(ship.position, camPos);
@@ -738,9 +784,46 @@ async function main(
     camVel = Vector.add(camVel, Vector.mult(norm_dp, accel));
     camVel = Vector.sub(camVel, Vector.mult(camVel, collided ? 0.03 : 0.4));
     camPos = Vector.add(camPos, Vector.mult(camVel, dt));
+
+    frameCallback(t, landed, landTime, shipHealth, ship);
   }
 }
 
 loadGlobalResources().then((resources) => {
-  main(levels["1"].filePrefix, setupCanvas(), resources);
+  let shipStats = {
+    health: 100,
+    running: true,
+    failed: false,
+    finished: false,
+  };
+  const renderers = setupCanvas();
+
+  function onFrame(t, landed, landTime, shipHealth, ship) {
+    shipStats.health = shipHealth;
+  }
+
+  function shouldStopFn() {
+    return !shipStats.running;
+  }
+
+  function onFinish(reason) {
+    shipStats.running = false;
+
+    if (reason == GAME_FINISH_REASONS.HEALTH_ZERO) {
+      shipStats.finished = false;
+      shipStats.failed = true;
+    }
+
+    if (reason == GAME_FINISH_REASONS.LEVEL_COMPLETE) {
+      shipStats.failed = false;
+      shipStats.finished = true;
+    }
+  }
+
+  main(levels["1"].filePrefix, renderers, resources, {
+    // shouldStopCallback: shouldStopFn,
+    shouldStopPlay: shouldStopFn,
+    frameCallback: onFrame,
+    finishCallback: onFinish,
+  });
 });

@@ -1098,6 +1098,13 @@ async function main(
           Vector.magnitude(movingBody.velocity) * 0.3 +
           Math.abs(Vector.dot(movingBody.velocity, collission.normal)) * 0.7;
         shipHealth -= collidingVelocity * 3;
+
+        const INSTANT_DESTRUCTION_THRESHOLD = 5;
+        if (
+          Vector.magnitude(movingBody.velocity) > INSTANT_DESTRUCTION_THRESHOLD
+        ) {
+          shipHealth = 0;
+        }
         collissionMap[other.id] = true;
         collided = true;
       } else if (collissionMap[other.id] == true && collission == null) {

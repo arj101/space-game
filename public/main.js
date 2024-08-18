@@ -218,9 +218,9 @@ async function main(
 
     openMenu: () => {
       scrollableMenu.enabled = true;
-      scrollable.leftClickStart = -1;
-      scrollable.rightClickStart = -1;
-      scrollable.enterClickStart = -1;
+      scrollableMenu.leftClickStart = -1;
+      scrollableMenu.rightClickStart = -1;
+      scrollableMenu.enterClickStart = -1;
     },
 
     closeMenu: () => {

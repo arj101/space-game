@@ -2,14 +2,18 @@ const GLOBAL_OBJ_SCALE = 0.4;
 
 function loadGlobalResources() {
   return new Promise(async (resolve, reject) => {
-    const shipFile = "/shipwhole.png";
+    const shipFile = "/ship.png";
     const flameFile = "/flame.png";
+    const ship2File = "/ship.png";
+    const ship2VertexFile = "/ship.obj";
+    const ship2CollisionFile = "/ship-collission.obj";
 
     const menuSlideAudioFile = "/audio/menu_slide2.wav";
     const menuClickAudioFile = "/audio/menu_click.mp3";
 
     const shipImageP = loadImage(shipFile);
     const flameImageP = loadImage(flameFile);
+    const ship2ImageP = loadImage(ship2File);
     const menuSlideAudioP = loadAudio(menuSlideAudioFile);
     const menuClickAudioP = loadAudio(menuClickAudioFile);
 
@@ -89,61 +93,11 @@ function loadLevelResources(filePrefix, width, height) {
         collissionObj,
       ),
     );
-
-    const cvs = collissionObjs.map((collissionObj) => {
-      let s = collissionObj.center;
-      let sx = (s.x + 1.0) * 0.5 * width;
-      let sy = (1.0 - s.y) * 0.5 * height;
-
-      // sx = 0;
-      // sy = 0;
-
-      return {
-        center: { x: sx, y: sy },
-        name: collissionObj.name,
-        vertices: collissionObj.vertices.map(([x, y]) => {
-          return {
-            x: (x + 1.0) * 0.5 * width,
-            y: (1.0 - y) * 0.5 * height,
-          };
-        }),
-      };
-    });
-
-    const Vector = Matter.Vector,
-      Bodies = Matter.Bodies;
-
-    let finishPlatform;
-    const collissionBodies = cvs.map((cv) => {
-      let v1 = cv.vertices[0];
-      let v2 = cv.vertices[1];
-      let v3 = cv.vertices[2];
-      let v4 = cv.vertices[3];
-
-      let width = Vector.magnitude(Vector.sub(v1, v2));
-      let height = Vector.magnitude(Vector.sub(v2, v3));
-
-      let angle = Math.atan2(-(v2.y - v1.y), v2.x - v1.x);
-
-      let centerx = (v1.x + v2.x + v3.x + v4.x) / 4;
-      let centery = (v1.y + v2.y + v3.y + v4.y) / 4;
-
-      // return Bodies.fromVertices(centerx, centery, [cv.vertices], {
-      //   isStatic: true,
-      // });
-
-      let b = Bodies.rectangle(centerx, centery, width, height, {
-        isStatic: true,
-        angle: -angle,
-      });
-
-      if (cv.name == "finish") {
-        finishPlatform = b;
-        console.log("Found finish platform in collission data");
-      }
-
-      return b;
-    });
+    const { collissionBodies, finishPlatform } = buildCollissionRects(
+      collissionObjs,
+      width,
+      height,
+    );
 
     let terrainObj = parseOBJ(terrainText);
     terrainObj = scaleOBJ(GLOBAL_OBJ_SCALE, GLOBAL_OBJ_SCALE, terrainObj);

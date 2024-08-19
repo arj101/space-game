@@ -56,6 +56,10 @@ function loadLevelResources(filePrefix, width, height) {
     const terrainP = loadText(terrainFile);
     const finishObjFile = filePrefix + "finish.obj";
 
+    const objectsInfoFile = filePrefix + "objects.json"; //contains info about other non-terrain object in the world
+
+    const objectsInfo = await loadJSON(objectsInfoFile);
+
     const terrainImageP = loadImage(terrainImageFile);
     const startPlatformImageP = loadImage(startPlatformImageFile);
     const finishPlatformP = loadImage(finishPlatformImageFile);
@@ -149,6 +153,23 @@ function loadLevelResources(filePrefix, width, height) {
     finishObj = scaleOBJ(GLOBAL_OBJ_SCALE, GLOBAL_OBJ_SCALE, finishObj);
     finishObj = scaleOBJ(height / width, 1, finishObj);
 
+    const otherObjects = {};
+
+    //todo async loading
+    for (const obj in objectsInfo) {
+      console.log(objectsInfo[obj].vertices, objectsInfo[obj].texture);
+      otherObjects[obj] = {
+        vertices: scaleOBJ(
+          (height / width) * GLOBAL_OBJ_SCALE,
+          GLOBAL_OBJ_SCALE,
+          parseOBJ(await loadText(filePrefix + objectsInfo[obj]["vertices"])),
+        ),
+        texture: await loadImage(filePrefix + objectsInfo[obj]["texture"]),
+      };
+    }
+
+    // console.log("others", otherObjects);
+
     resolve({
       collissionBodies,
       terrainObj,
@@ -157,6 +178,7 @@ function loadLevelResources(filePrefix, width, height) {
       finishPlatformImage,
       finishPlatformBody: finishPlatform, //this is the body used for collission detection while...
       finishPlatformObj: finishObj, //this is the object used for rendering
+      otherObjects,
     });
   });
 }

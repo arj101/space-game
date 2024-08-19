@@ -60,6 +60,7 @@ async function main(
   levelPrefix,
   { width, height, ctx, gl },
   globalResources,
+  levelResources,
   {
     shouldStopInstanceCallBack = () => false,
     restartCallback = () => {},
@@ -126,8 +127,6 @@ async function main(
       isStatic: true,
     },
   );
-
-  const levelResources = await loadLevelResources(levelPrefix, width, height);
 
   let collissionBodies = levelResources.collissionBodies;
   const finishPlatform = levelResources.finishPlatformBody;
@@ -1202,8 +1201,13 @@ async function main(
   }
 }
 
-loadGlobalResources().then((resources) => {
+loadGlobalResources().then((globalResources) => {
   let shipStats = {};
+
+  let gameStats = {
+    levelResources: {},
+    level: 1,
+  };
 
   function resetStats() {
     shipStats.health = 100;
@@ -1255,15 +1259,33 @@ loadGlobalResources().then((resources) => {
     }
   }
 
-  function startInstance() {
-    shipStats.instance = main(levels["1"].filePrefix, renderers, resources, {
-      shouldStopInstanceCallBack: shouldStopIntance,
-      shouldStopPlay: shouldStopFn,
-      frameCallback: onFrame,
-      finishCallback: onFinish,
-      restartCallback: onRestart,
-      onStopInstance,
-    });
+  async function startInstance() {
+    const levelPrefix = levels[gameStats.level].filePrefix;
+
+    let levelResources = gameStats.levelResources[levelPrefix];
+    if (!levelResources) {
+      levelResources = await loadLevelResources(
+        levelPrefix,
+        renderers.width,
+        renderers.height,
+      );
+    }
+    gameStats.levelResources[levelPrefix] = levelResources;
+
+    shipStats.instance = main(
+      levels[gameStats.level].filePrefix,
+      renderers,
+      globalResources,
+      levelResources,
+      {
+        shouldStopInstanceCallBack: shouldStopIntance,
+        shouldStopPlay: shouldStopFn,
+        frameCallback: onFrame,
+        finishCallback: onFinish,
+        restartCallback: onRestart,
+        onStopInstance,
+      },
+    );
   }
   startInstance();
 });

@@ -87,20 +87,35 @@ async function main(
 
   const pixelRatio = window.devicePixelRatio;
 
+  const shipWidth = 361.46 * 0.8;
+  const shipHeight = 152 * 0.8;
+
+  const thrusterWidth = 31.65 * 0.8;
+  const shipBodyWidth = 281 * 0.8;
+
+  const shipBodyHeight = 118 * 0.8;
+  const thrusterHeight = 46.2 * 0.8;
+
   const shipPos = { x: width / 2, y: 400 };
-  const shipBody = Bodies.rectangle(shipPos.x, shipPos.y, 250, 87, {});
+  const shipBody = Bodies.rectangle(
+    shipPos.x,
+    shipPos.y,
+    shipBodyWidth,
+    shipBodyHeight,
+    {},
+  );
   const shipLThrust = Bodies.rectangle(
-    shipPos.x - 125 - 15,
-    shipPos.y + 17,
-    30,
-    60,
+    shipPos.x - shipWidth / 2 + thrusterWidth / 2,
+    shipPos.y + 20,
+    thrusterWidth,
+    thrusterHeight,
     {},
   );
   const shipRThrust = Bodies.rectangle(
-    shipPos.x + 125 + 15,
-    shipPos.y + 17,
-    30,
-    60,
+    shipPos.x + shipWidth / 2 - thrusterWidth / 2,
+    shipPos.y + 20,
+    thrusterWidth,
+    thrusterHeight,
     {},
   );
 
@@ -696,9 +711,6 @@ async function main(
     screenToClipX(ship.position.x - camPos.x + width / 2),
     screenToClipY(ship.position.y - camPos.y + height / 2),
   );
-
-  const shipWidth = 250 + 30 + 30;
-  const shipHeight = 94.5;
 
   const shipSize = gl.getUniformLocation(shipg, "shipSize");
 

@@ -396,7 +396,7 @@ void main() {
     // gl_FragColor.xw += step(distance(texPos, vec2(0.05, 0.1)), 0.1);
     // gl_FragColor.xw += step(distance(texPos, vec2(1.-0.05, 0.1)), 0.1);
 
-    vec2 t1 = vec2(0.00, 0.1);
+    vec2 t1 = vec2(0.00, 0.1 );
     vec2 t2 = vec2(1.-0.09, 0.1);
 
 
@@ -413,11 +413,24 @@ void main() {
     ft1 /= 0.1 ;
     ft2 /= 0.1;
 
-    ft1.y *= 0.3 / (lr.x * 0.5 + 0.5);
-    ft2.y *= 0.3 / (lr.y *0.5 + 0.5);
+    // ft1.y *= lr.x ;
+    // ft2.y *= lr.y / (0.2 *0.5 + 0.5);
+    ft1.y *= lr.x * 0.2444;
+    ft2.y *= lr.y * 0.2444;
 
-    ft1.y = 0.8 + ft1.y;
-    ft2.y = 0.85 + ft2.y;
+    ft1.y = 0.5 +  ft1.y;
+    ft2.y = 0.5  + ft2.y;
+
+    ft1.y *= lr.x;
+    ft2.y *= lr.y;
+
+    ft1.x *= 0.8;
+    ft2.x *= 0.8;
+
+    ft1.x += 0.04;
+    ft2.x += 0.11;
+
+
 
     vec4 ft1c = texture2D(flame, ft1);
     vec4 ft2c = texture2D(flame, ft2);
@@ -425,8 +438,9 @@ void main() {
     float thrustFrac = 1.0 - smoothstep(0.0, 0.1, gl_FragColor.w);
 
 
-    gl_FragColor += ft1c * pow(ft1.y , 2.) * 2. * thrustFrac;
-    gl_FragColor += ft2c * pow(ft2.y , 2.) * 2. * thrustFrac;
+    gl_FragColor += ft1c * pow(ft1.y , 2.) * 3. * thrustFrac;
+    gl_FragColor += ft2c * pow(ft2.y , 2.) * 3. * thrustFrac;
+    // gl_FragColor.xw += 0.4;
 
     }
 

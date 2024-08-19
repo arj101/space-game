@@ -35,6 +35,15 @@ function loadText(url) {
   });
 }
 
+function loadJSON(url) {
+  return new Promise(async (resolve, reject) => {
+    let req = await fetch(url).catch(reject);
+    let json = await req.json();
+
+    resolve(json);
+  });
+}
+
 function loadImage(url) {
   return new Promise(async (resolve, reject) => {
     let image = new Image();

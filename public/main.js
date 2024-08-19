@@ -756,48 +756,105 @@ async function main(
 
   //<----terrain setup-------
 
+  //-----other objects----->
+  const otherObjectPg = shaderPrograms.finishPlatformShader;
+  gl.useProgram(otherObjectPg);
+
+  let texUnit = 4;
+
+  let otherObjects = [];
+
+  for (const obj in levelResources.otherObjects) {
+    gl.activeTexture(gl.TEXTURE0 + texUnit);
+
+    const objTexture = gl.createTexture();
+
+    const texture = levelResources.otherObjects[obj].texture;
+    const vertices = levelResources.otherObjects[obj].vertices;
+
+    gl.bindTexture(gl.TEXTURE_2D, objTexture);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      texture,
+    );
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    const ovPos = gl.getAttribLocation(otherObjectPg, "position");
+    const ouvPos = gl.getAttribLocation(otherObjectPg, "uv");
+
+    const ovaBuf = gl.createBuffer();
+
+    const ovBuf = objToVAttributes(vertices);
+    gl.enableVertexAttribArray(ovPos);
+    gl.enableVertexAttribArray(ouvPos);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, ovaBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ovBuf), gl.STATIC_DRAW);
+
+    gl.vertexAttribPointer(ovPos, 2, gl.FLOAT, false, 4 * 4, 0);
+    gl.vertexAttribPointer(ouvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
+
+    const texU = gl.getUniformLocation(otherObjectPg, "texture");
+    gl.uniform1i(texU, texUnit);
+    otherObjects.push({
+      texture: objTexture,
+      buffer: ovaBuf,
+      ovPos,
+      ouvPos,
+      vertices,
+      texUnit,
+    });
+  }
+
   //---- finish platform ---->
-  const finishPlatformPg = shaderPrograms.finishPlatformShader;
+  // const finishPlatformPg = shaderPrograms.finishPlatformShader;
 
-  gl.activeTexture(gl.TEXTURE4);
-  const platformTex = gl.createTexture();
+  // gl.activeTexture(gl.TEXTURE4);
+  // const platformTex = gl.createTexture();
 
-  gl.bindTexture(gl.TEXTURE_2D, platformTex);
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.RGBA,
-    gl.RGBA,
-    gl.UNSIGNED_BYTE,
-    platformImg,
-  );
+  // gl.bindTexture(gl.TEXTURE_2D, platformTex);
+  // gl.texImage2D(
+  //   gl.TEXTURE_2D,
+  //   0,
+  //   gl.RGBA,
+  //   gl.RGBA,
+  //   gl.UNSIGNED_BYTE,
+  //   platformImg,
+  // );
 
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-  finishObj = levelResources.finishPlatformObj;
-  console.log(finishObj);
+  // finishObj = levelResources.finishPlatformObj;
+  // console.log(finishObj);
 
-  const finishBuf = objToVAttributes(finishObj);
-  gl.useProgram(finishPlatformPg);
+  // const finishBuf = objToVAttributes(finishObj);
+  // gl.useProgram(finishPlatformPg);
 
-  const fvPos = gl.getAttribLocation(finishPlatformPg, "position");
-  const fuvPos = gl.getAttribLocation(finishPlatformPg, "uv");
+  // const fvPos = gl.getAttribLocation(finishPlatformPg, "position");
+  // const fuvPos = gl.getAttribLocation(finishPlatformPg, "uv");
 
-  const fvaBuf = gl.createBuffer();
+  // const fvaBuf = gl.createBuffer();
 
-  gl.enableVertexAttribArray(fvPos);
-  gl.enableVertexAttribArray(fuvPos);
+  // gl.enableVertexAttribArray(fvPos);
+  // gl.enableVertexAttribArray(fuvPos);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, fvaBuf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(finishBuf), gl.STATIC_DRAW);
+  // gl.bindBuffer(gl.ARRAY_BUFFER, fvaBuf);
+  // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(finishBuf), gl.STATIC_DRAW);
 
-  gl.vertexAttribPointer(fvPos, 2, gl.FLOAT, false, 4 * 4, 0);
-  gl.vertexAttribPointer(fuvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
+  // gl.vertexAttribPointer(fvPos, 2, gl.FLOAT, false, 4 * 4, 0);
+  // gl.vertexAttribPointer(fuvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
 
-  const finishU = gl.getUniformLocation(finishPlatformPg, "texture");
-  gl.uniform1i(finishU, 4);
+  // const finishU = gl.getUniformLocation(finishPlatformPg, "texture");
+  // gl.uniform1i(finishU, 4);
 
   //<-----finsih platform
   let startTime = 0;
@@ -887,20 +944,34 @@ async function main(
     ]);
     gl.drawArrays(gl.TRIANGLES, 0, tvs.length / 2);
 
-    gl.useProgram(finishPlatformPg);
+    gl.useProgram(otherObjectPg);
     // gl.bindBuffer(gl.ARRAY_BUFFER, tvBuf);
     // gl.vertexAttribPointer(tvPos, 2, gl.FLOAT, false, 0, 0);
     // gl.bindBuffer(gl.ARRAY_BUFFER, tuvBuf);
     // gl.vertexAttribPointer(tuvPos, 2, gl.FLOAT, false, 0, 0);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, fvaBuf);
-    gl.vertexAttribPointer(fvPos, 2, gl.FLOAT, false, 4 * 4, 0);
-    gl.vertexAttribPointer(fuvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
-    setUniform(gl, finishPlatformPg, "center", [
-      screenToClipX(camPos.x),
-      screenToClipY(camPos.y),
-    ]);
-    gl.drawArrays(gl.TRIANGLES, 0, finishObj.vertices.length);
+    // gl.bindBuffer(gl.ARRAY_BUFFER, fvaBuf);
+    // gl.vertexAttribPointer(fvPos, 2, gl.FLOAT, false, 4 * 4, 0);
+    // gl.vertexAttribPointer(fuvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
+    // gl.drawArrays(gl.TRIANGLES, 0, finishObj.vertices.length);
+
+    for (const obj of otherObjects) {
+      gl.activeTexture(gl.TEXTURE0 + obj.texUnit);
+      gl.bindTexture(gl.TEXTURE_2D, obj.texture);
+      gl.bindBuffer(gl.ARRAY_BUFFER, obj.buffer);
+      gl.vertexAttribPointer(obj.ovPos, 2, gl.FLOAT, false, 4 * 4, 0);
+      gl.vertexAttribPointer(obj.ouvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
+
+      setUniform(gl, otherObjectPg, "center", [
+        screenToClipX(camPos.x),
+        screenToClipY(camPos.y),
+      ]);
+
+      const texU = gl.getUniformLocation(otherObjectPg, "texture");
+      gl.uniform1i(texU, obj.texUnit);
+
+      gl.drawArrays(gl.TRIANGLES, 0, obj.vertices.vertices.length);
+    }
 
     const shakeOffsetX =
       Math.max(-50 / 0.3, Math.min(200, -(camPos.x - ship.position.x))) * 0.3;

@@ -7,29 +7,6 @@
         />
         <!-- full screen button-->
 
-        <button
-            id="fullscreen"
-            onclick="(
-            function () {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().then (() => {
-                    document.getElementById('fullscreen_img').src = './closefullscreen.svg';
-                })
-            } else if (document.exitFullscreen) {
-                document.exitFullscreen().then(() => {
-                    document.getElementById('fullscreen_img').src = './fullscreen.svg';
-                })
-            }
-
-        })()"
-        >
-            <image id="fullscreen_img" src="./fullscreen.svg"></image>
-        </button>
-
-        <button id="menu">
-            <image id="menu_img" src="./menu.svg"></image>
-        </button>
-
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
@@ -43,6 +20,29 @@
     </head>
     <body>
         <div id="container"></div>
+
+        <button
+            id="fullscreen"
+            onclick="(
+                    function () {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().then (() => {
+                            document.getElementById('fullscreen_img').src = './closefullscreen.svg';
+                        })
+                    } else if (document.exitFullscreen) {
+                        document.exitFullscreen().then(() => {
+                            document.getElementById('fullscreen_img').src = './fullscreen.svg';
+                        })
+                    }
+
+                })()"
+        >
+            <image id="fullscreen_img" src="./fullscreen.svg"></image>
+        </button>
+
+        <button id="menu">
+            <image id="menu_img" src="./menu.svg"></image>
+        </button>
         <!-- <canvas width="1024" height="480" id="canvas1"></canvas> -->
         <script src="./matter.min.js"></script>
         <script src="./glutils.js"></script>
@@ -111,6 +111,7 @@
             #menu img {
                 width: 4rem;
                 height: 4rem;
+                pointer-events: none;
             }
 
             #fullscreen img {

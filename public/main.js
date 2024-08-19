@@ -213,8 +213,8 @@ async function main(
     rightClickStart: -1,
     enterClickStart: -1,
 
-    selectTime: 1500,
-    maxClickTime: 600,
+    selectTime: 500,
+    maxClickTime: 200,
 
     openMenu: () => {
       scrollableMenu.enabled = true;
@@ -248,6 +248,11 @@ async function main(
     scrollLeft: () => {
       if (!scrollableMenu.enabled) return;
 
+      globalResources.audioCtx.resume();
+
+      globalResources.menuSlideAudio.currentTime = 0;
+      globalResources.menuSlideAudio.play();
+
       scrollableMenu.selected -= 1;
       if (scrollableMenu.selected < 0) {
         scrollableMenu.selected = scrollableMenu.items.length - 1;
@@ -255,6 +260,11 @@ async function main(
     },
     scrollRight: () => {
       if (!scrollableMenu.enabled) return;
+
+      globalResources.audioCtx.resume();
+
+      globalResources.menuSlideAudio.currentTime = 0;
+      globalResources.menuSlideAudio.play();
 
       scrollableMenu.selected += 1;
       if (scrollableMenu.selected > scrollableMenu.items.length - 1) {
@@ -398,19 +408,25 @@ async function main(
             leftClickStart > -1 &&
             tNow - leftClickStart > scrollableMenu.maxClickTime
           ) {
-            rectWidth *= (tNow - leftClickStart) / scrollableMenu.selectTime;
+            rectWidth *=
+              (tNow - leftClickStart - scrollableMenu.maxClickTime) /
+              scrollableMenu.selectTime;
           } else if (
             rightClickStart > -1 &&
             tNow - rightClickStart > scrollableMenu.maxClickTime
           ) {
-            rectWidth *= (tNow - rightClickStart) / scrollableMenu.selectTime;
+            rectWidth *=
+              (tNow - rightClickStart - scrollableMenu.maxClickTime) /
+              scrollableMenu.selectTime;
           }
 
           if (
             enterClickStart > -1 &&
             tNow - enterClickStart > scrollableMenu.maxClickTime
           ) {
-            rectWidth *= (tNow - enterClickStart) / scrollableMenu.selectTime;
+            rectWidth *=
+              (tNow - enterClickStart - scrollableMenu.maxClickTime) /
+              scrollableMenu.selectTime;
           }
 
           rectWidth = Math.min(itemWidth, rectWidth);
@@ -428,7 +444,11 @@ async function main(
     },
   };
 
-  document.getElementById("menu").addEventListener("click", (e) => {
+  const menuElt = document.getElementById("menu");
+
+  menuElt.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     ctx.canvas.focus();
 
     if (scrollableMenu.enabled) {
@@ -469,6 +489,10 @@ async function main(
   });
 
   addEventListener("pointerdown", (e) => {
+    if (e.target == menuElt) {
+      return;
+    }
+
     mouseDown = true;
     const x = e.pageX * window.devicePixelRatio;
     const y = e.pageY * window.devicePixelRatio;
@@ -500,6 +524,10 @@ async function main(
   });
 
   addEventListener("pointerup", (e) => {
+    if (e.target == menuElt) {
+      return;
+    }
+
     mouseDown = false;
     const x = e.pageX * window.devicePixelRatio;
     const y = e.pageY * window.devicePixelRatio;

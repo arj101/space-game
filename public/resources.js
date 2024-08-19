@@ -2,19 +2,43 @@ const GLOBAL_OBJ_SCALE = 0.4;
 
 function loadGlobalResources() {
   return new Promise(async (resolve, reject) => {
-    const shipFile = "./shipwhole.png";
-    const flameFile = "./flame.png";
+    const shipFile = "/shipwhole.png";
+    const flameFile = "/flame.png";
+
+    const menuSlideAudioFile = "/audio/menu_slide2.wav";
+    const menuClickAudioFile = "/audio/menu_click.mp3";
 
     const shipImageP = loadImage(shipFile);
     const flameImageP = loadImage(flameFile);
+    const menuSlideAudioP = loadAudio(menuSlideAudioFile);
+    const menuClickAudioP = loadAudio(menuClickAudioFile);
 
-    const [shipImage, flameImage] = await Promise.all([
-      shipImageP,
-      flameImageP,
-    ]);
+    const [shipImage, flameImage, menuSlideAudio, menuClickAudio] =
+      await Promise.all([
+        shipImageP,
+        flameImageP,
+        menuSlideAudioP,
+        menuClickAudioP,
+      ]);
+
+    const audioContext = new AudioContext({ latencyHint: "interactive" });
+    const menuSlideTrack =
+      audioContext.createMediaElementSource(menuSlideAudio);
+
+    const menuClickTrack =
+      audioContext.createMediaElementSource(menuClickAudio);
+
+    menuSlideTrack.connect(audioContext.destination);
+    menuClickTrack.connect(audioContext.destination);
+
     resolve({
       shipImage,
       flameImage,
+      audioCtx: audioContext,
+      menuSlideTrack,
+      menuSlideAudio,
+      menuClickAudio,
+      menuClickTrack,
     });
   });
 }

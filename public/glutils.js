@@ -45,6 +45,17 @@ function loadImage(url) {
   });
 }
 
+function loadAudio(url) {
+  return new Promise(async (resolve, reject) => {
+    let audio = new Audio();
+    audio.pause();
+    audio.oncanplaythrough = () => {
+      resolve(audio);
+    };
+    audio.src = url;
+  });
+}
+
 function parseOBJCollissionData(source) {
   let lines = source.split("\n");
   let vs = [];

@@ -16,6 +16,7 @@ function setupCanvas() {
 
   canvas.style.width = heightIsSmaller ? "auto" : "100%";
   canvas.style.height = heightIsSmaller ? "100%" : "auto";
+  canvas.style.touchAction = "none";
   canvasContainer.appendChild(canvas);
 
   const overlayCanvas = document.createElement("canvas");
@@ -24,6 +25,7 @@ function setupCanvas() {
   overlayCanvas.style.width = heightIsSmaller ? "auto" : "100%";
   overlayCanvas.style.height = heightIsSmaller ? "100%" : "auto";
   overlayCanvas.style.position = "absolute";
+  overlayCanvas.style.touchAction = "none";
   // overlayCanvas.style.top = "auto";
   // overlayCanvas.style.left = "auto";
   canvasContainer.appendChild(overlayCanvas);

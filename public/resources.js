@@ -2,14 +2,13 @@ const GLOBAL_OBJ_SCALE = 0.4;
 
 function loadGlobalResources(width, height) {
   return new Promise(async (resolve, reject) => {
-    const shipFile = "/ship.png";
-    const flameFile = "/flame.png";
-    const ship2File = "/ship.png";
-    const shipVertexFile = "/ship.obj";
-    const shipTextObjFile = "/shiptex.obj";
+    const shipFile = "/assets/ship.png";
+    const flameFile = "/assets/flame.png";
+    const shipVertexFile = "/assets/ship.obj";
+    const shipTextObjFile = "/assets/shiptex.obj";
 
-    const menuSlideAudioFile = "/audio/menu_slide2.wav";
-    const menuClickAudioFile = "/audio/menu_click.mp3";
+    const menuSlideAudioFile = "/assets/audio/menu_slide2.wav";
+    const menuClickAudioFile = "/assets/audio/menu_click.mp3";
 
     const shipImageP = loadImage(shipFile);
     const flameImageP = loadImage(flameFile);

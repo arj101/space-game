@@ -92,11 +92,11 @@ function parseOBJCollissionData(source) {
         shapes[shapeI].vertices.push(vs[parseInt(b) - 1]);
     } else if (line.startsWith("f ")) {
       let fvs = line.split(" ").slice(1);
-      for (let j = 0; j < fvs.length / 2; j++) {
-        let a = parseInt(fvs[j * 2]) - 1;
-        let b = parseInt(fvs[j * 2 + 1]) - 1;
+      for (let j = 0; j < fvs.length; j += 1) {
+        let a = parseInt(fvs[j]) - 1;
+        // let b = parseInt(fvs[j + 1]) - 1;
         shapes[shapeI].vertices.push(vs[a]);
-        shapes[shapeI].vertices.push(vs[b]);
+        // shapes[shapeI].vertices.push(vs[b]);
         // sx += parseFloat(vs[a]);
         // sy += parseFloat(vs[b]);
         // n++;
@@ -117,7 +117,7 @@ function parseOBJCollissionData(source) {
     shapes[shapeI].center = { x: sx / n, y: sy / n };
   }
 
-  console.log(shapes);
+  console.log("Collission Data parsed: ", shapes);
 
   return shapes;
 }
@@ -160,38 +160,70 @@ function buildCollissionRects(
     Bodies = Matter.Bodies;
 
   let finishPlatform;
-  const collissionBodies = cvs.map((cv) => {
-    let v1 = cv.vertices[0];
-    let v2 = cv.vertices[1];
-    let v3 = cv.vertices[2];
-    let v4 = cv.vertices[3];
 
-    let width = Vector.magnitude(Vector.sub(v1, v2));
-    let height = Vector.magnitude(Vector.sub(v2, v3));
+  const collissionTries = cvs.map((cv) => {
+    let bodies = [];
 
-    let angle = Math.atan2(-(v2.y - v1.y), v2.x - v1.x);
+    for (let i = 0; i < cv.vertices.length; i += 3) {
+      let v1 = cv.vertices[i + 0];
+      let v2 = cv.vertices[i + 1];
+      let v3 = cv.vertices[i + 2];
 
-    let centerx = (v1.x + v2.x + v3.x + v4.x) / 4;
-    let centery = (v1.y + v2.y + v3.y + v4.y) / 4;
+      let centerx = (v1.x + v2.x + v3.x) / 3;
+      let centery = (v1.y + v2.y + v3.y) / 3;
 
-    // return Bodies.fromVertices(centerx, centery, [cv.vertices], {
-    //   isStatic: true,
-    // });
+      let b = Bodies.fromVertices(centerx, centery, [[v1, v2, v3]], {
+        isStatic: true,
+      });
 
-    let b = Bodies.rectangle(centerx, centery, width, height, {
-      isStatic,
-      angle: -angle,
+      bodies.push(b);
+    }
+
+    const b = Matter.Body.create({
+      parts: bodies,
+      isStatic: true,
     });
 
     if (cv.name == "finish") {
       finishPlatform = b;
-      console.log("Found finish platform in collission data");
     }
-
     return b;
   });
 
-  return { collissionBodies, finishPlatform };
+  // const collissionBodies = cvs.map((cv) => {
+  //   let v1 = cv.vertices[0];
+  //   let v2 = cv.vertices[1];
+  //   let v3 = cv.vertices[2];
+  //   let v4 = cv.vertices[3];
+
+  //   let width = Vector.magnitude(Vector.sub(v1, v2));
+  //   let height = Vector.magnitude(Vector.sub(v2, v3));
+
+  //   let angle = Math.atan2(-(v2.y - v1.y), v2.x - v1.x);
+
+  //   let centerx = (v1.x + v2.x + v3.x + v4.x) / 4;
+  //   let centery = (v1.y + v2.y + v3.y + v4.y) / 4;
+
+  //   // return Bodies.fromVertices(centerx, centery, [cv.vertices], {
+  //   //   isStatic: true,
+  //   // });
+
+  //   let b = Bodies.rectangle(centerx, centery, width, height, {
+  //     isStatic,
+  //     angle: -angle,
+  //   });
+
+  //   if (cv.name == "finish") {
+  //     finishPlatform = b;
+  //     console.log("Found finish platform in collission data");
+  //   }
+
+  //   return b;
+  // });
+  //
+  console.log("Triangles", collissionTries);
+
+  return { finishPlatform, collissionTries };
 }
 
 function parseOBJ(source) {

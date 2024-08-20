@@ -1,29 +1,38 @@
 const GLOBAL_OBJ_SCALE = 0.4;
 
-function loadGlobalResources() {
+function loadGlobalResources(width, height) {
   return new Promise(async (resolve, reject) => {
     const shipFile = "/ship.png";
     const flameFile = "/flame.png";
     const ship2File = "/ship.png";
-    const ship2VertexFile = "/ship.obj";
-    const ship2CollisionFile = "/ship-collission.obj";
+    const shipVertexFile = "/ship.obj";
+    const shipTextObjFile = "/shiptex.obj";
 
     const menuSlideAudioFile = "/audio/menu_slide2.wav";
     const menuClickAudioFile = "/audio/menu_click.mp3";
 
     const shipImageP = loadImage(shipFile);
     const flameImageP = loadImage(flameFile);
-    const ship2ImageP = loadImage(ship2File);
+    const shipVertexFileP = loadText(shipVertexFile);
+    const shipTexObjFileP = loadText(shipTextObjFile);
     const menuSlideAudioP = loadAudio(menuSlideAudioFile);
     const menuClickAudioP = loadAudio(menuClickAudioFile);
 
-    const [shipImage, flameImage, menuSlideAudio, menuClickAudio] =
-      await Promise.all([
-        shipImageP,
-        flameImageP,
-        menuSlideAudioP,
-        menuClickAudioP,
-      ]);
+    const [
+      shipImage,
+      flameImage,
+      menuSlideAudio,
+      menuClickAudio,
+      shipVertices,
+      shipTexObjText,
+    ] = await Promise.all([
+      shipImageP,
+      flameImageP,
+      menuSlideAudioP,
+      menuClickAudioP,
+      shipVertexFileP,
+      shipTexObjFileP,
+    ]);
 
     const audioContext = new AudioContext({ latencyHint: "interactive" });
     const menuSlideTrack =
@@ -35,6 +44,28 @@ function loadGlobalResources() {
     menuSlideTrack.connect(audioContext.destination);
     menuClickTrack.connect(audioContext.destination);
 
+    let shipVertexObj = parseOBJCollissionData(shipVertices);
+    console.log("Ship vertex obj", shipVertexObj);
+
+    shipVertexObj = shipVertexObj.map((collissionObj) =>
+      scaleOBJ(
+        (GLOBAL_OBJ_SCALE * height) / width,
+        GLOBAL_OBJ_SCALE,
+        collissionObj,
+      ),
+    );
+    const { collissionTries: shipCollissionBodies, finishPlatform } =
+      buildCollissionRects(shipVertexObj, width, height, { isStatic: false });
+
+    console.log("Ship collission bodies, ", shipCollissionBodies);
+
+    let shipTexObj = parseOBJ(shipTexObjText);
+    shipTexObj = scaleOBJ(
+      (GLOBAL_OBJ_SCALE * height) / width,
+      GLOBAL_OBJ_SCALE,
+      shipTexObj,
+    );
+
     resolve({
       shipImage,
       flameImage,
@@ -43,6 +74,8 @@ function loadGlobalResources() {
       menuSlideAudio,
       menuClickAudio,
       menuClickTrack,
+      shipCollissionBodies,
+      shipTexObj,
     });
   });
 }

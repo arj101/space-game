@@ -346,10 +346,13 @@ void main() {
     vertex: `
 
     attribute vec4 v_position;
+    attribute vec4 texcoord;
     uniform vec2 center;
     varying vec4 position;
+    varying vec4 f_texcoord;
     uniform float angle;
     uniform vec2 shipCenter;
+
 
     void main() {
        vec2 ppos = v_position.xy;
@@ -359,6 +362,7 @@ void main() {
       gl_Position = vec4(pos.xy + shipCenter - center, 0., 1.);
 
       position = v_position;
+      f_texcoord = texcoord;
     }
     `,
     fragment: `
@@ -366,6 +370,7 @@ void main() {
 
     precision highp float;
     varying vec4 position;
+    varying vec4 f_texcoord;
     uniform vec2 shipCenter;
     uniform vec2 center;
     uniform vec2 shipSize;
@@ -388,7 +393,7 @@ void main() {
 
 
 
-    vec4 color = texture2D(img, texPos);
+    vec4 color = texture2D(img, f_texcoord.xy);
 
  //   vec4 color = vec4(1.0 - smoothstep( 0.08, 0.09, distance(position.xy, vec2(0.) )), 1., 1., 1.);
     gl_FragColor = color;
@@ -440,7 +445,7 @@ void main() {
 
     gl_FragColor += ft1c * pow(ft1.y , 2.) * 3. * thrustFrac;
     gl_FragColor += ft2c * pow(ft2.y , 2.) * 3. * thrustFrac;
-    // gl_FragColor.xw += 0.4;
+    // gl_FragColor.xw += 0.6;V
 
     }
 

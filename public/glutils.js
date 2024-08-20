@@ -173,7 +173,7 @@ function buildCollissionRects(
       let centery = (v1.y + v2.y + v3.y) / 3;
 
       let b = Bodies.fromVertices(centerx, centery, [[v1, v2, v3]], {
-        isStatic: true,
+        isStatic,
       });
 
       bodies.push(b);
@@ -181,7 +181,7 @@ function buildCollissionRects(
 
     const b = Matter.Body.create({
       parts: bodies,
-      isStatic: true,
+      isStatic,
     });
 
     if (cv.name == "finish") {

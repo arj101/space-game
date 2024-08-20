@@ -87,8 +87,8 @@ async function main(
 
   const pixelRatio = window.devicePixelRatio;
 
-  const shipWidth = 361.46 * 0.8;
-  const shipHeight = 152 * 0.8;
+  const shipWidth = 386.46 * 0.8;
+  const shipHeight = 175 * 0.8;
 
   const thrusterWidth = 31.65 * 0.8;
   const shipBodyWidth = 281 * 0.8;
@@ -119,8 +119,10 @@ async function main(
     {},
   );
 
+  console.log(globalResources);
   const ship = Body.create({
-    parts: [shipBody, shipLThrust, shipRThrust],
+    // parts: [shipBody, shipLThrust, shipRThrust],
+    parts: globalResources.shipCollissionBodies,
   });
 
   let shipHealth = 100;
@@ -681,23 +683,31 @@ async function main(
 
   const shipvbuf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, shipvbuf);
-  let shipvs = [];
+  // let shipvs = [];
 
-  for (const v of ship.vertices) {
-    const y = screenToClipY(v.y) - screenToClipY(ship.position.y);
-    shipvs.push(
-      y < 0 ? y - 100 / width : y,
-      screenToClipX(v.x) - screenToClipX(ship.position.x),
-    );
-  }
+  // for (const v of ship.vertices) {
+  //   const y = screenToClipY(v.y) - screenToClipY(ship.position.y);
+  //   shipvs.push(
+  //     y,
+  //     // y < 0 ? y - 100 / width : y,
+  //     screenToClipX(v.x) - screenToClipX(ship.position.x),
+  //   );
+  // }
 
-  shipvs.reverse();
-  shipvs.push(shipvs[0], shipvs[1]);
+  let shipVas = objToVAttributes(globalResources.shipTexObj);
+  console.log(shipVas);
+
+  // shipVas = [];
+
+  // shipvs.reverse();
+  // shipvs.push(shipvs[0], shipvs[1]);
   // console.log(shipvs);
 
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shipvs), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shipVas), gl.STATIC_DRAW);
   const shipva = gl.getAttribLocation(shipg, "v_position");
-  gl.vertexAttribPointer(shipva, 2, gl.FLOAT, false, 0, 0);
+  const shipuvs = gl.getAttribLocation(shipg, "texcoord");
+  gl.vertexAttribPointer(shipva, 2, gl.FLOAT, false, 4 * 4, 0);
+  gl.vertexAttribPointer(shipuvs, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
   const center2 = gl.getUniformLocation(shipg, "center");
   gl.uniform2f(center2, screenToClipX(camPos.x), screenToClipY(camPos.y));
   gl.enableVertexAttribArray(shipva);
@@ -926,9 +936,10 @@ async function main(
     //   shipvs.push(screenToClipX(v.y));
     // }
 
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shipvs), gl.STATIC_DRAW);
-    const shipva = gl.getAttribLocation(shipg, "v_position");
-    gl.vertexAttribPointer(shipva, 2, gl.FLOAT, false, 0, 0);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shipVas), gl.STATIC_DRAW);
+    // const shipva = gl.getAttribLocation(shipg, "v_position");
+    gl.vertexAttribPointer(shipva, 2, gl.FLOAT, false, 4 * 4, 0);
+    gl.vertexAttribPointer(shipuvs, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
     gl.uniform1f(angle, ship.angle);
     gl.uniform2f(center2, screenToClipX(camPos.x), screenToClipY(camPos.y));
     gl.uniform2f(
@@ -939,7 +950,11 @@ async function main(
     gl.uniform2f(lr, leftThruster ? 1 : 0, rightThruster ? 1 : 0);
     gl.uniform1f(u_time, t / 1000);
 
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, shipvs.length / 2);
+    gl.drawArrays(
+      gl.TRIANGLE_FAN,
+      0,
+      globalResources.shipTexObj.vertices.length,
+    );
 
     gl.useProgram(terrainPg);
     // gl.bindBuffer(gl.ARRAY_BUFFER, tvBuf);
@@ -1247,9 +1262,9 @@ async function main(
 
     if (!stopPlay) {
       let landedCollission =
-        collides(shipLThrust, finishPlatform) ||
-        collides(shipRThrust, finishPlatform) ||
-        collides(shipBody, finishPlatform);
+        // collides(shipLThrust, finishPlatform) ||
+        // collides(shipRThrust, finishPlatform) ||
+        collides(ship, finishPlatform);
       if (
         landedCollission != null &&
         landedCollission.supports.length >= 2 &&
@@ -1257,7 +1272,7 @@ async function main(
         ship.speed < 1e-1 &&
         Math.abs(ship.angle) <= 0.1 &&
         Vector.magnitude(Vector.sub(ship.position, finishPlatform.position)) <=
-          100
+          120
       ) {
         if (!landed) {
           landed = true;
@@ -1283,91 +1298,92 @@ async function main(
   }
 }
 
-loadGlobalResources().then((globalResources) => {
-  let shipStats = {};
+const renderers = setupCanvas();
+loadGlobalResources(renderers.width, renderers.height).then(
+  (globalResources) => {
+    let shipStats = {};
 
-  let gameStats = {
-    levelResources: {},
-    level: 1,
-  };
+    let gameStats = {
+      levelResources: {},
+      level: 1,
+    };
 
-  function resetStats() {
-    shipStats.health = 100;
-    shipStats.running = true;
-    shipStats.failed = false;
-    shipStats.finished = false;
-    shipStats.requiresRestart = false;
-  }
-
-  resetStats();
-
-  const renderers = setupCanvas();
-
-  function onFrame(t, landed, landTime, shipHealth, ship) {
-    shipStats.health = shipHealth;
-  }
-
-  function shouldStopFn() {
-    return !shipStats.running;
-  }
-
-  function onFinish(reason) {
-    shipStats.running = false;
-
-    if (reason == GAME_FINISH_REASONS.HEALTH_ZERO) {
-      shipStats.finished = false;
-      shipStats.failed = true;
-    }
-
-    if (reason == GAME_FINISH_REASONS.LEVEL_COMPLETE) {
+    function resetStats() {
+      shipStats.health = 100;
+      shipStats.running = true;
       shipStats.failed = false;
-      shipStats.finished = true;
-    }
-  }
-
-  function shouldStopIntance() {
-    return shipStats.requiresRestart;
-  }
-
-  function onRestart() {
-    shipStats.requiresRestart = true;
-  }
-
-  function onStopInstance() {
-    if (shipStats.requiresRestart) {
+      shipStats.finished = false;
       shipStats.requiresRestart = false;
-      resetStats();
-      startInstance();
     }
-  }
 
-  async function startInstance() {
-    const levelPrefix = levels[gameStats.level].filePrefix;
+    resetStats();
 
-    let levelResources = gameStats.levelResources[levelPrefix];
-    if (!levelResources) {
-      levelResources = await loadLevelResources(
-        levelPrefix,
-        renderers.width,
-        renderers.height,
+    function onFrame(t, landed, landTime, shipHealth, ship) {
+      shipStats.health = shipHealth;
+    }
+
+    function shouldStopFn() {
+      return !shipStats.running;
+    }
+
+    function onFinish(reason) {
+      shipStats.running = false;
+
+      if (reason == GAME_FINISH_REASONS.HEALTH_ZERO) {
+        shipStats.finished = false;
+        shipStats.failed = true;
+      }
+
+      if (reason == GAME_FINISH_REASONS.LEVEL_COMPLETE) {
+        shipStats.failed = false;
+        shipStats.finished = true;
+      }
+    }
+
+    function shouldStopIntance() {
+      return shipStats.requiresRestart;
+    }
+
+    function onRestart() {
+      shipStats.requiresRestart = true;
+    }
+
+    function onStopInstance() {
+      if (shipStats.requiresRestart) {
+        shipStats.requiresRestart = false;
+        resetStats();
+        startInstance();
+      }
+    }
+
+    async function startInstance() {
+      const levelPrefix = levels[gameStats.level].filePrefix;
+
+      let levelResources = gameStats.levelResources[levelPrefix];
+      if (!levelResources) {
+        levelResources = await loadLevelResources(
+          levelPrefix,
+          renderers.width,
+          renderers.height,
+        );
+      }
+      gameStats.levelResources[levelPrefix] = levelResources;
+
+      shipStats.instance = main(
+        levels[gameStats.level].filePrefix,
+        renderers,
+        globalResources,
+        levelResources,
+        {
+          shouldStopInstanceCallBack: shouldStopIntance,
+          shouldStopPlay: shouldStopFn,
+          frameCallback: onFrame,
+          finishCallback: onFinish,
+          restartCallback: onRestart,
+          onStopInstance,
+        },
       );
     }
-    gameStats.levelResources[levelPrefix] = levelResources;
-
-    shipStats.instance = main(
-      levels[gameStats.level].filePrefix,
-      renderers,
-      globalResources,
-      levelResources,
-      {
-        shouldStopInstanceCallBack: shouldStopIntance,
-        shouldStopPlay: shouldStopFn,
-        frameCallback: onFrame,
-        finishCallback: onFinish,
-        restartCallback: onRestart,
-        onStopInstance,
-      },
-    );
-  }
-  startInstance();
-});
+    startInstance();
+  },
+);

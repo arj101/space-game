@@ -916,7 +916,7 @@ async function main(
       const impactScale = Math.sin(collissionAngle) * 0.2 + 0.8;
 
       const scaledImpact = Vector.magnitude(ship.velocity) * impactScale * 3.0;
-      shipHealth -= scaledImpact;
+      // shipHealth -= scaledImpact;
     });
   });
   run(0);

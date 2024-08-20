@@ -161,7 +161,8 @@ function buildCollissionRects(
 
   let finishPlatform;
 
-  const collissionTries = cvs.map((cv) => {
+  let collissionTries = [];
+  cvs.forEach((cv) => {
     let bodies = [];
 
     for (let i = 0; i < cv.vertices.length; i += 3) {
@@ -186,8 +187,9 @@ function buildCollissionRects(
 
     if (cv.name == "finish") {
       finishPlatform = b;
+    } else {
+      collissionTries.push(b);
     }
-    return b;
   });
 
   // const collissionBodies = cvs.map((cv) => {

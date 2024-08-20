@@ -917,6 +917,10 @@ async function main(
 
       const scaledImpact = Vector.magnitude(ship.velocity) * impactScale * 3.0;
       shipHealth -= scaledImpact;
+
+      if (scaledImpact >= 10) {
+        shipHealth = 0;
+      }
     });
   });
   run(0);

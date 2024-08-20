@@ -54,10 +54,8 @@ function loadGlobalResources(width, height) {
         collissionObj,
       ),
     );
-    const { collissionTries: shipCollissionBodies, finishPlatform } =
-      buildCollissionRects(shipVertexObj, width, height, { isStatic: false });
-
-    console.log("Ship collission bodies, ", shipCollissionBodies);
+    // const { collissionTries: shipCollissionBodies, finishPlatform } =
+    //   buildCollissionRects(shipVertexObj, width, height, { isStatic: false });
 
     let shipTexObj = parseOBJ(shipTexObjText);
     shipTexObj = scaleOBJ(
@@ -74,7 +72,7 @@ function loadGlobalResources(width, height) {
       menuSlideAudio,
       menuClickAudio,
       menuClickTrack,
-      shipCollissionBodies,
+      shipCollissionObjs: shipVertexObj,
       shipTexObj,
     });
   });

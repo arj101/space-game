@@ -119,10 +119,16 @@ async function main(
     {},
   );
 
+  const { collissionTries: shipCollissionBodies } = buildCollissionRects(
+    globalResources.shipCollissionObjs,
+    width,
+    height,
+    { isStatic: false },
+  );
   console.log(globalResources);
   const ship = Body.create({
     // parts: [shipBody, shipLThrust, shipRThrust],
-    parts: globalResources.shipCollissionBodies,
+    parts: shipCollissionBodies,
   });
 
   let shipHealth = 100;

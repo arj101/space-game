@@ -93,7 +93,7 @@ function loadLevelResources(filePrefix, width, height) {
         collissionObj,
       ),
     );
-    const { collissionBodies, finishPlatform } = buildCollissionRects(
+    const { collissionTries, finishPlatform } = buildCollissionRects(
       collissionObjs,
       width,
       height,
@@ -125,7 +125,7 @@ function loadLevelResources(filePrefix, width, height) {
     // console.log("others", otherObjects);
 
     resolve({
-      collissionBodies,
+      collissionTries,
       terrainObj,
       terrainImage,
       startPlatformImage,

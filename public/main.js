@@ -143,7 +143,7 @@ async function main(
     },
   );
 
-  let collissionBodies = levelResources.collissionBodies;
+  let collissionBodies = levelResources.collissionTries;
   const finishPlatform = levelResources.finishPlatformBody;
 
   let eventListeners = [];
@@ -1054,7 +1054,6 @@ async function main(
       ctx.lineWidth = 2;
       const shipScreenX = width / 2 + (ship.position.x - camPos.x);
       const shipScreenY = height / 2 + (ship.position.y - camPos.y);
-      console.log(shipScreenX, shipScreenY);
       ctx.strokeRect(
         shipScreenX - shipWidth / 2,
         shipScreenY - shipHeight,

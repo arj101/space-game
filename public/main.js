@@ -891,6 +891,34 @@ async function main(
 
   let timerTime = 0;
 
+  let collided = false;
+
+  Matter.Events.on(engine, "collisionStart", function (event, bodyA) {
+    event.pairs.forEach(function (pair) {
+      const bodyA = pair.bodyA.isStatic ? pair.bodyB : pair.bodyA;
+      const bodyB = pair.bodyB.isStatic ? pair.bodyB : pair.bodyA;
+
+      if (bodyA.parent.id != ship.id) return;
+      collided = true;
+      const collission = pair.collision;
+
+      const normalisedImpact = Math.abs(
+        Vector.dot(collission.normal, Vector.normalise(ship.velocity)),
+      );
+
+      const impactSpeed = Math.abs(
+        Vector.dot(collission.normal, ship.velocity),
+      );
+
+      const collissionAngle = Math.acos(normalisedImpact);
+      console.log((collissionAngle * 180) / Math.PI);
+
+      const impactScale = Math.sin(collissionAngle) * 0.2 + 0.8;
+
+      const scaledImpact = Vector.magnitude(ship.velocity) * impactScale * 3.0;
+      shipHealth -= scaledImpact;
+    });
+  });
   run(0);
   function run(t) {
     if (!shouldStopInstanceCallBack()) window.requestAnimationFrame(run);
@@ -1241,31 +1269,7 @@ async function main(
       const force = Vector.rotate(Vector.create(0, -forceMag), ship.angle);
       Body.applyForce(ship, forceOriginOff, force);
     }
-    let collided = false;
-    for (const other of otherBodies) {
-      const collission = Matter.Collision.collides(ship, other);
-
-      if (collission != null && collissionMap[other.id] != true) {
-        const movingBody = collission.bodyA.isStatic
-          ? collission.bodyB
-          : collission.bodyA;
-        const collidingVelocity =
-          Vector.magnitude(movingBody.velocity) * 0.3 +
-          Math.abs(Vector.dot(movingBody.velocity, collission.normal)) * 0.7;
-        shipHealth -= collidingVelocity * 3;
-
-        const INSTANT_DESTRUCTION_THRESHOLD = 5;
-        if (
-          Vector.magnitude(movingBody.velocity) > INSTANT_DESTRUCTION_THRESHOLD
-        ) {
-          shipHealth = 0;
-        }
-        collissionMap[other.id] = true;
-        collided = true;
-      } else if (collissionMap[other.id] == true && collission == null) {
-        collissionMap[other.id] = false;
-      }
-    }
+    // let collided = false;
     const collides = Matter.Collision.collides;
 
     if (!stopPlay) {
@@ -1301,6 +1305,7 @@ async function main(
     camVel = Vector.add(camVel, Vector.mult(norm_dp, accel));
     camVel = Vector.sub(camVel, Vector.mult(camVel, collided ? 0.03 : 0.4));
     camPos = Vector.add(camPos, Vector.mult(camVel, dt));
+    collided = false;
 
     frameCallback(t, landed, landTime, shipHealth, ship);
   }

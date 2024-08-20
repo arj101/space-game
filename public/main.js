@@ -1313,6 +1313,17 @@ async function main(
   }
 }
 
+let paramString = window.location.href.split("?")[1];
+let queryString = new URLSearchParams(paramString);
+let level = 1;
+for (let pair of queryString.entries()) {
+  if (pair[0] == "level") {
+    let n = parseInt(pair[1]);
+    if (n) level = n;
+    console.log("Level", n);
+  }
+}
+
 const renderers = setupCanvas();
 loadGlobalResources(renderers.width, renderers.height).then(
   (globalResources) => {
@@ -1320,7 +1331,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
 
     let gameStats = {
       levelResources: {},
-      level: 2,
+      level,
     };
 
     function resetStats() {

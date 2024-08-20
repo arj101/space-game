@@ -411,8 +411,8 @@ void main() {
     ft1 *= rot(sin(u_time * 70.) * 0.02);
     ft2 *= rot(sin(u_time * 70.) * 0.02);
 
-    ft1.y /= abs(sin(u_time * 70. * (20. * lr.x))* (0.03 + lr.x * 0.05) + 1.);
-    ft2.y /= abs(sin(u_time * 70. * (20. * lr.y))* (0.03 + lr.y * 0.05) + 1.);
+    ft1.y /= abs(sin(u_time * 70. * (20. * lr.x))* (0.2 + lr.x * 0.2) + 1.);
+    ft2.y /= abs(sin(u_time * 70. * (20. * lr.y))* (0.2 + lr.y * 0.2) + 1.);
 
 
     ft1 /= 0.1 ;

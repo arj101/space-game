@@ -169,10 +169,8 @@ async function main(
     window.addEventListener(event, callback);
   }
 
-  const otherBodies = [startPlatform, finishPlatform, ...collissionBodies];
-
-  let bodies = [ship, startPlatform, finishPlatform];
-  bodies.push(...collissionBodies);
+  let bodies = [ship, startPlatform];
+  bodies.push(finishPlatform, ...collissionBodies);
 
   Composite.add(engine.world, bodies);
 
@@ -893,13 +891,30 @@ async function main(
 
   let collided = false;
 
+  let finishPlatformCollided = false;
+  Matter.Events.on(engine, "collisionEnd", function (event) {
+    var pairs = event.pairs;
+
+    pairs.forEach(function (pair) {
+      var bodyA = pair.bodyA;
+      var bodyB = pair.bodyB;
+
+      // Handle the end of collision between bodyA and bodyB
+      console.log(`Collision ended between ${bodyA.label} and ${bodyB.label}`);
+
+      // You can perform any action you need when the collision ends
+      // For example, resetting properties, stopping effects, etc.
+    });
+  });
+
   Matter.Events.on(engine, "collisionStart", function (event, bodyA) {
     event.pairs.forEach(function (pair) {
       const bodyA = pair.bodyA.isStatic ? pair.bodyB : pair.bodyA;
       const bodyB = pair.bodyB.isStatic ? pair.bodyB : pair.bodyA;
 
       if (bodyA.parent.id != ship.id) return;
-      collided = true;
+      if (bodyB.parent.id == finishPlatform.id) return;
+      // collided = true;
       const collission = pair.collision;
 
       const normalisedImpact = Math.abs(
@@ -1277,30 +1292,31 @@ async function main(
     const collides = Matter.Collision.collides;
 
     if (!stopPlay) {
-      let landedCollission =
-        // collides(shipLThrust, finishPlatform) ||
-        // collides(shipRThrust, finishPlatform) ||
-        collides(ship, finishPlatform);
-      if (
-        landedCollission != null &&
-        landedCollission.supports.length >= 2 &&
-        ship.angularSpeed < 1e-6 &&
-        ship.speed < 1e-1 &&
-        Math.abs(ship.angle) <= 0.1 &&
-        Vector.magnitude(Vector.sub(ship.position, finishPlatform.position)) <=
-          120
-      ) {
-        if (!landed) {
-          landed = true;
-          landTime = t;
-        }
-        if (t - landTime > 4000) {
-          landTime = t - 4000;
-        }
-      } else {
-        landed = false;
-        landTime = -1;
-      }
+      //   let landedCollission =
+      //     // collides(shipLThrust, finishPlatform) ||
+      //     // collides(shipRThrust, finishPlatform) ||
+      //     // collides(ship, finishPlatform);
+      //     null;
+      //   if (
+      //     landedCollission != null &&
+      //     landedCollission.supports.length >= 2 &&
+      //     ship.angularSpeed < 1e-6 &&
+      //     ship.speed < 1e-1 &&
+      //     Math.abs(ship.angle) <= 0.1 &&
+      //     Vector.magnitude(Vector.sub(ship.position, finishPlatform.position)) <=
+      //       120
+      //   ) {
+      //     if (!landed) {
+      //       landed = true;
+      //       landTime = t;
+      //     }
+      //     if (t - landTime > 4000) {
+      //       landTime = t - 4000;
+      //     }
+      //   } else {
+      //     landed = false;
+      //     landTime = -1;
+      //   }
     }
 
     const dp = Vector.sub(ship.position, camPos);
@@ -1322,7 +1338,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
 
     let gameStats = {
       levelResources: {},
-      level: 1,
+      level: 2,
     };
 
     function resetStats() {

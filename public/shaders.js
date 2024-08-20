@@ -307,10 +307,11 @@ void main() {
    color *= color;
 
 
-   float scale = 6.0;
+   float scale = 1.0;
 
-  vec2 st = texcoord * scale;
+  vec2 st = vpos * scale;
   st *= 20.0;
+  st.x *= ${width.toFixed(0) / height.toFixed(0)};
   float cn = cnoise(st);
   vec2 offset = rot(cn) * vec2(0., 0.290);
 

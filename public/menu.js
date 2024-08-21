@@ -22,6 +22,12 @@ function insideRect(canvas, x, y, w, h, px, py) {
   return soffX >= x && soffX <= x + w && soffY >= y && soffY <= y + h;
 }
 
+function outsideRect(canvas, x, y, w, h, px, py) {
+  return !insideRect(canvas, x, y, w, h, px, py);
+}
+
+function textBox(textBoxState) {}
+
 /**
  * @param {string} levelPrefix
  * @param {object} options
@@ -33,6 +39,65 @@ function insideRect(canvas, x, y, w, h, px, py) {
  * @param {object} levelResources
  * @param {object} callbacks
  */
+
+class TextBox {
+  constructor(ctx, x, y, width, height) {
+    this.ctx = ctx;
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.text = "";
+    this.focused = false;
+
+    window.addEventListener("click", (e) => {
+      const ex = e.pageX * window.devicePixelRatio;
+      const ey = e.pageY * window.devicePixelRatio;
+
+      if (!insideRect(ctx.canvas, x, y, width, height, ex, ey)) {
+        this.focused = false;
+      } else {
+        this.focused = true;
+      }
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (!this.focused) return;
+
+      if (e.key === "Backspace") {
+        this.text = this.text.slice(0, -1);
+        return;
+      }
+
+      if (e.key === "Enter") {
+        this.focused = false;
+        return;
+      }
+
+      if (e.key == "Shift" || e.key == "Alt" || e.key == "Control") return;
+
+      this.text += e.key;
+    });
+  }
+
+  draw() {
+    this.ctx.strokeStyle = "white";
+    this.ctx.fillStyle = "white";
+    this.ctx.font = "600 30px Orbitron";
+
+    this.ctx.strokeRect(this.x, this.y, this.width, this.height);
+    this.ctx.fillText(this.text, this.x + 10, this.y + this.height / 2 + 15);
+
+    if (this.focused) {
+      this.ctx.strokeRect(
+        this.x - 5,
+        this.y - 5,
+        this.width + 10,
+        this.height + 10,
+      );
+    }
+  }
+}
 
 async function menu(
   { width, height, ctx, gl },
@@ -55,6 +120,13 @@ async function menu(
       y: 200,
       width: 900,
       height: 700,
+    },
+
+    login: {
+      x: 1700,
+      y: 50,
+      width: 150,
+      height: 80,
     },
   };
 
@@ -102,7 +174,6 @@ async function menu(
   window.addEventListener("pointermove", (e) => {
     mouse.x = e.pageX * pixelRatio;
     mouse.y = e.pageY * pixelRatio;
-    console.log(e.movementY);
 
     //scroll leaderboard just like before
     if (mouse.down && mouseInsideElement(elements.leaderboard)) {
@@ -133,6 +204,8 @@ async function menu(
     { finished: false },
     { finished: false },
   ];
+
+  let textBox = new TextBox(ctx, 100, 100, 400, 90);
 
   run();
   function run(t) {
@@ -299,5 +372,37 @@ async function menu(
       //   ctx.fillRect(levelRectX + 200, levelRectY + i * 50 - 20, 20, 20);
       // }
     }
+
+    //render login button
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      elements.login.x,
+      elements.login.y,
+      elements.login.width,
+      elements.login.height,
+    );
+    ctx.stroke();
+    ctx.fillStyle = "white";
+    ctx.font = "600 30px Orbitron";
+    ctx.fillText(
+      "Login",
+      elements.login.x +
+        elements.login.width / 2 -
+        ctx.measureText("Login").width / 2,
+      elements.login.y + elements.login.height / 2 + 10,
+    );
+
+    if (mouseInsideElement(elements.login)) {
+      ctx.strokeStyle = "white";
+      ctx.strokeRect(
+        elements.login.x - 5,
+        elements.login.y - 5,
+        elements.login.width + 10,
+        elements.login.height + 10,
+      );
+    }
+
+    textBox.draw();
   }
 }

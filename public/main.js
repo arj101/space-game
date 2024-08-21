@@ -70,6 +70,7 @@ async function main(
     frameCallback = () => {},
     shouldStopPlay = () => {},
     onStopInstance = () => {},
+    onExitToMenu: exitToMenuCallback = () => {},
   } = {
     shouldStopInstanceCallback: () => false,
     restartCallback: () => {},
@@ -77,6 +78,7 @@ async function main(
     frameCallback: () => {},
     shouldStopPlay: () => {},
     onStopInstance: () => {},
+    onExitToMenu: () => {},
   },
 ) {
   const Engine = Matter.Engine,
@@ -501,6 +503,10 @@ async function main(
 
       if (item == "Cheat >:)") {
         window.location.href = "https://www.youtube.com/watch?v=xvFZjo5PgG0";
+      }
+
+      if (item == "Exit to menu") {
+        exitToMenuCallback();
       }
     };
   });
@@ -1152,6 +1158,9 @@ async function main(
             restartCallback();
             console.log("Restarting...");
           }
+          if (item == "Exit to menu") {
+            exitToMenuCallback();
+          }
         };
       }
     }
@@ -1210,6 +1219,9 @@ async function main(
             scrollableMenu.closeMenu();
             restartCallback();
             console.log("restarting...");
+          }
+          if (item == "Exit to menu") {
+            exitToMenuCallback();
           }
         };
       }
@@ -1340,6 +1352,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
       shipStats.failed = false;
       shipStats.finished = false;
       shipStats.requiresRestart = false;
+      shipStats.gotoMenu = false;
     }
 
     resetStats();
@@ -1367,7 +1380,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
     }
 
     function shouldStopIntance() {
-      return shipStats.requiresRestart;
+      return shipStats.requiresRestart || shipStats.gotoMenu;
     }
 
     function onRestart() {
@@ -1379,6 +1392,14 @@ loadGlobalResources(renderers.width, renderers.height).then(
         shipStats.requiresRestart = false;
         resetStats();
         startInstance();
+        return;
+      }
+
+      if (shipStats.gotoMenu) {
+        shipStats.gotoMenu = false;
+        resetStats();
+        startMenu();
+        return;
       }
     }
 
@@ -1388,9 +1409,17 @@ loadGlobalResources(renderers.width, renderers.height).then(
         globalResources,
         {},
         {
-          startInstance,
+          onGameStart: (levelIdx) => {
+            console.log("start level", levelIdx + 1);
+            gameStats.level = levelIdx + 1;
+            startInstance();
+          },
         },
       );
+    }
+
+    function exitToMenu() {
+      shipStats.gotoMenu = true;
     }
 
     async function startInstance() {
@@ -1418,6 +1447,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
           finishCallback: onFinish,
           restartCallback: onRestart,
           onStopInstance,
+          onExitToMenu: exitToMenu,
         },
       );
     }

@@ -26,8 +26,6 @@ function outsideRect(canvas, x, y, w, h, px, py) {
   return !insideRect(canvas, x, y, w, h, px, py);
 }
 
-function textBox(textBoxState) {}
-
 /**
  * @param {string} levelPrefix
  * @param {object} options
@@ -40,99 +38,12 @@ function textBox(textBoxState) {}
  * @param {object} callbacks
  */
 
-class TextBox {
-  constructor(ctx, x, y, width, height) {
-    this.ctx = ctx;
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
-    this.text = "";
-    this.focused = false;
-    this.textbox = document.createElement("textarea");
-    this.textbox.id = "mehidden";
-    // this.textbox.style.display = "none";
-    this.textbox.style.position = "absolute";
-    this.textbox.style.pointerEvents = "none";
-    this.textbox.style.opacity = "0";
-
-    document.body.appendChild(this.textbox);
-
-    window.addEventListener("pointerdown", (e) => {
-      const ex = e.pageX * window.devicePixelRatio;
-      const ey = e.pageY * window.devicePixelRatio;
-
-      if (!insideRect(ctx.canvas, x, y, width, height, ex, ey)) {
-        if (e.target == this.textbox) return;
-        this.focused = false;
-      } else {
-        this.focused = true;
-        this.textbox.focus();
-        this.textbox.click();
-      }
-    });
-
-    window.addEventListener("keydown", (e) => {
-      if (!this.focused) return;
-
-      if (e.key === "Backspace") {
-        this.text = this.text.slice(0, -1);
-        return;
-      }
-
-      if (e.key === "Enter") {
-        this.focused = false;
-        return;
-      }
-
-      if (e.key == "Shift" || e.key == "Alt" || e.key == "Control") return;
-
-      this.text = this.textbox.value;
-    });
-  }
-
-  draw() {
-    this.ctx.strokeStyle = "white";
-    this.ctx.fillStyle = "white";
-    this.ctx.font = "600 30px Orbitron";
-
-    this.ctx.strokeRect(this.x, this.y, this.width, this.height);
-    this.ctx.fillText(this.text, this.x + 10, this.y + this.height / 2 + 15);
-
-    if (this.focused) {
-      this.ctx.strokeRect(
-        this.x - 5,
-        this.y - 5,
-        this.width + 10,
-        this.height + 10,
-      );
-    }
-
-    //draw qwerty keyboard just below the textbox
-    this.ctx.fillStyle = "white";
-    this.ctx.font = "600 20px Orbitron";
-    this.ctx.fillText(
-      "Q W E R T Y U I O P",
-      this.x + 10,
-      this.y + this.height + 30,
-    );
-    this.ctx.fillText(
-      "A S D F G H J K L",
-      this.x + 10,
-      this.y + this.height + 60,
-    );
-    this.ctx.fillText("Z X C V B N M", this.x + 10, this.y + this.height + 90);
-    //border
-    this.ctx.strokeRect(this.x, this.y + this.height + 10, this.width, 100);
-  }
-}
-
 async function menu(
   { width, height, ctx, gl },
   globalResources,
   levelResources,
-  { onLevelStart } = {
-    onGameStart: () => {},
+  { onGameStart } = {
+    onGameStart: (levelIdx) => {},
   },
 ) {
   const elements = {
@@ -187,10 +98,10 @@ async function menu(
     } else if (elements.login.open) {
       const bounds = form.getBoundingClientRect();
       if (
-        mouse.x > bounds.left &&
-        mouse.x < bounds.right &&
-        mouse.y > bounds.top &&
-        mouse.y < bounds.bottom
+        mouse.x > bounds.left * pixelRatio &&
+        mouse.x < bounds.right * pixelRatio &&
+        mouse.y > bounds.top * pixelRatio &&
+        mouse.y < bounds.bottom * pixelRatio
       )
         return;
       form.style.display = "none";
@@ -252,10 +163,15 @@ async function menu(
     { finished: false },
   ];
 
-  let textBox = new TextBox(ctx, 100, 100, 400, 90);
+  let selectedLevel = null;
+
+  let playbuttonHold = null;
+
+  let quitted = false;
 
   run();
   function run(t) {
+    if (quitted) return;
     requestAnimationFrame(run);
 
     ctx.fillStyle = "black";
@@ -398,6 +314,16 @@ async function menu(
           boxSize.width + 10,
           boxSize.height + 10,
         );
+
+        if (mouse.down) {
+          selectedLevel = i;
+        }
+      }
+
+      if (selectedLevel == i) {
+        //green background
+        ctx.fillStyle = "rgba(28, 255, 89, 0.1)";
+        ctx.fillRect(levelRectX, levelRectY, boxSize.width, boxSize.height);
       }
       ctx.restore();
 
@@ -448,6 +374,70 @@ async function menu(
         elements.login.width + 10,
         elements.login.height + 10,
       );
+    }
+
+    if (selectedLevel != null) {
+      //display  play button
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(
+        elements.play.x,
+        elements.play.y + elements.play.height - 100,
+        elements.play.width,
+        100,
+      );
+      ctx.font = "600 30px Orbitron";
+      const levelText = `Play level ${selectedLevel + 1}`;
+      ctx.fillText(
+        levelText,
+        elements.play.x +
+          elements.play.width / 2 -
+          ctx.measureText(levelText).width / 2,
+        elements.play.y + elements.play.height - 40,
+      );
+
+      const playbuttonElement = {
+        x: elements.play.x,
+        y: elements.play.y + elements.play.height - 100,
+        width: elements.play.width,
+        height: 100,
+      };
+
+      if (
+        mouseInsideElement(playbuttonElement) &&
+        mouse.down &&
+        (levels[selectedLevel].finished || selectedLevel == nextLevel)
+      ) {
+        if (playbuttonHold == null) {
+          playbuttonHold = Date.now();
+        } else {
+          const holdProgress = Date.now() - playbuttonHold;
+          const holdProgressF = Math.min(1, holdProgress / 600);
+
+          ctx.fillStyle = "rgba(255, 255, 255, 1)";
+          ctx.fillRect(
+            elements.play.x,
+            elements.play.y + elements.play.height - 100,
+            elements.play.width * holdProgressF,
+            100,
+          );
+          ctx.fillStyle = "black";
+          ctx.fillText(
+            levelText,
+            elements.play.x +
+              elements.play.width / 2 -
+              ctx.measureText(levelText).width / 2,
+            elements.play.y + elements.play.height - 40,
+          );
+
+          if (holdProgressF >= 1) {
+            quitted = true;
+            onGameStart(selectedLevel);
+          }
+        }
+      } else if (playbuttonHold != null) {
+        playbuttonHold = null;
+      }
     }
 
     //   textBox.draw();

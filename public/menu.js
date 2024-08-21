@@ -49,15 +49,26 @@ class TextBox {
     this.height = height;
     this.text = "";
     this.focused = false;
+    this.textbox = document.createElement("textarea");
+    this.textbox.id = "mehidden";
+    // this.textbox.style.display = "none";
+    this.textbox.style.position = "absolute";
+    this.textbox.style.pointerEvents = "none";
+    this.textbox.style.opacity = "0";
 
-    window.addEventListener("click", (e) => {
+    document.body.appendChild(this.textbox);
+
+    window.addEventListener("pointerdown", (e) => {
       const ex = e.pageX * window.devicePixelRatio;
       const ey = e.pageY * window.devicePixelRatio;
 
       if (!insideRect(ctx.canvas, x, y, width, height, ex, ey)) {
+        if (e.target == this.textbox) return;
         this.focused = false;
       } else {
         this.focused = true;
+        this.textbox.focus();
+        this.textbox.click();
       }
     });
 
@@ -76,7 +87,7 @@ class TextBox {
 
       if (e.key == "Shift" || e.key == "Alt" || e.key == "Control") return;
 
-      this.text += e.key;
+      this.text = this.textbox.value;
     });
   }
 
@@ -96,6 +107,23 @@ class TextBox {
         this.height + 10,
       );
     }
+
+    //draw qwerty keyboard just below the textbox
+    this.ctx.fillStyle = "white";
+    this.ctx.font = "600 20px Orbitron";
+    this.ctx.fillText(
+      "Q W E R T Y U I O P",
+      this.x + 10,
+      this.y + this.height + 30,
+    );
+    this.ctx.fillText(
+      "A S D F G H J K L",
+      this.x + 10,
+      this.y + this.height + 60,
+    );
+    this.ctx.fillText("Z X C V B N M", this.x + 10, this.y + this.height + 90);
+    //border
+    this.ctx.strokeRect(this.x, this.y + this.height + 10, this.width, 100);
   }
 }
 
@@ -127,6 +155,7 @@ async function menu(
       y: 50,
       width: 150,
       height: 80,
+      open: false,
     },
   };
 
@@ -145,10 +174,28 @@ async function menu(
     );
   };
 
+  const form = document.getElementById("loginform");
+
   window.addEventListener("pointerdown", (e) => {
     mouse.y = e.pageY * pixelRatio;
     mouse.x = e.pageX * pixelRatio;
     mouse.down = true;
+
+    if (mouseInsideElement(elements.login)) {
+      form.style.display = "flex";
+      elements.login.open = true;
+    } else if (elements.login.open) {
+      const bounds = form.getBoundingClientRect();
+      if (
+        mouse.x > bounds.left &&
+        mouse.x < bounds.right &&
+        mouse.y > bounds.top &&
+        mouse.y < bounds.bottom
+      )
+        return;
+      form.style.display = "none";
+      elements.login.open = false;
+    }
   });
 
   window.addEventListener("pointerup", (e) => {
@@ -403,6 +450,6 @@ async function menu(
       );
     }
 
-    textBox.draw();
+    //   textBox.draw();
   }
 }

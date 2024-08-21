@@ -43,6 +43,15 @@
         <button id="menu">
             <image id="menu_img" src="./menu.svg"></image>
         </button>
+
+        <div id="loginform">
+            <h1>Login</h1>
+            <label>Username</label>
+            <input type="text" id="username" />
+            <label>Password</label>
+            <input type="password" id="password" />
+            <button id="login">Login</button>
+        </div>
         <!-- <canvas width="1024" height="480" id="canvas1"></canvas> -->
         <script src="./matter.min.js"></script>
         <script src="./glutils.js"></script>
@@ -118,6 +127,67 @@
             #fullscreen img {
                 width: 2rem;
                 height: 2rem;
+            }
+
+            #loginform {
+                font-family: "Orbitron", sans-serif;
+                /* font-size: 2rem; */
+                font-weight: 800;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: rgba(0, 0, 0, 0.9);
+                border: 2px solid white;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-around;
+                align-items: start;
+                border-radius: 0;
+                color: white;
+                padding: 1rem;
+                display: none;
+            }
+
+            label {
+                font-weight: 500;
+                font-size: 1.5rem;
+                font-family: "Orbitron", sans-serif;
+            }
+
+            input {
+                font-family: "Orbitron", sans-serif;
+                font-weight: 500;
+                font-size: 1rem;
+                padding: 0.3rem 0.5rem;
+                /* width: 100%; */
+                background-color: rgba(0, 0, 0, 0.5);
+                border: 2px solid white;
+                border-radius: 0;
+                /* height: 2rem; */
+                color: white;
+                outline: none;
+                margin: 0;
+                margin-bottom: 1rem;
+            }
+
+            #login {
+                width: 100%;
+                margin-top: 1rem;
+
+                font-weight: 500;
+                font-size: 1.5rem;
+                font-family: "Orbitron", sans-serif;
+                background-color: rgba(0, 0, 0, 0.5);
+                border: 2px solid white;
+                padding: 1rem 1.5rem;
+                color: white;
+            }
+
+            #login:hover {
+                box-shadow:
+                    0 0 0px 4px black,
+                    0 0 0px 6px white;
             }
         </style>
     </body>

@@ -11,7 +11,7 @@ Function for hit testing rectangles inside a scaled canvas.
 function insideRect(canvas, x, y, w, h, px, py) {
   const pixelRatio = window.devicePixelRatio || 1;
   const bounds = canvas.getBoundingClientRect();
-  const scale = (canvas.width * pixelRatio) / bounds.width;
+  const scale = canvas.width / (bounds.width * pixelRatio);
 
   const offX = px - bounds.left * pixelRatio;
   const offY = py - bounds.top * pixelRatio;

@@ -1382,6 +1382,17 @@ loadGlobalResources(renderers.width, renderers.height).then(
       }
     }
 
+    async function startMenu() {
+      menu(
+        renderers,
+        globalResources,
+        {},
+        {
+          startInstance,
+        },
+      );
+    }
+
     async function startInstance() {
       const levelPrefix = levels[gameStats.level].filePrefix;
 
@@ -1410,6 +1421,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
         },
       );
     }
-    startInstance();
+    // startInstance();
+    startMenu();
   },
 );

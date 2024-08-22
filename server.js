@@ -89,7 +89,7 @@ class GameSession {
           criticalError = true;
         }
 
-        if (!validEvent && !criticalError) {
+        if (validEvent && !criticalError) {
           this.clientstarttimestamp = timestamp;
           this.clientStarted = true;
         }
@@ -154,7 +154,13 @@ class GameSession {
           const angle = rawEvent.angle;
           const health = rawEvent.health;
 
-          if (!xpos || !ypos || !angle || !health) {
+          if (
+            //TODO: better safe guard here
+            xpos == undefined ||
+            ypos == undefined ||
+            angle == undefined ||
+            health == undefined
+          ) {
             console.log(
               "Invalidated (just) game event because of sending invalid alive event",
             );
@@ -193,7 +199,7 @@ class GameSession {
         );
     }
 
-    if (!validEvent && !criticalError) {
+    if (validEvent && !criticalError) {
       this.ping();
       this.eventlog.push(parsedEvent);
     }
@@ -209,7 +215,11 @@ class GameSession {
     const { validEvent, criticalError } = this.validateEvent(rawEvent);
     if (criticalError) this.running = false;
 
-    return criticalError;
+    console.log(
+      `Processed event message. Valid: ${validEvent}, Error: ${criticalError}`,
+    );
+
+    return !criticalError;
   }
 
   isValid() {
@@ -228,7 +238,7 @@ class GameSession {
       "[GameSession] Closing game session (failed, finished or invalidated)",
     );
     console.log(`${this.eventlog.length} events were sent by the client`);
-    console.log(`Events: ${this.eventlog}`);
+    console.log(`Events: ${JSON.stringify(this.eventlog)}`);
     console.log("[GameSession] Bye bye... ");
   }
 }
@@ -292,10 +302,11 @@ class GameSessionsManager {
   onReceiveKeepAliveAlive(gameSessionID, rawEventJSON) {
     const gameSession = this.getGameSession(gameSessionID);
 
-    if (!rawEvent) return false;
-    if (!rawEvent.type) return false;
+    if (!rawEventJSON) return false;
+    if (!rawEventJSON.type) return false;
+    if (!gameSession) return false;
 
-    return gameSession.onReceiveKeepAlive(rawEvent);
+    return gameSession.onReceiveKeepAlive(rawEventJSON);
   }
 }
 
@@ -472,7 +483,7 @@ app.post("/:sessionid/:gamesessionid/alive/", async (req, res) => {
 
   if (
     !gameSessionsManager.getGameSessionID(sessionid) ||
-    gameSessionsManager.getGameSessionID(sessionid) !== req.headers.gsid
+    gameSessionsManager.getGameSessionID(sessionid) != req.headers.gsid
   ) {
     res.status(401).send("Unauthorised");
     console.log("[alive] invalid game session");
@@ -493,6 +504,8 @@ app.post("/:sessionid/:gamesessionid/alive/", async (req, res) => {
     res.status(401).send("Invalid request");
     return;
   }
+
+  console.log(data);
 
   const result = gameSessionsManager.onReceiveKeepAliveAlive(
     gameSessionID,

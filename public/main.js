@@ -1374,7 +1374,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
     function onFrame(t, landed, landTime, shipHealth, ship) {
       shipStats.health = shipHealth;
       shipStats.ship = ship;
-      if (Date.now() - lastStatSend > 5000) {
+      if (Date.now() - lastStatSend > 3000 + Math.random() * 3000) {
         networkClient.sendStats(
           screenToClipX(ship.position.x),
           screenToClipY(ship.position.y),
@@ -1425,9 +1425,19 @@ loadGlobalResources(renderers.width, renderers.height).then(
       shipStats.requiresRestart = true;
     }
 
-    function onStopInstance() {
+    async function onStopInstance() {
       if (shipStats.requiresRestart) {
         shipStats.requiresRestart = false;
+
+        const result = await networkClient.requestGame(gameStats.level);
+
+        if (!result) {
+          alert(
+            "Restart failed, try going to main menu by reloading this page.",
+          );
+          return;
+        }
+
         resetStats();
         startInstance();
         return;

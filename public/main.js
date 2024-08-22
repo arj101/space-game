@@ -63,6 +63,7 @@ async function main(
   { width, height, ctx, gl },
   globalResources,
   levelResources,
+  networkClient,
   {
     shouldStopInstanceCallBack = () => false,
     restartCallback = () => {},
@@ -1337,6 +1338,7 @@ for (let pair of queryString.entries()) {
 }
 
 const renderers = setupCanvas();
+const networkClient = new NetworkClient();
 loadGlobalResources(renderers.width, renderers.height).then(
   (globalResources) => {
     let shipStats = {};
@@ -1404,21 +1406,17 @@ loadGlobalResources(renderers.width, renderers.height).then(
     }
 
     async function startMenu() {
-      menu(
-        renderers,
-        globalResources,
-        {},
-        {
-          onGameStart: (levelIdx) => {
-            console.log("start level", levelIdx + 1);
-            gameStats.level = levelIdx + 1;
-            startInstance();
-          },
+      menu(renderers, globalResources, {}, networkClient, {
+        onGameStart: (levelIdx) => {
+          console.log("start level", levelIdx + 1);
+          gameStats.level = levelIdx + 1;
+          startInstance();
         },
-      );
+      });
     }
 
     function exitToMenu() {
+      networkClient.exitGame();
       shipStats.gotoMenu = true;
     }
 
@@ -1431,6 +1429,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
           levelPrefix,
           renderers.width,
           renderers.height,
+          networkClient,
         );
       }
       gameStats.levelResources[levelPrefix] = levelResources;
@@ -1440,6 +1439,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
         renderers,
         globalResources,
         levelResources,
+        networkClient,
         {
           shouldStopInstanceCallBack: shouldStopIntance,
           shouldStopPlay: shouldStopFn,

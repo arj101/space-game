@@ -42,6 +42,7 @@ async function menu(
   { width, height, ctx, gl },
   globalResources,
   levelResources,
+  networkClient,
   { onGameStart } = {
     onGameStart: (levelIdx) => {},
   },
@@ -92,7 +93,7 @@ async function menu(
     mouse.x = e.pageX * pixelRatio;
     mouse.down = true;
 
-    if (mouseInsideElement(elements.login)) {
+    if (mouseInsideElement(elements.login) && !networkClient.loggedIn) {
       form.style.display = "flex";
       elements.login.open = true;
     } else if (elements.login.open) {
@@ -146,6 +147,28 @@ async function menu(
     }
   });
 
+  document.getElementById("login").addEventListener("click", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const password = document.getElementById("password").value;
+    const username = document.getElementById("username").value;
+
+    if (!password || !username) {
+      alert("Fill both password and username");
+      return;
+    }
+
+    const result = await networkClient.login(username, password);
+
+    if (result) {
+      form.style.display = "none";
+      elements.login.open = false;
+    } else {
+      alert("Login failed");
+    }
+  });
+
   //create a leaderboard of random names and scores
   let leaderboard = Array.from({ length: 200 }, (_, i) => ({
     name: Math.random().toString(36).substring(7),
@@ -168,6 +191,8 @@ async function menu(
   let playbuttonHold = null;
 
   let quitted = false;
+
+  let levelReqSent = false;
 
   run();
   function run(t) {
@@ -315,7 +340,7 @@ async function menu(
           boxSize.height + 10,
         );
 
-        if (mouse.down) {
+        if (mouse.down && networkClient.loggedIn) {
           selectedLevel = i;
         }
       }
@@ -346,34 +371,45 @@ async function menu(
       // }
     }
 
-    //render login button
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(
-      elements.login.x,
-      elements.login.y,
-      elements.login.width,
-      elements.login.height,
-    );
-    ctx.stroke();
     ctx.fillStyle = "white";
     ctx.font = "600 30px Orbitron";
+
+    const loginText = networkClient.loggedIn
+      ? `Hi, ${networkClient.username}!`
+      : "Login";
     ctx.fillText(
-      "Login",
-      elements.login.x +
-        elements.login.width / 2 -
-        ctx.measureText("Login").width / 2,
+      loginText,
+      networkClient.loggedIn
+        ? elements.login.x +
+            elements.login.width +
+            50 -
+            ctx.measureText(loginText).width
+        : elements.login.x +
+            elements.login.width / 2 -
+            ctx.measureText(loginText).width / 2,
       elements.login.y + elements.login.height / 2 + 10,
     );
 
-    if (mouseInsideElement(elements.login)) {
+    if (!networkClient.loggedIn) {
+      //render login button
       ctx.strokeStyle = "white";
+      ctx.lineWidth = 2;
       ctx.strokeRect(
-        elements.login.x - 5,
-        elements.login.y - 5,
-        elements.login.width + 10,
-        elements.login.height + 10,
+        elements.login.x,
+        elements.login.y,
+        elements.login.width,
+        elements.login.height,
       );
+      ctx.stroke();
+      if (mouseInsideElement(elements.login)) {
+        ctx.strokeStyle = "white";
+        ctx.strokeRect(
+          elements.login.x - 5,
+          elements.login.y - 5,
+          elements.login.width + 10,
+          elements.login.height + 10,
+        );
+      }
     }
 
     if (selectedLevel != null) {
@@ -430,16 +466,53 @@ async function menu(
             elements.play.y + elements.play.height - 40,
           );
 
-          if (holdProgressF >= 1) {
+          if (holdProgressF >= 0.7 && !levelReqSent) {
+            levelReqSent = true;
+            networkClient.requestGame(selectedLevel + 1).then((result) => {
+              if (result) return;
+              console.log("Level request failed");
+            });
+            console.log("Requesting game...");
+          }
+
+          if (holdProgressF <= 0 && levelReqSent) {
+            levelReqSent = false;
+          }
+
+          if (holdProgressF >= 1 && networkClient.gameSessionID != null) {
+            console.log(networkClient.gameSessionID);
+            console.log("Request succeeded, starting level :)");
             quitted = true;
             onGameStart(selectedLevel);
           }
         }
       } else if (playbuttonHold != null) {
+        levelReqSent = false;
         playbuttonHold = null;
       }
     }
 
-    //   textBox.draw();
+    if (!networkClient.loggedIn) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+      ctx.fillRect(
+        elements.play.x,
+        elements.play.y,
+        elements.play.width,
+        elements.play.height,
+      );
+      ctx.stroke();
+
+      const loginToPlayText = "Login to play";
+
+      ctx.fillStyle = "rgb(255, 255, 255)";
+      ctx.font = "600 33px Orbitron";
+      ctx.fillText(
+        loginToPlayText,
+        elements.play.x +
+          elements.play.width / 2 -
+          ctx.measureText(loginToPlayText).width / 2,
+        elements.play.y + elements.play.height / 2 + 20,
+      );
+    }
   }
 }

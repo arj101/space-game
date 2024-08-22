@@ -4,11 +4,14 @@ const uuid = require("uuid");
 
 const database = {};
 
+database.getUserIDfromName = function (username) {
+  return "sngagjgsnj";
+};
 database.getUser = function (userid) {
   return {
-    username: "e",
+    username: "nevergonnagiveyouup",
     password: "1234",
-    currlevel: 1,
+    currlevel: 2,
   };
 };
 
@@ -29,11 +32,32 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 //security by obscurity
-app.post("/:userid/:username/login", (req, res) => {
-  const userid = req.params.userid;
+app.post("/:id/:username/login", (req, res) => {
   const username = req.params.username;
 
+  let sum = 0;
+  for (let i = 0; i < username.length; i++) {
+    const c = username.charCodeAt(i);
+    sum |= 0b1 << (c + i) % 26;
+    sum = (sum * 3) % 24882501;
+  }
+
+  const id = sum.toString();
+
+  if (id !== req.params.id) {
+    res.status(401).send("Unauthorized");
+
+    return;
+  }
+
   const psd = req.headers.psd;
+
+  const userid = database.getUserIDfromName(username);
+
+  if (!userid) {
+    res.status(401).send("Unauthorized");
+    return;
+  }
 
   const dbuser = database.getUser(userid);
 
@@ -56,7 +80,7 @@ app.post("/:userid/:username/login", (req, res) => {
 
   sessions[sid] = userid;
 
-  res.send({ status: "success", sid });
+  res.send({ status: "success", sid, userid, currlevel: dbuser.currlevel });
 });
 
 app.post("/:userid/:sessionid/gamereq/:level", (req, res) => {
@@ -83,7 +107,8 @@ app.post("/:userid/:sessionid/gamereq/:level", (req, res) => {
     return;
   }
 
-  if (user.currlevel < levelnum) {
+  console.log("Requesting level ", levelnum, user.currlevel);
+  if (levelnum > user.currlevel) {
     res.status(401).send("You havent reached there yet :(");
     return;
   }
@@ -96,9 +121,54 @@ app.post("/:userid/:sessionid/gamereq/:level", (req, res) => {
     timestamp: Date.now(),
   };
 
-  gameSessions[gameSessionID] = gameSession;
+  gameSessions[sessionid] = gameSessionID;
+  games[gameSessionID] = gameSession;
 
   res.send({ statis: "success", id: gameSessionID });
+});
+
+app.get("/levels/:level/*", (req, res, next) => {
+  const level = req.params.level;
+  const levelNum = parseInt(level);
+  if (isNaN(levelNum)) {
+    res.status(401).send("Invalid request");
+  }
+
+  console.log("Trying to read from level ", levelNum);
+
+  const sessionid = req.headers.sid;
+
+  if (!sessions[sessionid]) {
+    res.status(401).send("Unauthorized ");
+    console.log("invalid session");
+    return;
+  }
+
+  if (
+    !gameSessions[sessionid] ||
+    gameSessions[sessionid] !== req.headers.gsid
+  ) {
+    res.status(401).send("Unauthorized");
+    console.log("invalid gamesession");
+    return;
+  }
+
+  const gameSessionID = gameSessions[sessionid];
+  const gameSession = games[gameSessionID];
+
+  if (!gameSession) {
+    res.status(401).send("Unauthorized");
+    console.log("game session not found");
+    return;
+  }
+
+  if (levelNum != gameSession.level) {
+    res.status(401).send("Unauthorized");
+    console.log("wrong level");
+    return;
+  }
+
+  next();
 });
 
 app.post("/:sessionid/:gamesessionid/alive/", async (req, res) => {
@@ -134,46 +204,6 @@ app.post("/:sessionid/:gamesessionid/alive/", async (req, res) => {
 
   if (result) res.send({ status: "success" });
   else res.status(401).send({ status: "failed" });
-});
-
-app.get("/levels/:level/*", (req, res, next) => {
-  const level = req.params.level;
-  const levelNum = parseInt(level);
-  if (isNaN(levelNum)) {
-    res.status(401).send("Invalid request");
-  }
-
-  console.log("Trying to read from level ", levelNum);
-
-  const sessionid = req.headers.sesionid;
-
-  if (!sessions[sessionid]) {
-    res.status(401).send("Unauthorized");
-    return;
-  }
-
-  if (
-    !gameSessions[sessionid] ||
-    !gameSessions[sessionid] !== req.headers.gsessionid
-  ) {
-    res.status(401).send("Unauthorized");
-    return;
-  }
-
-  const gameSessionID = gameSessions[sessionid];
-  const gameSession = games[gameSessionID];
-
-  if (!gameSession) {
-    res.status(401).send("Unauthorized");
-    return;
-  }
-
-  if (levelNum != gameSession.level) {
-    res.status(401).send("Unauthorized");
-    return;
-  }
-
-  res.next();
 });
 
 app.use(express.static("public"));

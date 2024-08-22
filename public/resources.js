@@ -77,8 +77,10 @@ function loadGlobalResources(width, height) {
   });
 }
 
-function loadLevelResources(filePrefix, width, height) {
+function loadLevelResources(filePrefix, width, height, networkClient) {
   return new Promise(async (resolve, reject) => {
+    const nc = networkClient;
+
     const collissionFile = filePrefix + "collission.obj";
     const terrainFile = filePrefix + "terrain.obj";
     const terrainImageFile = filePrefix + "terrain.png";
@@ -86,18 +88,18 @@ function loadLevelResources(filePrefix, width, height) {
     const startPlatformImageFile = filePrefix + "start.png";
     const finishPlatformImageFile = filePrefix + "finish.png";
 
-    const collissionP = loadText(collissionFile);
-    const terrainP = loadText(terrainFile);
+    const collissionP = nc.loadText(collissionFile);
+    const terrainP = nc.loadText(terrainFile);
     const finishObjFile = filePrefix + "finish.obj";
 
     const objectsInfoFile = filePrefix + "objects.json"; //contains info about other non-terrain object in the world
 
-    const objectsInfo = await loadJSON(objectsInfoFile);
+    const objectsInfo = await nc.loadJSON(objectsInfoFile);
 
-    const terrainImageP = loadImage(terrainImageFile);
-    const startPlatformImageP = loadImage(startPlatformImageFile);
-    const finishPlatformP = loadImage(finishPlatformImageFile);
-    const finishObjP = loadText(finishObjFile);
+    const terrainImageP = nc.loadImage(terrainImageFile);
+    const startPlatformImageP = nc.loadImage(startPlatformImageFile);
+    const finishPlatformP = nc.loadImage(finishPlatformImageFile);
+    const finishObjP = nc.loadText(finishObjFile);
 
     let [
       collissionText,
@@ -146,9 +148,11 @@ function loadLevelResources(filePrefix, width, height) {
         vertices: scaleOBJ(
           (height / width) * GLOBAL_OBJ_SCALE,
           GLOBAL_OBJ_SCALE,
-          parseOBJ(await loadText(filePrefix + objectsInfo[obj]["vertices"])),
+          parseOBJ(
+            await nc.loadText(filePrefix + objectsInfo[obj]["vertices"]),
+          ),
         ),
-        texture: await loadImage(filePrefix + objectsInfo[obj]["texture"]),
+        texture: await nc.loadImage(filePrefix + objectsInfo[obj]["texture"]),
       };
     }
 

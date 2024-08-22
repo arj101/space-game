@@ -532,7 +532,7 @@ async function main(
 
       //   80 * pixelRatio
       x <
-      width / 2 - width * 0.125
+      width / 2 - Math.min(width * 0.125, 50)
     ) {
       if (!shouldStopPlay() && !scrollableMenu.enabled) leftThruster = true;
 
@@ -543,7 +543,7 @@ async function main(
       // Vector.magnitude(Vector.sub(rightThrusterButtonPos, mouse)) <=
       // 80 * pixelRatio
       x >
-      width / 2 + width * 0.125
+      width / 2 + Math.min(width * 0.125, 50)
     ) {
       if (!shouldStopPlay() && !scrollableMenu.enabled) rightThruster = true;
 

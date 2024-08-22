@@ -222,6 +222,15 @@ class GameSession {
 
     return true;
   }
+
+  onClose() {
+    console.log(
+      "[GameSession] Closing game session (failed, finished or invalidated)",
+    );
+    console.log(`${this.eventlog.length} events were sent by the client`);
+    console.log(`Events: ${this.eventlog}`);
+    console.log("[GameSession] Bye bye... ");
+  }
 }
 
 class GameSessionsManager {
@@ -229,34 +238,42 @@ class GameSessionsManager {
     this.sessionGameSessionMap = new Map();
     this.gameSessions = new Map();
     this.sessionPoll = setInterval(() => {
-      //for each session
       for (const [sessionID, gsid] of this.sessionGameSessionMap) {
         const gameSession = this.gameSessions.get(gsid);
         if (!gameSession.isValid()) {
           console.log(
             `Game session ${gsid} is invalid. Deleting game session.`,
           );
+          gameSession.onClose();
           this.deleteGameSession(sessionID, gsid);
         }
 
         if (!gameSession.running) {
           console.log(`Deleting session because it has finished running`);
+          gameSession.onClose();
           this.deleteGameSession(sessionID, gsid);
         }
       }
     }, 5000);
   }
 
-  createGameSession(sessionID) {
-    if (this.gameSessions.has(sessionID)) {
+  createGameSession(userID, userSessionID, gameSessionID, levelnum) {
+    if (this.sessionGameSessionMap.has(userSessionID)) {
       console.log(
         "User already in another session (or did not exit properly). Not allowing to create another session",
       );
       return false;
     }
 
-    const gameSession = new GameSession(sessionID);
-    this.gameSessions.set(sessionID, gameSession);
+    const gameSession = new GameSession(
+      userID,
+      userSessionID,
+      gameSessionID,
+      levelnum,
+    );
+    this.sessionGameSessionMap.set(userSessionID, gameSessionID);
+    this.gameSessions.set(gameSessionID, gameSession);
+    return true;
   }
 
   getGameSessionID(sessionID) {
@@ -298,6 +315,10 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+//automatically starts polling every 5 seconds
+const gameSessionsManager = new GameSessionsManager();
+
 //security by obscurity
 app.post("/:id/:username/login", (req, res) => {
   const username = req.params.username;
@@ -356,21 +377,21 @@ app.post("/:userid/:sessionid/gamereq/:level", (req, res) => {
   const level = req.params.level;
 
   if (isNaN(parseInt(level))) {
-    res.status(401).send("Unauthorized 0");
+    res.status(401).send("Unauthorised");
     return;
   }
 
   const levelnum = parseInt(level);
 
   if (sessions[sessionid] !== userid) {
-    res.status(401).send("Unauthorized 1");
+    res.status(401).send("Unauthorised");
     return;
   }
 
   const user = database.getUser(userid);
 
   if (!user) {
-    res.status(401).send("Unauthorized 2");
+    res.status(401).send("Unauthorised");
     return;
   }
 
@@ -381,17 +402,19 @@ app.post("/:userid/:sessionid/gamereq/:level", (req, res) => {
   }
 
   const gameSessionID = uuid.v4();
-  const gameSession = {
-    id: gameSessionID,
-    level: levelnum,
+
+  const createdSession = gameSessionsManager.createGameSession(
     userid,
-    timestamp: Date.now(),
-  };
+    sessionid,
+    gameSessionID,
+    levelnum,
+  );
 
-  gameSessions[sessionid] = gameSessionID;
-  games[gameSessionID] = gameSession;
-
-  res.send({ statis: "success", id: gameSessionID });
+  if (createdSession) {
+    res.send({ status: "success", id: gameSessionID });
+    return;
+  }
+  res.send({ status: "failed" });
 });
 
 app.get("/levels/:level/*", (req, res, next) => {
@@ -412,16 +435,17 @@ app.get("/levels/:level/*", (req, res, next) => {
   }
 
   if (
-    !gameSessions[sessionid] ||
-    gameSessions[sessionid] !== req.headers.gsid
+    !gameSessionsManager.getGameSessionID(sessionid) ||
+    gameSessionsManager.getGameSessionID(sessionid) !== req.headers.gsid
   ) {
     res.status(401).send("Unauthorized");
     console.log("invalid gamesession");
     return;
   }
 
-  const gameSessionID = gameSessions[sessionid];
-  const gameSession = games[gameSessionID];
+  const gameSession = gameSessionsManager.getGameSession(
+    gameSessionsManager.getGameSessionID(sessionid),
+  );
 
   if (!gameSession) {
     res.status(401).send("Unauthorized");
@@ -429,7 +453,7 @@ app.get("/levels/:level/*", (req, res, next) => {
     return;
   }
 
-  if (levelNum != gameSession.level) {
+  if (levelNum !== gameSession.levelNum) {
     res.status(401).send("Unauthorized");
     console.log("wrong level");
     return;

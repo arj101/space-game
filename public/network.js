@@ -78,6 +78,7 @@ class NetworkClient {
       method: "POST",
       headers: {
         gsid: this.gameSessionID,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
     });

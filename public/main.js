@@ -928,6 +928,7 @@ async function main(
       }
     });
   });
+
   run(0);
   function run(t) {
     if (!shouldStopInstanceCallBack()) window.requestAnimationFrame(run);
@@ -1348,6 +1349,14 @@ loadGlobalResources(renderers.width, renderers.height).then(
       level,
     };
 
+    function screenToClipX(x) {
+      return (x / renderers.width - 0.5) * 2;
+    }
+
+    function screenToClipY(y) {
+      return (0.5 - y / renderers.height) * 2;
+    }
+
     function resetStats() {
       shipStats.health = 100;
       shipStats.running = true;
@@ -1355,12 +1364,25 @@ loadGlobalResources(renderers.width, renderers.height).then(
       shipStats.finished = false;
       shipStats.requiresRestart = false;
       shipStats.gotoMenu = false;
+      shipStats.ship = null;
     }
+
+    let lastStatSend = -1;
 
     resetStats();
 
     function onFrame(t, landed, landTime, shipHealth, ship) {
       shipStats.health = shipHealth;
+      shipStats.ship = ship;
+      if (Date.now() - lastStatSend > 5000) {
+        networkClient.sendStats(
+          screenToClipX(ship.position.x),
+          screenToClipY(ship.position.y),
+          ship.angle,
+          shipHealth,
+        );
+        lastStatSend = Date.now();
+      }
     }
 
     function shouldStopFn() {
@@ -1370,15 +1392,29 @@ loadGlobalResources(renderers.width, renderers.height).then(
     function onFinish(reason) {
       shipStats.running = false;
 
+      networkClient.sendStats(
+        screenToClipX(shipStats.ship.position.x),
+        screenToClipY(shipStats.ship.position.y),
+        shipStats.ship.angle,
+        shipStats.health,
+      );
+
+      console.log("Game finished");
+
       if (reason == GAME_FINISH_REASONS.HEALTH_ZERO) {
+        console.log("sending death threat");
+        networkClient.sendDeath();
         shipStats.finished = false;
         shipStats.failed = true;
       }
 
       if (reason == GAME_FINISH_REASONS.LEVEL_COMPLETE) {
+        networkClient.sendFinish();
         shipStats.failed = false;
         shipStats.finished = true;
       }
+
+      networkClient.exitGame();
     }
 
     function shouldStopIntance() {
@@ -1416,7 +1452,6 @@ loadGlobalResources(renderers.width, renderers.height).then(
     }
 
     function exitToMenu() {
-      networkClient.exitGame();
       shipStats.gotoMenu = true;
     }
 
@@ -1433,6 +1468,8 @@ loadGlobalResources(renderers.width, renderers.height).then(
         );
       }
       gameStats.levelResources[levelPrefix] = levelResources;
+
+      networkClient.sendStart();
 
       shipStats.instance = main(
         levels[gameStats.level].filePrefix,

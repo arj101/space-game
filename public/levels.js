@@ -1,8 +1,8 @@
 const levels = {
   1: {
-    filePrefix: "/level1/",
+    filePrefix: "/levels/1/",
   },
   2: {
-    filePrefix: "/level2/",
+    filePrefix: "/levels/2/",
   },
 };

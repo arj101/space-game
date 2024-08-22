@@ -207,4 +207,4 @@ app.post("/:sessionid/:gamesessionid/alive/", async (req, res) => {
 });
 
 app.use(express.static("public"));
-app.listen(5173, "127.0.0.1");
+app.listen(process.env.PORT || 5173, process.env.ADDR || "127.0.0.1");

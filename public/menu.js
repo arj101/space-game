@@ -505,7 +505,7 @@ async function menu(
       const loginToPlayText = "Login to play";
 
       ctx.fillStyle = "rgb(255, 255, 255)";
-      ctx.font = "600 33px Orbitron";
+      ctx.font = "600 32px Orbitron";
       ctx.fillText(
         loginToPlayText,
         elements.play.x +

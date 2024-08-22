@@ -238,7 +238,6 @@ class GameSession {
       "[GameSession] Closing game session (failed, finished or invalidated)",
     );
     console.log(`${this.eventlog.length} events were sent by the client`);
-    console.log(`Events: ${JSON.stringify(this.eventlog)}`);
     console.log("[GameSession] Bye bye... ");
   }
 }

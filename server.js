@@ -1,7 +1,16 @@
 const express = require("express");
 const fs = require("fs");
+const uuid = require("uuid");
 
 const database = {};
+
+database.getUser = function (userid) {
+  return {
+    username: "e",
+    password: "1234",
+    currlevel: 1,
+  };
+};
 
 //Map<userID, username>
 const users = new Map();
@@ -33,7 +42,7 @@ app.post("/:userid/:username/login", (req, res) => {
     return;
   }
 
-  if (dbuser.username != -username) {
+  if (dbuser.username !== username) {
     res.status(401).send("Unauthorized");
     return;
   }
@@ -43,9 +52,9 @@ app.post("/:userid/:username/login", (req, res) => {
     return;
   }
 
-  const sid = genSessionID();
+  const sid = uuid.v4();
 
-  sessions.set(sid, userid);
+  sessions[sid] = userid;
 
   res.send({ status: "success", sid });
 });
@@ -56,34 +65,36 @@ app.post("/:userid/:sessionid/gamereq/:level", (req, res) => {
   const level = req.params.level;
 
   if (isNaN(parseInt(level))) {
-    res.status(401).send("Unauthorized");
+    res.status(401).send("Unauthorized 0");
     return;
   }
 
   const levelnum = parseInt(level);
 
   if (sessions[sessionid] !== userid) {
-    res.status(401).send("Unauthorized");
+    res.status(401).send("Unauthorized 1");
     return;
   }
 
-  if (!users[userid]) {
-    res.status(401).send("Unauthorized");
+  const user = database.getUser(userid);
+
+  if (!user) {
+    res.status(401).send("Unauthorized 2");
     return;
   }
 
-  if (users[userid].currlevel < levelnum) {
+  if (user.currlevel < levelnum) {
     res.status(401).send("You havent reached there yet :(");
     return;
   }
 
-  const gameSessionID = genGameSessionID();
-  const gameSession = newGameSession({
+  const gameSessionID = uuid.v4();
+  const gameSession = {
     id: gameSessionID,
     level: levelnum,
     userid,
     timestamp: Date.now(),
-  });
+  };
 
   gameSessions[gameSessionID] = gameSession;
 

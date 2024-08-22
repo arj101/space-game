@@ -202,8 +202,8 @@ class GameSession {
   }
 
   onReceiveKeepAlive(rawEvent) {
-    if (!rawEvent) return;
-    if (!rawEvent.type) return;
+    if (!rawEvent) return false;
+    if (!rawEvent.type) return false;
     if (!this.running) return false;
 
     const { validEvent, criticalError } = this.validateEvent(rawEvent);
@@ -468,19 +468,22 @@ app.post("/:sessionid/:gamesessionid/alive/", async (req, res) => {
     return;
   }
 
+  const sessionid = req.params.sessionid;
+
   if (
-    !gameSessions[req.params.sessionid] ||
-    !gameSessions[req.params.sessionid] !== req.params.gamesessionid
+    !gameSessionsManager.getGameSessionID(sessionid) ||
+    gameSessionsManager.getGameSessionID(sessionid) !== req.headers.gsid
   ) {
-    res.status(401).send("Unauthorized");
+    res.status(401).send("Unauthorised");
+    console.log("[alive] invalid game session");
     return;
   }
 
-  const gameSessionID = gameSessions[req.params.sessionid];
-  const gameSession = games[gameSessionID];
+  const gameSessionID = gameSessionsManager.getGameSessionID(sessionid);
+  const gameSession = gameSessionsManager.getGameSession(gameSessionID);
 
   if (!gameSession) {
-    res.status(401).send("Unauthorized");
+    res.status(401).send("Unauthorised");
     return;
   }
 
@@ -491,7 +494,10 @@ app.post("/:sessionid/:gamesessionid/alive/", async (req, res) => {
     return;
   }
 
-  const result = await gameSession.update(data);
+  const result = gameSessionsManager.onReceiveKeepAliveAlive(
+    gameSessionID,
+    data,
+  );
 
   if (result) res.send({ status: "success" });
   else res.status(401).send({ status: "failed" });

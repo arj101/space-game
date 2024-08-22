@@ -71,6 +71,59 @@ class NetworkClient {
     return true;
   }
 
+  async sendAlive(body) {
+    if (!this.gameSessionID) return false;
+
+    const res = await fetch(`/${this.sessionID}/${this.gameSessionID}/alive`, {
+      method: "POST",
+      headers: {
+        gsid: this.gameSessionID,
+      },
+      body: JSON.stringify(body),
+    });
+
+    return res.ok;
+  }
+
+  async sendStart() {
+    if (!this.gameSessionID) return false;
+
+    const res = await this.sendAlive({ type: "start", timestamp: Date.now() });
+
+    return res.ok;
+  }
+
+  async sendFinish() {
+    if (!this.gameSessionID) return false;
+
+    const res = await this.sendAlive({ type: "finish", timestamp: Date.now() });
+
+    return res.ok;
+  }
+
+  async sendDeath() {
+    if (!this.gameSessionID) return false;
+
+    const res = await this.sendAlive({ type: "dead", timestamp: Date.now() });
+
+    return res.ok;
+  }
+
+  async sendStats(xpos, ypos, angle, health) {
+    if (!this.gameSessionID) return false;
+
+    const res = await this.sendAlive({
+      type: "alive",
+      timestamp: Date.now(),
+      xpos,
+      ypos,
+      angle,
+      health,
+    });
+
+    return res.ok;
+  }
+
   exitGame() {
     this.gameSessionID = null;
   }

@@ -125,5 +125,45 @@ app.post("/:sessionid/:gamesessionid/alive/", async (req, res) => {
   else res.status(401).send({ status: "failed" });
 });
 
+app.get("/levels/:level/*", (req, res, next) => {
+  const level = req.params.level;
+  const levelNum = parseInt(level);
+  if (isNaN(levelNum)) {
+    res.status(401).send("Invalid request");
+  }
+
+  console.log("Trying to read from level ", levelNum);
+
+  const sessionid = req.headers.sesionid;
+
+  if (!sessions[sessionid]) {
+    res.status(401).send("Unauthorized");
+    return;
+  }
+
+  if (
+    !gameSessions[sessionid] ||
+    !gameSessions[sessionid] !== req.headers.gsessionid
+  ) {
+    res.status(401).send("Unauthorized");
+    return;
+  }
+
+  const gameSessionID = gameSessions[sessionid];
+  const gameSession = games[gameSessionID];
+
+  if (!gameSession) {
+    res.status(401).send("Unauthorized");
+    return;
+  }
+
+  if (levelNum != gameSession.level) {
+    res.status(401).send("Unauthorized");
+    return;
+  }
+
+  res.next();
+});
+
 app.use(express.static("public"));
 app.listen(5173, "127.0.0.1");

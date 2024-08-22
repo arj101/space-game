@@ -98,6 +98,10 @@ class NetworkClient {
 
     const res = await this.sendAlive({ type: "finish", timestamp: Date.now() });
 
+    if (res.ok) {
+      this.gameSessionID = null;
+    }
+
     return res.ok;
   }
 
@@ -105,6 +109,10 @@ class NetworkClient {
     if (!this.gameSessionID) return false;
 
     const res = await this.sendAlive({ type: "dead", timestamp: Date.now() });
+
+    if (res.ok) {
+      this.gameSessionID = null;
+    }
 
     return res.ok;
   }

@@ -167,15 +167,15 @@ class NetworkClient {
 
     const resbody = await response.json();
 
-    if (!resbody.sid || !resbody.currlevel || !resbody.userid) {
+    if (!resbody.sessionId || !resbody.user || !resbody.userId) {
       return false;
     }
 
-    this.userID = resbody.userid;
-    this.sessionID = resbody.sid;
+    this.userID = resbody.userId;
+    this.sessionID = resbody.sessionId;
     this.username = username;
     this.loggedIn = true;
-    this.currLevel = resbody.currlevel;
+    this.currLevel = resbody.user.currLevel;
 
     return true;
   }

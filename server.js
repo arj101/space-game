@@ -30,6 +30,7 @@ class GameSession {
     this.starttimestamp = Date.now();
     this.clientstarttimestamp = null;
     this.pingtimestamp = Date.now();
+    this.lastEventType = null;
 
     this.eventlog = [];
   }
@@ -40,6 +41,40 @@ class GameSession {
 
   isActive() {
     return Date.now() - this.pingtimestamp < GAME_SESSION_TIMEOUT;
+  }
+
+  validateFinalEventLog() {
+    if (this.eventlog.length < 4) return false;
+    if (this.eventlog[0].type !== "start") return false;
+    if (this.eventlog[1].type !== "alive") return false;
+    if (this.eventlog[this.eventlog.length - 2].type !== "alive") return false;
+    if (this.eventlog[this.eventlog.length - 1].type !== "finish") return false;
+    if (
+      this.eventlog[this.eventlog.length - 2].timestamp -
+        this.eventlog[1].timestamp <=
+      MIN_GAME_COMPLETION_TIME
+    )
+      if (this.eventlog[1].posx !== 0 || this.eventlog[1].posy !== 0)
+        //game always starts at (0, 0)
+        return false;
+    return false;
+
+    //Thats it for now >:)
+
+    return true;
+  }
+
+  finalData() {
+    if (this.running) return null;
+  }
+
+  onFinish() {
+    const isValidFinish = this.validateFinalEventLog();
+    if (!isValidFinish) return null;
+  }
+
+  onDeath() {
+    //death counter++
   }
 
   validateEvent(rawEvent) {
@@ -202,6 +237,7 @@ class GameSession {
     if (validEvent && !criticalError) {
       this.ping();
       this.eventlog.push(parsedEvent);
+      this.lastEventType = rawEvent;
     }
 
     return { validEvent, criticalError };
@@ -242,8 +278,88 @@ class GameSession {
   }
 }
 
-class GameSessionsManager {
+class Leaderboards {
   constructor() {
+    this.global = [];
+    this.level = new Map();
+  }
+
+  insertLevelLeaderboard(level, time, userid) {
+    if (!this.level[level]) this.level[level] = [{ userid, time }];
+    else this.level[level].push({ userid, time });
+
+    this.level[level].sort((a, b) => a.time - b.time);
+  }
+}
+
+class User {
+  constructor(username, userid, currlevel, password) {
+    this.username = username;
+    this.userid = userid;
+    this.currlevel = currlevel;
+    this.password = password;
+    this.levelsinfo = [];
+  }
+
+  addGameFinish(level, duration, health) {}
+}
+
+//user data is stored in database and operations on the user data are performed only by function calls (not directly editing)
+//session manager handles active sessions but does not hold user specific data
+
+class GameSessionsManager {
+  createBrowserSession(username, password) {
+    const id = database.getUserIDfromName(username);
+    if (!id) return null;
+
+    if (this.userIDBrowserSessionMap[id]) {
+      //delete old session if present
+      console.log(
+        `Found previous session for user '${username}' deleting for new session`,
+      );
+      this.browserSessions.delete(this.userIDBrowserSessionMap[id]);
+      this.browserSessions.delete(id);
+    }
+
+    const user = database.getUser(id);
+    if (password == user.password) {
+      const sessionId = uuid.v4();
+      this.browserSessions.set(sessionId, id);
+      this.userIDBrowserSessionMap.set(id, sessionId);
+
+      console.log(`Created session for user '${username}'`);
+
+      return {
+        sessionId,
+        userId: id,
+        user,
+      };
+    }
+
+    console.log(
+      `Password for user '${username}', (ID: ${id}) did not match. Failing request...`,
+    );
+
+    return null;
+  }
+
+  checkUserSession(userid, sessionid) {
+    if (!this.browserSessions.get(sessionid)) return false;
+    if (this.userIDBrowserSessionMap.get(userid) != sessionid) return false;
+    return true;
+  }
+
+  checkSessionPresence(sessionid) {
+    if (this.browserSessions.get(sessionid)) return true;
+    return false;
+  }
+
+  constructor() {
+    //Map<sessionID, userID>
+    this.browserSessions = new Map(); //this browser session does not really have a purpose except to add complexity to auth process
+    //Map<userID, sessionID>
+    this.userIDBrowserSessionMap = new Map();
+
     this.sessionGameSessionMap = new Map();
     this.gameSessions = new Map();
     this.sessionPoll = setInterval(() => {
@@ -259,6 +375,24 @@ class GameSessionsManager {
 
         if (!gameSession.running) {
           console.log(`Deleting session because it has finished running`);
+
+          if (
+            gameSession.lastEventType == "finish" &&
+            gameSession.validateFinalEventLog()
+          ) {
+            try {
+              const userid = gameSession.userID;
+              database.updateUserProgress(userid, gameSession.levelNum);
+            } catch (_) {}
+          }
+
+          if (gameSession.lastEventType == "dead") {
+            try {
+              const userid = gameSession.userID;
+              database.updateDeathCount(userid, gameSession.levelNum);
+            } catch (e) {}
+          }
+
           gameSession.onClose();
           this.deleteGameSession(sessionID, gsid);
         }
@@ -309,18 +443,6 @@ class GameSessionsManager {
   }
 }
 
-//Map<userID, username>
-const users = new Map();
-
-//Map<sessionID, userID>
-const sessions = new Map();
-
-//Map<sessionID, gameID>
-const gameSessions = new Map();
-
-//Map<gameID, GameSession>
-const games = new Map();
-
 const app = express();
 
 app.use(express.json());
@@ -341,44 +463,21 @@ app.post("/:id/:username/login", (req, res) => {
   }
 
   const id = sum.toString();
-
   if (id !== req.params.id) {
-    res.status(401).send("Unauthorized");
-
+    res.status(401).send("Unauthorised");
     return;
   }
 
   const psd = req.headers.psd;
 
-  const userid = database.getUserIDfromName(username);
+  const result = gameSessionsManager.createBrowserSession(username, psd);
 
-  if (!userid) {
-    res.status(401).send("Unauthorized");
+  if (!result) {
+    res.status(401).send("Unauthorised");
     return;
   }
 
-  const dbuser = database.getUser(userid);
-
-  if (!dbuser) {
-    res.status(401).send("Unauthorized");
-    return;
-  }
-
-  if (dbuser.username !== username) {
-    res.status(401).send("Unauthorized");
-    return;
-  }
-
-  if (dbuser.password !== psd) {
-    res.status(401).send("Unauthorized");
-    return;
-  }
-
-  const sid = uuid.v4();
-
-  sessions[sid] = userid;
-
-  res.send({ status: "success", sid, userid, currlevel: dbuser.currlevel });
+  res.send(result);
 });
 
 app.post("/:userid/:sessionid/gamereq/:level", (req, res) => {
@@ -393,7 +492,8 @@ app.post("/:userid/:sessionid/gamereq/:level", (req, res) => {
 
   const levelnum = parseInt(level);
 
-  if (sessions[sessionid] !== userid) {
+  if (!gameSessionsManager.checkUserSession(userid, sessionid)) {
+    console.log(`User ID ${userid} and ${sessionid} not found`);
     res.status(401).send("Unauthorised");
     return;
   }
@@ -438,7 +538,7 @@ app.get("/levels/:level/*", (req, res, next) => {
 
   const sessionid = req.headers.sid;
 
-  if (!sessions[sessionid]) {
+  if (!gameSessionsManager.checkSessionPresence(sessionid)) {
     res.status(401).send("Unauthorized ");
     console.log("invalid session");
     return;
@@ -605,7 +705,7 @@ function md5(inputString) {
 }
 
 app.post("/:sessionid/:gamesessionid/a/:hash", async (req, res) => {
-  if (!sessions[req.params.sessionid]) {
+  if (!gameSessionsManager.checkSessionPresence(req.params.sessionid)) {
     res.status(401).send("Unauthorized");
     return;
   }

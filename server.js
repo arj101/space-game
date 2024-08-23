@@ -1,19 +1,82 @@
+require("dotenv").config();
+
 const express = require("express");
 const fs = require("fs");
 const uuid = require("uuid");
+const admin = require("firebase-admin");
+const { getFirestore } = require("firebase-admin/firestore");
+// const serviceAccount = require("./serviceAccount.json");
 
+//load the firebase service account file from env
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+const db = getFirestore();
+
+const leaderboards = [];
+const users = new Map();
 const database = {};
 
-database.getUserIDfromName = function (username) {
-  return "sngagjgsnj";
+database.getUserIDfromName = async function (username) {
+  const queryResult = await db
+    .collection("users")
+    .where("username", "==", username)
+    .get();
+
+  if (queryResult.size < 1) return null;
+
+  return queryResult.docs[0].data().userId;
 };
-database.getUser = function (userid) {
-  return {
-    username: "nevergonnagiveyouup",
-    password: "1234",
-    currlevel: 2,
-  };
+
+database.getUser = async function (userid) {
+  if (!userid) return null;
+
+  const queryResult = await db
+    .collection("users")
+    .where("userId", "==", userid)
+    .get();
+
+  if (queryResult.size < 1) return null;
+
+  return queryResult.docs[0].data();
 };
+
+database.updateUserProgress = async function (userid, levelnum, score) {
+  let user = await db.collection("users").doc(userid).get();
+  user = user.data();
+  if (!user) return null;
+
+  if (user.currLevel == levelnum) {
+    user.currLevel += 1;
+  }
+
+  user.progress = user.progress || {};
+  user.progress[levelnum] = score;
+
+  console.log(`Updating user ${JSON.stringify(user)}`);
+
+  await db.collection("users").doc(userid).set(user);
+};
+
+database.updateDeathCount = async function (userid, levelnum, score) {
+  let user = await db.collection("users").doc(userid).get();
+  user = user.data();
+  if (!user) return null;
+
+  user.deathcount = user.deathcount || 0;
+  user.deathcount += 1;
+
+  console.log(`Updating user ${JSON.stringify(user)}`);
+
+  await db.collection("users").doc(userid).set(user);
+};
+
+class Database {
+  constructor() {}
+}
 
 const GAME_SESSION_TIMEOUT = 15 * 1000;
 const MAX_TIMESTAMP_ERROR = 30 * 1000;
@@ -31,6 +94,7 @@ class GameSession {
     this.clientstarttimestamp = null;
     this.pingtimestamp = Date.now();
     this.lastEventType = null;
+    this.duration = null;
 
     this.eventlog = [];
   }
@@ -54,10 +118,13 @@ class GameSession {
         this.eventlog[1].timestamp <=
       MIN_GAME_COMPLETION_TIME
     )
-      if (this.eventlog[1].posx !== 0 || this.eventlog[1].posy !== 0)
-        //game always starts at (0, 0)
-        return false;
-    return false;
+      return false;
+    if (
+      Math.abs(this.eventlog[1].posx) >= 0.1 ||
+      Math.abs(this.eventlog[1].posy) >= 0.1
+    )
+      //game always starts at (0, 0)
+      return false;
 
     //Thats it for now >:)
 
@@ -170,6 +237,7 @@ class GameSession {
           }
 
           if (!criticalError && validEvent) {
+            this.duration = min_duration;
             this.running = false;
           }
         }
@@ -237,7 +305,7 @@ class GameSession {
     if (validEvent && !criticalError) {
       this.ping();
       this.eventlog.push(parsedEvent);
-      this.lastEventType = rawEvent;
+      this.lastEventType = rawEvent.type;
     }
 
     return { validEvent, criticalError };
@@ -308,8 +376,8 @@ class User {
 //session manager handles active sessions but does not hold user specific data
 
 class GameSessionsManager {
-  createBrowserSession(username, password) {
-    const id = database.getUserIDfromName(username);
+  async createBrowserSession(username, password) {
+    const id = await database.getUserIDfromName(username);
     if (!id) return null;
 
     if (this.userIDBrowserSessionMap[id]) {
@@ -321,7 +389,7 @@ class GameSessionsManager {
       this.browserSessions.delete(id);
     }
 
-    const user = database.getUser(id);
+    const user = await database.getUser(id);
     if (password == user.password) {
       const sessionId = uuid.v4();
       this.browserSessions.set(sessionId, id);
@@ -375,14 +443,24 @@ class GameSessionsManager {
 
         if (!gameSession.running) {
           console.log(`Deleting session because it has finished running`);
+          const validSession = gameSession.validateFinalEventLog();
+          if (!validSession) {
+            console.log(
+              `Invalidated game session because of invalid event log`,
+            );
+          }
 
-          if (
-            gameSession.lastEventType == "finish" &&
-            gameSession.validateFinalEventLog()
-          ) {
+          console.log(`Last event: ${gameSession.lastEventType}`);
+
+          if (gameSession.lastEventType == "finish" && validSession) {
             try {
+              console.log(`Game duration ${gameSession.duration}`);
               const userid = gameSession.userID;
-              database.updateUserProgress(userid, gameSession.levelNum);
+              database.updateUserProgress(
+                userid,
+                gameSession.levelNum,
+                gameSession.duration,
+              );
             } catch (_) {}
           }
 
@@ -452,7 +530,7 @@ app.use(express.urlencoded({ extended: true }));
 const gameSessionsManager = new GameSessionsManager();
 
 //security by obscurity
-app.post("/:id/:username/login", (req, res) => {
+app.post("/:id/:username/login", async (req, res) => {
   const username = req.params.username;
 
   let sum = 0;
@@ -470,7 +548,7 @@ app.post("/:id/:username/login", (req, res) => {
 
   const psd = req.headers.psd;
 
-  const result = gameSessionsManager.createBrowserSession(username, psd);
+  const result = await gameSessionsManager.createBrowserSession(username, psd);
 
   if (!result) {
     res.status(401).send("Unauthorised");
@@ -480,7 +558,7 @@ app.post("/:id/:username/login", (req, res) => {
   res.send(result);
 });
 
-app.post("/:userid/:sessionid/gamereq/:level", (req, res) => {
+app.post("/:userid/:sessionid/gamereq/:level", async (req, res) => {
   const userid = req.params.userid;
   const sessionid = req.params.sessionid;
   const level = req.params.level;
@@ -498,14 +576,14 @@ app.post("/:userid/:sessionid/gamereq/:level", (req, res) => {
     return;
   }
 
-  const user = database.getUser(userid);
+  const user = await database.getUser(userid);
 
   if (!user) {
     res.status(401).send("Unauthorised");
     return;
   }
 
-  console.log("Requesting level ", levelnum, user.currlevel);
+  console.log("Requesting level ", levelnum, user.currLevel);
   if (levelnum > user.currlevel) {
     res.status(401).send("You havent reached there yet :(");
     return;
@@ -520,11 +598,12 @@ app.post("/:userid/:sessionid/gamereq/:level", (req, res) => {
     levelnum,
   );
 
-  if (createdSession) {
-    res.send({ status: "success", id: gameSessionID });
+  if (!createdSession) {
+    res.send({ status: "failed" });
     return;
   }
-  res.send({ status: "failed" });
+
+  res.send({ status: "success", id: gameSessionID });
 });
 
 app.get("/levels/:level/*", (req, res, next) => {

@@ -124,10 +124,19 @@ async function updateLeaderboard() {
 
   console.log("Leaderboard needs update");
 
+  //global leaderboard must be updated atleast once after updating local leaderboard
+  //(needsGlobslLeaderboardUpdate is set only after running updateLeaderboard)
+  //because otherwise two or more diffs might be present for one person (on one level)
+  if (database.needsGlobalLeaderboardUpdate) {
+    setTimeout(updateLeaderboard, 1000);
+    return;
+  }
+
   if (database.leaderboardLock) {
     setTimeout(updateLeaderboard, 1000); //wait one second to recheck the lock
     return;
   }
+
   database.leaderboardLock = true;
 
   console.log("Updating level leaderboards...");

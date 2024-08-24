@@ -131,8 +131,10 @@ database.updateUserProgress = async function (userid, levelnum, score_time) {
   }
 
   if (!user.currLevel) {
-    user.currLevel = 1;
-  } else if (user.currLevel == levelnum) {
+    user.currLevel = 1; //initial curr level
+  }
+
+  if (user.currLevel == levelnum) {
     user.currLevel += 1;
   }
 
@@ -277,18 +279,18 @@ async function updateLeaderboard() {
 
       let leaderboardView = [];
 
-      for (const userid of leaderboardData.order) {
-        const user = leaderboardData.users[userid];
+      for (const userid of newOrder) {
+        const user = leaderboardUsers[userid];
         leaderboardView.push({
           username: await database.getUsernameFromUserID(userid),
           score: user.score || "[no score]", //i dont want to accidentally send undefined lol
         });
       }
 
-      database.leaderboardViews[level.toString()] = leaderboardView;
+      database.leaderboardViews[levelnum.toString()] = leaderboardView;
 
       console.log(
-        `Built leaderboard view for level ${level}:`,
+        `Built leaderboard view for level ${levelnum}:`,
         leaderboardView,
       );
     }
@@ -386,6 +388,7 @@ async function updateGlobalLeaderboard() {
     }
 
     newOrder = Object.keys(userRankSums);
+    console.log(userRankSums);
     newOrder.sort((id1, id2) => userRankSums[id1] - userRankSums[id2]);
 
     for (let i = 0; i < newOrder.length; i++) {
@@ -403,14 +406,9 @@ async function updateGlobalLeaderboard() {
 
     console.log(`Updated global leaderboard: ${newOrder}`);
 
-    const leaderboardData = globalLeaderboard;
-
-    leaderboardData.order = leaderboardData.order || [];
-    leaderboardData.users = leaderboardData.users || {};
-
     let leaderboardView = [];
 
-    for (const userid of leaderboardData.order) {
+    for (const userid of newOrder) {
       leaderboardView.push(await database.getUsernameFromUserID(userid));
     }
 

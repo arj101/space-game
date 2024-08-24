@@ -714,6 +714,8 @@ class GameSessionsManager {
     }
 
     const user = await database.getUser(id);
+    if (!user) return null;
+
     if (password == user.password) {
       const sessionId = uuid.v4();
       this.browserSessions.set(sessionId, id);
@@ -865,10 +867,10 @@ app.post("/:id/:username/login", async (req, res) => {
   }
 
   const id = sum.toString();
-  if (id !== req.params.id) {
-    res.status(401).send("Unauthorised");
-    return;
-  }
+  // if (id !== req.params.id) {
+  //   res.status(401).send("Unauthorised");
+  //   return;
+  // }
 
   const psd = req.headers.psd;
 

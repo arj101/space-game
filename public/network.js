@@ -143,6 +143,7 @@ class NetworkClient {
     this.userLevels = [];
     this.currLevel = null;
     this.loggedIn = false;
+    this.playingLevel = null;
   }
 
   async login(username, password) {
@@ -199,6 +200,7 @@ class NetworkClient {
     if (!body.id) return false;
 
     this.gameSessionID = body.id;
+    this.playingLevel = level;
 
     return true;
   }
@@ -250,11 +252,13 @@ class NetworkClient {
       instance: "fxs",
     });
 
-    if (res.ok) {
+    if (res) {
       this.gameSessionID = null;
+      //optimistically update currLevel, if this is not done on the server(validation failed) the further requests will just fail
+      this.currLevel = this.playingLevel + 1;
     }
 
-    return res.ok;
+    return res;
   }
 
   async sendDeath() {

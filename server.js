@@ -74,6 +74,7 @@ database.updateUserProgress = async function (userid, levelnum, score_time) {
 
   const updateDb = () => {
     database.needsLeaderboardUpdate = true;
+    console.log("setting needs leaderboard update");
     if (!database.leaderboardDiffs.has(levelnum)) {
       database.leaderboardDiffs.set(levelnum, new Map());
     }
@@ -94,7 +95,9 @@ database.updateUserProgress = async function (userid, levelnum, score_time) {
     updateDb();
   }
 
-  if (user.currLevel == levelnum) {
+  if (!user.currLevel) {
+    user.currLevel = 1;
+  } else if (user.currLevel == levelnum) {
     user.currLevel += 1;
   }
 
@@ -124,26 +127,25 @@ async function updateLeaderboard() {
     return;
   }
 
+  console.log("Leaderboard needs update");
+
   if (database.leaderboardLock) {
     setTimeout(updateLeaderboard, 1000); //wait one second to recheck the lock
     return;
   }
   database.leaderboardLock = true;
 
+  console.log("Updating level leaderboards...");
+
   try {
     database.needsLeaderboardUpdate = false;
 
     for (const [levelnum, diffs] of database.leaderboardDiffs) {
-      const leaderboardRef = db.collection("leaderboard").doc(levelnum);
+      const leaderboardRef = db
+        .collection("leaderboard")
+        .doc(levelnum.toString());
       const leaderboardObj = await leaderboardRef.get();
-      const leaderboardData = leaderboardObj.data();
-
-      if (!leaderboardData) {
-        console.log(
-          `Warning: Leaderboard data for level ${levelnum} not found`,
-        );
-        continue;
-      }
+      const leaderboardData = leaderboardObj.data() || { order: [], users: {} };
 
       let newOrder = [];
       const leaderboardUsers = leaderboardData.users || {};
@@ -154,7 +156,7 @@ async function updateLeaderboard() {
 
       newOrder = Object.keys(leaderboardUsers);
       newOrder.sort(
-        (id1, id2) => leaderboardUsers[id1] - leaderboardUsers[id2],
+        (id1, id2) => leaderboardUsers[id1].score - leaderboardUsers[id2].score,
       );
 
       for (let i = 0; i < newOrder.length; i++) {
@@ -167,7 +169,7 @@ async function updateLeaderboard() {
         users: leaderboardUsers,
       });
 
-      console.log(`Leaderboard updated for level ${levelnum}: ${order}`);
+      console.log(`Leaderboard updated for level ${levelnum}: ${newOrder}`);
 
       database.levelRanklistLengthCache.set(levelnum, newOrder.length);
     }
@@ -176,7 +178,8 @@ async function updateLeaderboard() {
     database.leaderboardDiffs.clear();
     setTimeout(updateLeaderboard, 4000);
   } catch (e) {
-    console.log(`LEADERBOARD UPDATE FAILED: ${JSON.stringify(e)}`);
+    console.log(e);
+    console.log(`LEADERBOARD UPDATE FAILED:`);
     console.log(`STOPPING ALL (level) LEADERBOARD UPDATES`);
   } finally {
     //no matter what happens, dont forget to release the lock
@@ -197,6 +200,7 @@ async function updateGlobalLeaderboard() {
   }
   database.leaderboardLock = true;
 
+  console.log("Updating global leaderboard...");
   try {
     database.needsGlobalLeaderboardUpdate = false;
 
@@ -208,7 +212,7 @@ async function updateGlobalLeaderboard() {
       if (!database.levelRanklistLengthCache.has(levelnum)) {
         const levelLeaderboardObj = await db
           .collection("leaderboard")
-          .doc(levelnum)
+          .doc(levelnum.toString())
           .get();
         const levelLeaderboardData = levelLeaderboardObj.data();
         if (!levelLeaderboardData) continue;
@@ -222,19 +226,66 @@ async function updateGlobalLeaderboard() {
     }
 
     const globalLeaderboardRef = db.collection("leaderboard").doc("global");
-    const globalLeaderboard = await globalLeaderboardRef.get();
+    const globalLeaderboard = (await globalLeaderboardRef.get()).data() || {
+      order: {},
+      users: {},
+    };
 
     let newOrder = [];
-    const users = globalLeaderboard.users || {};
+    const leaderboardUsers = globalLeaderboard.users || {};
 
     for (const [userid, { level, score }] of database.globalLeadrboardDiffs) {
+      const globalUserObject = leaderboardUsers[userid] || {
+        levels: {},
+      };
+      if (!globalUserObject.levels) {
+        globalUserObject.levels = {};
+      }
+      globalUserObject.levels[level] = score;
+      leaderboardUsers[userid] = globalUserObject;
+    }
+
+    const userRankSums = {};
+
+    for (const userid in leaderboardUsers) {
+      const user = leaderboardUsers[userid];
+      let rankSum = 0;
+      //sum up all the level ranks or default to rank list length
+      for (let i = 0; i < database.levelCount; i++) {
+        const levelnum = i + 1;
+        if (user.levels) {
+          rankSum +=
+            user.levels[levelnum] ||
+            database.levelRanklistLengthCache.get(levelnum) + 1;
+        } else {
+          rankSum += database.levelRanklistLengthCache.get(levelnum) + 1;
+        }
+      }
+      userRankSums[userid] = rankSum;
+    }
+
+    newOrder = Object.keys(userRankSums);
+    newOrder.sort((id1, id2) => userRankSums[id1] - userRankSums[id2]);
+
+    for (let i = 0; i < newOrder.length; i++) {
+      const userid = newOrder[i];
+      const user = leaderboardUsers[userid] || {};
+      user.rank = i + 1;
     }
 
     database.globalLeadrboardDiffs.clear();
 
+    globalLeaderboardRef.set({
+      order: newOrder,
+      users: leaderboardUsers,
+    });
+
+    console.log(`Updated global leaderboard: ${newOrder}`);
+
     setTimeout(updateGlobalLeaderboard, 5500);
   } catch (e) {
-    console.log(`GLOBAL LEADERBOARD UPDATE FAILED: ${JSON.stringify(e)}`);
+    console.log(e);
+    console.log(`GLOBAL LEADERBOARD UPDATE FAILED`);
     console.log(`STOPPING ALL (global) LEADERBOARD UPDATES`);
   } finally {
     database.leaderboardLock = false;
@@ -509,32 +560,6 @@ class GameSession {
     console.log(`${this.eventlog.length} events were sent by the client`);
     console.log("[GameSession] Bye bye... ");
   }
-}
-
-class Leaderboards {
-  constructor() {
-    this.global = [];
-    this.level = new Map();
-  }
-
-  insertLevelLeaderboard(level, time, userid) {
-    if (!this.level[level]) this.level[level] = [{ userid, time }];
-    else this.level[level].push({ userid, time });
-
-    this.level[level].sort((a, b) => a.time - b.time);
-  }
-}
-
-class User {
-  constructor(username, userid, currlevel, password) {
-    this.username = username;
-    this.userid = userid;
-    this.currlevel = currlevel;
-    this.password = password;
-    this.levelsinfo = [];
-  }
-
-  addGameFinish(level, duration, health) {}
 }
 
 //user data is stored in database and operations on the user data are performed only by function calls (not directly editing)

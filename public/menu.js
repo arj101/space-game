@@ -297,6 +297,10 @@ async function menu(
 
       if (selectedLeaderboard != "global") {
         ctx.font = "400 32px Orbitron";
+        const timeSeconds = score / 1000;
+        const subSecondPart = Math.floor(score / 10) % 100;
+        const secondsPart = timeSeconds % 60;
+        const minutesPart = Math.floor(timeSeconds / 60);
         ctx.fillText(
           `${score}`,
           elements.leaderboard.x + elements.leaderboard.width - 180,
@@ -328,6 +332,7 @@ async function menu(
     let levelRectX = elements.play.x + 100;
     let levelRectY = elements.play.y + 150;
 
+    //very genius way to check if mouse is outside some elements lol (/s)
     let mouseOutsideLevelBoxes = levels.length;
 
     for (let i = 0; i < levels.length; i++) {
@@ -411,7 +416,18 @@ async function menu(
       // }
     }
 
-    if (mouse.down && mouseOutsideLevelBoxes <= 0) {
+    const playbuttonElement = {
+      x: elements.play.x,
+      y: elements.play.y + elements.play.height - 100,
+      width: elements.play.width,
+      height: 100,
+    };
+
+    if (
+      mouse.down &&
+      mouseOutsideLevelBoxes <= 0 &&
+      !mouseInsideElement(playbuttonElement)
+    ) {
       selectedLeaderboard = "global";
       updateLeaderboard();
       selectedLevel = null;
@@ -477,13 +493,6 @@ async function menu(
           ctx.measureText(levelText).width / 2,
         elements.play.y + elements.play.height - 40,
       );
-
-      const playbuttonElement = {
-        x: elements.play.x,
-        y: elements.play.y + elements.play.height - 100,
-        width: elements.play.width,
-        height: 100,
-      };
 
       if (
         mouseInsideElement(playbuttonElement) &&

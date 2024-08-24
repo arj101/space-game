@@ -177,6 +177,7 @@ async function menu(
   let leaderboardOffset = 0;
 
   let nextLevel = 1;
+  let levelCount = 2;
   let levels = [
     { finished: true, position: 6 },
     { finished: false },
@@ -343,6 +344,7 @@ async function menu(
 
     for (let i = 0; i < levels.length; i++) {
       const level = levels[i];
+      const levelnum = i + 1;
 
       ctx.fillStyle = "white";
       ctx.font = "400 32px Orbitron";
@@ -355,12 +357,13 @@ async function menu(
         levelRectY + boxSize.height / 2 + 16,
       );
 
-      ctx.strokeStyle = level.finished
-        ? "rgb(28, 255, 89)"
-        : "rgb(255, 23, 100)";
+      ctx.strokeStyle =
+        levelnum < networkClient.currLevel
+          ? "rgb(28, 255, 89)"
+          : "rgb(255, 23, 100)";
 
       ctx.save();
-      if (i == nextLevel) {
+      if (levelnum == networkClient.currLevel && levelnum <= levelCount) {
         ctx.strokeStyle = "rgb(28, 123, 255)";
         ctx.lineWidth = 10;
         // ctx.strokeRect(levelRectX, levelRectY, boxSize.width, boxSize.height);
@@ -503,7 +506,7 @@ async function menu(
       if (
         mouseInsideElement(playbuttonElement) &&
         mouse.down &&
-        (levels[selectedLevel].finished || selectedLevel == nextLevel)
+        selectedLevel + 1 <= networkClient.currLevel
       ) {
         if (playbuttonHold == null) {
           playbuttonHold = Date.now();

@@ -175,7 +175,7 @@ class NetworkClient {
     this.sessionID = resbody.sessionId;
     this.username = username;
     this.loggedIn = true;
-    this.currLevel = resbody.user.currLevel;
+    this.currLevel = resbody.user.currLevel || 1;
 
     return true;
   }

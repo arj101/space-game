@@ -39,9 +39,45 @@ const database = {
   //locks the leaderboard when either the global or level leaderboard updates are running. avoids potential corrupt leaderboards
   //each function checks if the lock is set, if it is, waits some time to recheck the lock, and only executes the function when the lock has been released (false = released)
   leaderboardLock: false,
+
+  //a map of user ids and usernames, used to build up leaderboard, this is updated when a user logs in with username (not registers)
+  //useful to avoid requesting user id from the database, rather look up from this, and only fetch from database when this fails
+  idUsernameCache: new Map(),
+  //reverse of the above
+  usernameIdCache: new Map(),
+
+  //the leaderboard sent to users, made by replacing the user ids with usernames
+  leaderboardViews: {
+    //global leaderboard view: list of user names
+    global: [],
+    //per level leaderboard views:
+    //list of user names and time to finish
+    //WHY THIS STRUCTURE? because it is easier for my brain to understand as it matches the structure on the database
+    1: [],
+    2: [],
+  },
+};
+
+database.getUsernameFromUserID = async function (userid) {
+  if (database.idUsernameCache.has(userid))
+    return database.idUsernameCache.get(userid);
+
+  const snapshot = await db.collection("users").doc(userid).get();
+  const username = snapshot.data()?.username;
+
+  if (username) {
+    database.idUsernameCache.set(userid, username);
+    database.usernameIdCache.set(username, userid);
+  }
+
+  return username;
 };
 
 database.getUserIDfromName = async function (username) {
+  if (database.usernameIdCache.has(username)) {
+    return database.usernameIdCache.get(username);
+  }
+
   const queryResult = await db
     .collection("users")
     .where("username", "==", username)
@@ -49,20 +85,24 @@ database.getUserIDfromName = async function (username) {
 
   if (queryResult.size < 1) return null;
 
+  const id = queryResult.docs[0].data().userId;
+
+  if (id) {
+    database.idUsernameCache.set(id, username);
+    database.usernameIdCache.set(username, id);
+  }
+
   return queryResult.docs[0].data().userId;
 };
 
 database.getUser = async function (userid) {
   if (!userid) return null;
 
-  const queryResult = await db
-    .collection("users")
-    .where("userId", "==", userid)
-    .get();
+  const queryResult = await db.collection("users").doc(userid).get();
 
-  if (queryResult.size < 1) return null;
+  if (!queryResult) return null;
 
-  return queryResult.docs[0].data();
+  return queryResult.data();
 };
 
 database.updateUserProgress = async function (userid, levelnum, score_time) {
@@ -114,8 +154,62 @@ database.updateDeathCount = async function (userid, levelnum, score) {
   await db.collection("users").doc(userid).set(user);
 };
 
-//only update leaderboard every 5 seconds to avoid spamming the database
+//used to fetch all the leaderboards at startup, otherwise leaderboards must be updated along with diffs
+database.buildLevelLeaderboardView = async function (level) {
+  const leaderboardRef = await db
+    .collection("leaderboard")
+    .doc(level.toString())
+    .get();
 
+  const leaderboardData = leaderboardRef.data();
+
+  leaderboardData.order = leaderboardData.order || [];
+  leaderboardData.users = leaderboardData.users || {};
+
+  let leaderboardView = [];
+
+  for (const userid of leaderboardData.order) {
+    const user = leaderboardData.users[userid];
+    leaderboardView.push({
+      username: await database.getUsernameFromUserID(userid),
+      score: user.score || "[no score]", //i dont want to accidentally send undefined lol
+    });
+  }
+
+  database.leaderboardViews[level.toString()] = leaderboardView;
+
+  console.log(`Built leaderboard view for level ${level}:`, leaderboardView);
+};
+
+//used to fetch all the leaderboards at startup, otherwise leaderboards must be updated along with diffs
+database.buildGlobalLeaderboardView = async function () {
+  const leaderboardRef = await db.collection("leaderboard").doc("global").get();
+
+  const leaderboardData = leaderboardRef.data();
+
+  leaderboardData.order = leaderboardData.order || [];
+  leaderboardData.users = leaderboardData.users || {};
+
+  let leaderboardView = [];
+
+  for (const userid of leaderboardData.order) {
+    leaderboardView.push(await database.getUsernameFromUserID(userid));
+  }
+
+  database.leaderboardViews.global = leaderboardView;
+
+  console.log(`Built global leaderboard view:`, leaderboardView);
+};
+
+//build all leaderboard views initially at startup
+setTimeout(async function () {
+  for (let i = 0; i < database.levelCount; i++) {
+    await database.buildLevelLeaderboardView((i + 1).toString());
+  }
+  await database.buildGlobalLeaderboardView();
+});
+
+//only update leaderboard every 5 seconds to avoid spamming the database
 async function updateLeaderboard() {
   if (!database.needsLeaderboardUpdate) {
     setTimeout(updateLeaderboard, 4000);
@@ -179,8 +273,24 @@ async function updateLeaderboard() {
       });
 
       console.log(`Leaderboard updated for level ${levelnum}: ${newOrder}`);
-
       database.levelRanklistLengthCache.set(levelnum, newOrder.length);
+
+      let leaderboardView = [];
+
+      for (const userid of leaderboardData.order) {
+        const user = leaderboardData.users[userid];
+        leaderboardView.push({
+          username: await database.getUsernameFromUserID(userid),
+          score: user.score || "[no score]", //i dont want to accidentally send undefined lol
+        });
+      }
+
+      database.leaderboardViews[level.toString()] = leaderboardView;
+
+      console.log(
+        `Built leaderboard view for level ${level}:`,
+        leaderboardView,
+      );
     }
 
     database.needsGlobalLeaderboardUpdate = true;
@@ -217,8 +327,10 @@ async function updateGlobalLeaderboard() {
     //if not we fetch them here
     for (let i = 0; i < database.levelCount; i++) {
       const levelnum = i + 1;
-      console.log(`Fetching rank list length for level ${levelnum}`);
       if (!database.levelRanklistLengthCache.has(levelnum)) {
+        console.log(
+          `Fetching rank list length for level ${levelnum} from database (no cache present)`,
+        );
         const levelLeaderboardObj = await db
           .collection("leaderboard")
           .doc(levelnum.toString())
@@ -290,6 +402,21 @@ async function updateGlobalLeaderboard() {
     });
 
     console.log(`Updated global leaderboard: ${newOrder}`);
+
+    const leaderboardData = globalLeaderboard;
+
+    leaderboardData.order = leaderboardData.order || [];
+    leaderboardData.users = leaderboardData.users || {};
+
+    let leaderboardView = [];
+
+    for (const userid of leaderboardData.order) {
+      leaderboardView.push(await database.getUsernameFromUserID(userid));
+    }
+
+    database.leaderboardViews.global = leaderboardView;
+
+    console.log(`Built global leaderboard view:`, leaderboardView);
 
     setTimeout(updateGlobalLeaderboard, 5500);
   } catch (e) {
@@ -1036,6 +1163,34 @@ app.post("/:sessionid/:gamesessionid/a/:hash", async (req, res) => {
 
   if (result) res.send({ status: "success" });
   else res.status(401).send({ status: "failed" });
+});
+
+app.get("/leaderboard/level/:level", (req, res) => {
+  const level = req.params.level;
+  const levelNum = parseInt(level);
+
+  if (isNaN(levelNum)) {
+    res.status(404).send(
+      `<h1>Imagine not sending a number lol... fyi its /leaderboard/level/<levelnumber>,
+        do better next time lmao</h1>`,
+    );
+    return;
+  }
+
+  if (levelNum <= 0 || levelNum > database.levelCount) {
+    res
+      .status(404)
+      .send(
+        `<h1>How stupid are you to not realise that levels are from 1 to <lastLevelNum>???!!</h1>`,
+      );
+    return;
+  }
+
+  res.send({ leaderboard: database.leaderboardViews[levelNum.toString()] });
+});
+
+app.get("/leaderboard/global/", (req, res) => {
+  res.send({ leaderboard: database.leaderboardViews.global });
 });
 
 app.use(express.static("public"));

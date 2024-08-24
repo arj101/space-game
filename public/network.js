@@ -293,6 +293,37 @@ class NetworkClient {
     this.gameSessionID = null;
   }
 
+  /**
+   *
+   * @returns an array containing the global leaderboard (just usernames)
+   */
+  async fetchGlobalLeaderboard() {
+    const res = await fetch("/leaderboard/global");
+    if (!res.ok) {
+      return null;
+    }
+
+    const data = await res.json();
+
+    return data.leaderboard || [];
+  }
+
+  /**
+   *
+   * @param {number|string} levelnum
+   * @returns an array containing the level leaderboard ({username, score}) score is just the time for now
+   */
+  async fetchLevelLeaderboard(levelnum) {
+    const res = await fetch(`/leaderboard/level/${levelnum}`);
+    if (!res.ok) {
+      return null;
+    }
+
+    const data = await res.json();
+
+    return data.leaderboard || [];
+  }
+
   loadImage(url) {
     return new Promise(async (resolve, reject) => {
       const image = new Image();

@@ -299,11 +299,17 @@ async function menu(
         ctx.font = "400 32px Orbitron";
         const timeSeconds = score / 1000;
         const subSecondPart = Math.floor(score / 10) % 100;
-        const secondsPart = timeSeconds % 60;
+        const secondsPart = Math.floor(timeSeconds % 60);
         const minutesPart = Math.floor(timeSeconds / 60);
+        //render all parts
+        let scoreText = `${minutesPart > 0 ? minutesPart.toString() + ":" : ""}${secondsPart < 10 ? "0" : ""}${secondsPart}:${subSecondPart < 10 ? "0" : ""}${subSecondPart}`;
+
         ctx.fillText(
-          `${score}`,
-          elements.leaderboard.x + elements.leaderboard.width - 180,
+          `${scoreText}`,
+          elements.leaderboard.x +
+            elements.leaderboard.width -
+            50 -
+            ctx.measureText(scoreText).width,
           elements.leaderboard.y + 150 + offset * 50,
         );
       }

@@ -413,6 +413,7 @@ async function menu(
 
     if (mouse.down && mouseOutsideLevelBoxes <= 0) {
       selectedLeaderboard = "global";
+      updateLeaderboard();
       selectedLevel = null;
     }
 

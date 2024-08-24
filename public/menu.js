@@ -376,7 +376,10 @@ async function menu(
 
         if (mouse.down && networkClient.loggedIn) {
           selectedLevel = i;
-          selectedLeaderboard = i;
+          if (selectedLeaderboard != i) {
+            selectedLeaderboard = i;
+            updateLeaderboard();
+          }
         }
       } else {
         mouseOutsideLevelBoxes -= 1;

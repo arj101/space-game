@@ -74,15 +74,10 @@ database.updateUserProgress = async function (userid, levelnum, score_time) {
 
   const updateDb = () => {
     database.needsLeaderboardUpdate = true;
-    console.log("setting needs leaderboard update");
     if (!database.leaderboardDiffs.has(levelnum)) {
       database.leaderboardDiffs.set(levelnum, new Map());
     }
     database.leaderboardDiffs.get(levelnum).set(userid, score_time);
-    database.globalLeadrboardDiffs.set(userid, {
-      level: levelnum,
-      score: score_time,
-    });
   };
 
   if (user.progress[levelnum]) {
@@ -164,6 +159,11 @@ async function updateLeaderboard() {
         leaderboardUsers[id].rank = i + 1;
       }
 
+      for (const id in leaderboardUsers) {
+        const newUserRank = leaderboardUsers[id].rank;
+        database.globalLeadrboardDiffs.set([levelnum, id], newUserRank);
+      }
+
       await leaderboardRef.set({
         order: newOrder,
         users: leaderboardUsers,
@@ -234,7 +234,7 @@ async function updateGlobalLeaderboard() {
     let newOrder = [];
     const leaderboardUsers = globalLeaderboard.users || {};
 
-    for (const [userid, { level, score }] of database.globalLeadrboardDiffs) {
+    for (const [[level, userid], score] of database.globalLeadrboardDiffs) {
       const globalUserObject = leaderboardUsers[userid] || {
         levels: {},
       };

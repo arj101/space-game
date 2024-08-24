@@ -171,7 +171,7 @@ async function menu(
 
   //create a leaderboard of random names and scores
   let leaderboard = Array.from({ length: 200 }, (_, i) => ({
-    name: Math.random().toString(36).substring(7),
+    username: Math.random().toString(36).substring(7),
     score: Math.floor(Math.random() * 1000),
   }));
   let leaderboardOffset = 0;
@@ -194,9 +194,33 @@ async function menu(
 
   let levelReqSent = false;
 
+  let selectedLeaderboard = "global";
+
+  const updateLeaderboard = async () => {
+    let serverLeaderboard;
+    try {
+      if (selectedLeaderboard == "global")
+        serverLeaderboard = await networkClient.fetchGlobalLeaderboard();
+      else
+        serverLeaderboard = await networkClient.fetchLevelLeaderboard(
+          selectedLeaderboard + 1,
+        );
+    } catch (e) {
+      console.log("Error fetching leaderboard", e);
+    }
+
+    if (serverLeaderboard) leaderboard = serverLeaderboard;
+  };
+
+  updateLeaderboard();
+  const leaderboardUpdatePoll = setInterval(updateLeaderboard, 5000);
+
   run();
   function run(t) {
-    if (quitted) return;
+    if (quitted) {
+      clearInterval(leaderboardUpdatePoll);
+      return;
+    }
     requestAnimationFrame(run);
 
     ctx.fillStyle = "black";
@@ -247,8 +271,14 @@ async function menu(
       i++
     ) {
       const offset = i - leaderboardOffset;
+      let username,
+        score = "[no score]";
+      if (selectedLeaderboard == "global") username = leaderboard[i];
+      else {
+        username = leaderboard[i].username;
+        score = leaderboard[i].score;
+      }
 
-      const { name, score } = leaderboard[i];
       const posText = `${i + 1}`;
       1;
       ctx.font = "400 32px Orbitron";
@@ -260,17 +290,19 @@ async function menu(
 
       ctx.font = "600 32px Orbitron";
       ctx.fillText(
-        `${name}`,
+        `${username}`,
         elements.leaderboard.x + 150,
         elements.leaderboard.y + 150 + offset * 50,
       );
 
-      ctx.font = "400 32px Orbitron";
-      ctx.fillText(
-        `${score}`,
-        elements.leaderboard.x + elements.leaderboard.width - 180,
-        elements.leaderboard.y + 150 + offset * 50,
-      );
+      if (selectedLeaderboard != "global") {
+        ctx.font = "400 32px Orbitron";
+        ctx.fillText(
+          `${score}`,
+          elements.leaderboard.x + elements.leaderboard.width - 180,
+          elements.leaderboard.y + 150 + offset * 50,
+        );
+      }
     }
 
     //render levels
@@ -295,6 +327,8 @@ async function menu(
 
     let levelRectX = elements.play.x + 100;
     let levelRectY = elements.play.y + 150;
+
+    let mouseOutsideLevelBoxes = levels.length;
 
     for (let i = 0; i < levels.length; i++) {
       const level = levels[i];
@@ -342,7 +376,10 @@ async function menu(
 
         if (mouse.down && networkClient.loggedIn) {
           selectedLevel = i;
+          selectedLeaderboard = i;
         }
+      } else {
+        mouseOutsideLevelBoxes -= 1;
       }
 
       if (selectedLevel == i) {
@@ -369,6 +406,11 @@ async function menu(
       //   ctx.fillStyle = "green";
       //   ctx.fillRect(levelRectX + 200, levelRectY + i * 50 - 20, 20, 20);
       // }
+    }
+
+    if (mouse.down && mouseOutsideLevelBoxes <= 0) {
+      selectedLeaderboard = "global";
+      selectedLevel = null;
     }
 
     ctx.fillStyle = "white";

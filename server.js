@@ -16,9 +16,30 @@ admin.initializeApp({
 
 const db = getFirestore();
 
-const leaderboards = [];
+const leaderboards = {};
 const users = new Map();
-const database = {};
+const database = {
+  //variables used for batching leaderboard updates due to this server having little to no cpu power on render.com
+  needsLeaderboardUpdate: false,
+  needsGlobalLeaderboardUpdate: false,
+
+  //used to avoid re-fetching all users when building level leaderboards
+  leaderboardDiffs: new Map(),
+  //same thing but for global leaderboard
+  globalLeadrboardDiffs: new Map(),
+
+  //a Map of lengths of rank lists for each level, updated when the level leaderboards are updated.
+  //Used for assigning rank to players who havent played a specific level. Such players are given the last position in those rank lists
+  //(although they are not really present in that rank list)
+  //This is necessary because global leaderboard is built by summing up ranks of players in each level
+  levelRanklistLengthCache: new Map(),
+  //number of levels in the game, probably shouldnt hard code this but should work fine
+  levelCount: 2,
+
+  //locks the leaderboard when either the global or level leaderboard updates are running. avoids potential corrupt leaderboards
+  //each function checks if the lock is set, if it is, waits some time to recheck the lock, and only executes the function when the lock has been released (false = released)
+  leaderboardLock: false,
+};
 
 database.getUserIDfromName = async function (username) {
   const queryResult = await db
@@ -44,17 +65,38 @@ database.getUser = async function (userid) {
   return queryResult.docs[0].data();
 };
 
-database.updateUserProgress = async function (userid, levelnum, score) {
+database.updateUserProgress = async function (userid, levelnum, score_time) {
   let user = await db.collection("users").doc(userid).get();
   user = user.data();
   if (!user) return null;
 
+  user.progress = user.progress || {};
+
+  const updateDb = () => {
+    database.needsLeaderboardUpdate = true;
+    if (!database.leaderboardDiffs.has(levelnum)) {
+      database.leaderboardDiffs.set(levelnum, new Map());
+    }
+    database.leaderboardDiffs.get(levelnum).set(userid, score_time);
+    database.globalLeadrboardDiffs.set(userid, {
+      level: levelnum,
+      score: score_time,
+    });
+  };
+
+  if (user.progress[levelnum]) {
+    if (user.progress[levelnum] > score_time) {
+      user.progress[levelnum] = score_time;
+      updateDb();
+    }
+  } else {
+    user.progress[levelnum] = score_time;
+    updateDb();
+  }
+
   if (user.currLevel == levelnum) {
     user.currLevel += 1;
   }
-
-  user.progress = user.progress || {};
-  user.progress[levelnum] = score;
 
   console.log(`Updating user ${JSON.stringify(user)}`);
 
@@ -74,9 +116,132 @@ database.updateDeathCount = async function (userid, levelnum, score) {
   await db.collection("users").doc(userid).set(user);
 };
 
-class Database {
-  constructor() {}
+//only update leaderboard every 5 seconds to avoid spamming the database
+
+async function updateLeaderboard() {
+  if (!database.needsLeaderboardUpdate) {
+    setTimeout(updateLeaderboard, 4000);
+    return;
+  }
+
+  if (database.leaderboardLock) {
+    setTimeout(updateLeaderboard, 1000); //wait one second to recheck the lock
+    return;
+  }
+  database.leaderboardLock = true;
+
+  try {
+    database.needsLeaderboardUpdate = false;
+
+    for (const [levelnum, diffs] of database.leaderboardDiffs) {
+      const leaderboardRef = db.collection("leaderboard").doc(levelnum);
+      const leaderboardObj = await leaderboardRef.get();
+      const leaderboardData = leaderboardObj.data();
+
+      if (!leaderboardData) {
+        console.log(
+          `Warning: Leaderboard data for level ${levelnum} not found`,
+        );
+        continue;
+      }
+
+      let newOrder = [];
+      const leaderboardUsers = leaderboardData.users || {};
+
+      for (const [id, score] of diffs) {
+        leaderboardUsers[id] = { score, rank: null };
+      }
+
+      newOrder = Object.keys(leaderboardUsers);
+      newOrder.sort(
+        (id1, id2) => leaderboardUsers[id1] - leaderboardUsers[id2],
+      );
+
+      for (let i = 0; i < newOrder.length; i++) {
+        const id = newOrder[i];
+        leaderboardUsers[id].rank = i + 1;
+      }
+
+      await leaderboardRef.set({
+        order: newOrder,
+        users: leaderboardUsers,
+      });
+
+      console.log(`Leaderboard updated for level ${levelnum}: ${order}`);
+
+      database.levelRanklistLengthCache.set(levelnum, newOrder.length);
+    }
+
+    database.needsGlobalLeaderboardUpdate = true;
+    database.leaderboardDiffs.clear();
+    setTimeout(updateLeaderboard, 4000);
+  } catch (e) {
+    console.log(`LEADERBOARD UPDATE FAILED: ${JSON.stringify(e)}`);
+    console.log(`STOPPING ALL (level) LEADERBOARD UPDATES`);
+  } finally {
+    //no matter what happens, dont forget to release the lock
+    database.leaderboardLock = false;
+  }
 }
+setTimeout(updateLeaderboard, 2000);
+
+async function updateGlobalLeaderboard() {
+  if (!database.needsGlobalLeaderboardUpdate) {
+    setTimeout(updateGlobalLeaderboard, 5500);
+    return;
+  }
+
+  if (database.leaderboardLock) {
+    setTimeout(updateGlobalLeaderboard, 1000); //wait one second to recheck the lock
+    return;
+  }
+  database.leaderboardLock = true;
+
+  try {
+    database.needsGlobalLeaderboardUpdate = false;
+
+    //make sure we have all the rank list lengths before building leaderboard
+    //if not we fetch them here
+    for (let i = 0; i < database.levelCount; i++) {
+      const levelnum = i + 1;
+      console.log(`Fetching rank list length for level ${levelnum}`);
+      if (!database.levelRanklistLengthCache.has(levelnum)) {
+        const levelLeaderboardObj = await db
+          .collection("leaderboard")
+          .doc(levelnum)
+          .get();
+        const levelLeaderboardData = levelLeaderboardObj.data();
+        if (!levelLeaderboardData) continue;
+        const rankListLength = levelLeaderboardData.order?.length;
+        if (!rankListLength) {
+          console.log(`Rank list length for level ${levelnum} not found :/`);
+          continue;
+        }
+        database.levelRanklistLengthCache.set(levelnum, rankListLength);
+      }
+    }
+
+    const globalLeaderboardRef = db.collection("leaderboard").doc("global");
+    const globalLeaderboard = await globalLeaderboardRef.get();
+
+    let newOrder = [];
+    const users = globalLeaderboard.users || {};
+
+    for (const [userid, { level, score }] of database.globalLeadrboardDiffs) {
+    }
+
+    database.globalLeadrboardDiffs.clear();
+
+    setTimeout(updateGlobalLeaderboard, 5500);
+  } catch (e) {
+    console.log(`GLOBAL LEADERBOARD UPDATE FAILED: ${JSON.stringify(e)}`);
+    console.log(`STOPPING ALL (global) LEADERBOARD UPDATES`);
+  } finally {
+    database.leaderboardLock = false;
+  }
+}
+
+setTimeout(updateGlobalLeaderboard, 3000);
 
 const GAME_SESSION_TIMEOUT = 15 * 1000;
 const MAX_TIMESTAMP_ERROR = 30 * 1000;

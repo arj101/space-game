@@ -1364,7 +1364,7 @@ async function main(
         ship.speed < 1e-1 &&
         Math.abs(ship.angle) <= 0.1 &&
         Vector.magnitude(Vector.sub(ship.position, finishPlatform.position)) <=
-          120
+          200
       ) {
         if (!landed) {
           landed = true;

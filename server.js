@@ -10,20 +10,20 @@ const { getFirestore } = require("firebase-admin/firestore");
 const credentials = {};
 
 if (process.env.PROD) {
-  const privateKey = fs.readFileSync(
-    "/etc/letsencrypt/live/upright-parallelport.online/privkey.pem",
+  const key = fs.readFileSync(
+    "/etc/letsencrypt/live/upright-parallelport.online-0001/privkey.pem",
     "utf8",
   );
   const certificate = fs.readFileSync(
-    "/etc/letsencrypt/live/upright-parallelport.online/cert.pem",
+    "/etc/letsencrypt/live/upright-parallelport.online-0001/cert.pem",
     "utf8",
   );
   const ca = fs.readFileSync(
-    "/etc/letsencrypt/live/upright-parallelport.online/chain.pem",
+    "/etc/letsencrypt/live/upright-parallelport.online-0001/chain.pem",
     "utf8",
   );
-  credentials.privateKey = privateKey;
-  credentials.certificate = certificate;
+  credentials.key = key;
+  credentials.cert = certificate;
   credentials.ca = ca;
 }
 

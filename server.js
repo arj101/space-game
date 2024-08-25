@@ -762,6 +762,9 @@ class GameSessionsManager {
 
     this.sessionGameSessionMap = new Map();
     this.gameSessions = new Map();
+
+    this.finishedSessionPool = new Map();
+
     this.sessionPoll = setInterval(() => {
       for (const [sessionID, gsid] of this.sessionGameSessionMap) {
         const gameSession = this.gameSessions.get(gsid);
@@ -773,41 +776,43 @@ class GameSessionsManager {
           this.deleteGameSession(sessionID, gsid);
         }
 
-        if (!gameSession.running) {
-          console.log(`Deleting session because it has finished running`);
-          const validSession = gameSession.validateFinalEventLog();
-          if (!validSession) {
-            console.log(
-              `Invalidated game session because of invalid event log`,
-            );
-          }
-
-          console.log(`Last event: ${gameSession.lastEventType}`);
-
-          if (gameSession.lastEventType == "finish" && validSession) {
-            try {
-              console.log(`Game duration ${gameSession.duration}`);
-              const userid = gameSession.userID;
-              database.updateUserProgress(
-                userid,
-                gameSession.levelNum,
-                gameSession.duration,
-              );
-            } catch (_) {}
-          }
-
-          if (gameSession.lastEventType == "dead") {
-            try {
-              const userid = gameSession.userID;
-              database.updateDeathCount(userid, gameSession.levelNum);
-            } catch (e) {}
-          }
-
-          gameSession.onClose();
-          this.deleteGameSession(sessionID, gsid);
-        }
+        //rest should be a separate
       }
-    }, 5000);
+
+      for (const [sessionID, gsid] of this.finishedSessionPool) {
+        const gameSession = this.gameSessions.get(gsid);
+        console.log(`Deleting session because it has finished running`);
+        const validSession = gameSession.validateFinalEventLog();
+        if (!validSession) {
+          console.log(`Invalidated game session because of invalid event log`);
+        }
+
+        console.log(`Last event: ${gameSession.lastEventType}`);
+
+        if (gameSession.lastEventType == "finish" && validSession) {
+          try {
+            console.log(`Game duration ${gameSession.duration}`);
+            const userid = gameSession.userID;
+            database.updateUserProgress(
+              userid,
+              gameSession.levelNum,
+              gameSession.duration,
+            );
+          } catch (_) {}
+        }
+
+        if (gameSession.lastEventType == "dead") {
+          try {
+            const userid = gameSession.userID;
+            database.updateDeathCount(userid, gameSession.levelNum);
+          } catch (e) {}
+        }
+
+        gameSession.onClose();
+        this.gameSessions.delete(gsid);
+      }
+      this.finishedSessionPool.clear();
+    }, 30000);
   }
 
   createGameSession(userID, userSessionID, gameSessionID, levelnum) {
@@ -849,7 +854,14 @@ class GameSessionsManager {
     if (!rawEventJSON.type) return false;
     if (!gameSession) return false;
 
-    return gameSession.onReceiveKeepAlive(rawEventJSON);
+    const ret = gameSession.onReceiveKeepAlive(rawEventJSON);
+
+    if (!gameSession.running) {
+      this.finishedSessionPool.set(gameSession.userSessionID, gameSessionID);
+      this.sessionGameSessionMap.delete(gameSession.userSessionID);
+    }
+
+    return ret;
   }
 }
 

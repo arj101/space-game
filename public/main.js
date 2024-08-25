@@ -1468,6 +1468,9 @@ loadGlobalResources(renderers.width, renderers.height).then(
       if (shipStats.requiresRestart) {
         shipStats.requiresRestart = false;
 
+        const _ = await networkClient.sendDeath(); //this closes the game
+
+        //otherwise we cannot start a new session
         const result = await networkClient.requestGame(gameStats.level);
 
         if (!result) {
@@ -1501,6 +1504,8 @@ loadGlobalResources(renderers.width, renderers.height).then(
     }
 
     function exitToMenu() {
+      networkClient.sendDeath();
+      networkClient.gameSessionID = null;
       shipStats.gotoMenu = true;
     }
 

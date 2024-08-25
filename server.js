@@ -476,6 +476,12 @@ class GameSession {
       //game always starts at (0, 0)
       return false;
 
+    for (const event of this.eventlog) {
+      if (event.type == "alive") {
+        if (event.health <= 0) return false;
+      }
+    }
+
     //Thats it for now >:)
 
     return true;

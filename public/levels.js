@@ -5,4 +5,7 @@ const levels = {
   2: {
     filePrefix: "/levels/2/",
   },
+  3: {
+    filePrefix: "/levels/3/",
+  },
 };

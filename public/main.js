@@ -911,6 +911,8 @@ async function main(
 
   let collided = false;
 
+  let deltaTime = 0;
+
   Matter.Events.on(engine, "collisionStart", function (event, bodyA) {
     event.pairs.forEach(function (pair) {
       const bodyA = pair.bodyA.isStatic ? pair.bodyB : pair.bodyA;
@@ -924,23 +926,31 @@ async function main(
         Vector.dot(collission.normal, Vector.normalise(ship.velocity)),
       );
 
-      const impactSpeed = Math.abs(
-        Vector.dot(collission.normal, ship.velocity),
-      );
+      // const impactSpeed = Math.abs(
+      //   Vector.dot(collission.normal, ship.velocity),
+      // );
 
       const collissionAngle = Math.acos(normalisedImpact);
       console.log((collissionAngle * 180) / Math.PI);
 
       const impactScale = Math.sin(collissionAngle) * 0.2 + 0.8;
 
-      const scaledImpact = Vector.magnitude(ship.velocity) * impactScale * 3.0;
-      shipHealth -= scaledImpact;
+      const damageScale = 1000 / 144 / deltaTime;
+      const scaledImpact =
+        Vector.magnitude(ship.velocity) * impactScale * 3.0 * damageScale;
 
-      if (scaledImpact >= 10) {
-        shipHealth = 0;
+      if (scaledImpact > 2) {
+        shipHealth -= scaledImpact;
+
+        if (scaledImpact >= 30) {
+          shipHealth = 0;
+        }
       }
     });
   });
+
+  let accumDt = 0;
+  const physicsStep = 1000 / 60;
 
   run(0);
   function run(t) {
@@ -965,8 +975,17 @@ async function main(
       prevT = t;
       startTime = t;
     }
+    // accumDt += t - prevT;
+
+    // while (accumDt >= physicsStep) {
+    //   // engine.update(engine, physicsStep);
+    //   accumDt -= physicsStep;
+    //   Engine.update(engine, physicsStep);
+    // }
+
     const dt = Math.min(t - prevT, 1000 / 60); //deltaTime should never be too high, it will result in low accuracy
 
+    deltaTime = t - prevT;
     prevT = t;
     Engine.update(engine, dt);
 
@@ -1325,7 +1344,7 @@ async function main(
           (leftThruster ? 1 : 0) * PI_2 +
           (rightThruster ? 1 : 0) * PI_2,
       );
-      const forceMag = leftThruster && rightThruster ? 0.008 : 0.006;
+      const forceMag = leftThruster && rightThruster ? 0.02 : 0.01;
       const forceOriginOff = Vector.add(forceOrigin, fOriginOffset);
       const force = Vector.rotate(Vector.create(0, -forceMag), ship.angle);
       Body.applyForce(ship, forceOriginOff, force);
@@ -1361,10 +1380,10 @@ async function main(
     }
 
     const dp = Vector.sub(ship.position, camPos);
-    let accel = (collided ? 0.08 : 0.01) * Vector.magnitude(dp);
+    let accel = (collided ? 0.06 : 0.02) * Vector.magnitude(dp);
     const norm_dp = Vector.normalise(dp);
     camVel = Vector.add(camVel, Vector.mult(norm_dp, accel));
-    camVel = Vector.sub(camVel, Vector.mult(camVel, collided ? 0.02 : 0.2));
+    camVel = Vector.sub(camVel, Vector.mult(camVel, collided ? 0.03 : 0.4));
     camPos = Vector.add(camPos, Vector.mult(camVel, dt));
     collided = false;
 

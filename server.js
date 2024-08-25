@@ -832,7 +832,7 @@ class GameSessionsManager {
         this.gameSessions.delete(gsid);
       }
       this.finishedSessionPool.clear();
-    }, 30000);
+    }, 5000);
   }
 
   createGameSession(userID, userSessionID, gameSessionID, levelnum) {

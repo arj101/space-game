@@ -4,8 +4,28 @@ const express = require("express");
 const fs = require("fs");
 const uuid = require("uuid");
 const admin = require("firebase-admin");
+const https = require("https");
 const { getFirestore } = require("firebase-admin/firestore");
-// const serviceAccount = require("./serviceAccount.json");
+
+const credentials = {};
+
+if (process.env.PROD) {
+  const privateKey = fs.readFileSync(
+    "/etc/letsencrypt/live/upright-parallelport.online/privkey.pem",
+    "utf8",
+  );
+  const certificate = fs.readFileSync(
+    "/etc/letsencrypt/live/upright-parallelport.online/cert.pem",
+    "utf8",
+  );
+  const ca = fs.readFileSync(
+    "/etc/letsencrypt/live/upright-parallelport.online/chain.pem",
+    "utf8",
+  );
+  credentials.privateKey = privateKey;
+  credentials.certificate = certificate;
+  credentials.ca = ca;
+}
 
 //load the firebase service account file from env
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -1217,4 +1237,12 @@ app.get("/leaderboard/global/", (req, res) => {
 });
 
 app.use(express.static("public"));
-app.listen(process.env.PORT || 5173, process.env.ADDR || "127.0.0.1");
+
+if (process.env.PROD) {
+  const httpServer = https.createServer(credentials, app);
+  httpServer.listen(443, () => {
+    console.log("HTTP server listening on port 443");
+  });
+} else {
+  app.listen(process.env.PORT || 5173, process.env.ADDR || "127.0.0.1");
+}

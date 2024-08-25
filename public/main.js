@@ -180,9 +180,13 @@ async function main(
   const PI = Math.PI;
   const PI_2 = Math.PI / 2;
 
-  let leftThruster, rightThruster;
+  let leftThruster,
+    rightThruster,
+    prevLeftThruster = false,
+    prevRightThruster = false;
 
   addEventListener("keydown", (e) => {
+    globalResources.audioCtx.resume();
     if (
       (e.key == "Enter" || e.key == "e") &&
       scrollableMenu.enterClickStart < 0
@@ -472,6 +476,8 @@ async function main(
   const menuElt = document.getElementById("menu");
 
   menuElt.addEventListener("click", (e) => {
+    globalResources.audioCtx.resume();
+
     e.preventDefault();
     e.stopPropagation();
     ctx.canvas.focus();
@@ -518,6 +524,7 @@ async function main(
   });
 
   addEventListener("pointerdown", (e) => {
+    globalResources.audioCtx.resume();
     if (e.target == menuElt) {
       return;
     }
@@ -535,7 +542,11 @@ async function main(
       x <
       width / 2 - width * 0.125
     ) {
+      const prevLeftThruster = leftThruster;
       if (!shouldStopPlay() && !scrollableMenu.enabled) leftThruster = true;
+
+      if (leftThruster != prevLeftThruster && leftThruster) {
+      }
 
       scrollableMenu.leftPointerDown();
     }
@@ -1271,6 +1282,34 @@ async function main(
     ctx.restore();
 
     //other logics
+
+    if (
+      prevLeftThruster != leftThruster ||
+      prevRightThruster != rightThruster
+    ) {
+      globalResources.audioCtx.resume();
+      globalResources.thrusterAudio.play();
+      // globalResources.thrusterAudio.repeat = true;
+
+      // console.log("playing sound..");
+
+      let vol = leftThruster || rightThruster ? 0.7 : 0.0;
+      vol += leftThruster && rightThruster ? 0.2 : 0.0;
+
+      globalResources.gainNode.gain.setValueAtTime(
+        globalResources.gainNode.gain.value,
+        globalResources.audioCtx.currentTime,
+      );
+
+      globalResources.gainNode.gain.linearRampToValueAtTime(
+        vol,
+        globalResources.audioCtx.currentTime +
+          (globalResources.gainNode.gain.value > vol ? 0.3 : 0.2),
+      );
+
+      prevLeftThruster = leftThruster;
+      prevRightThruster = rightThruster;
+    }
 
     if (leftThruster || rightThruster) {
       let forceOrigin = Vector.create(ship.position.x, ship.position.y);

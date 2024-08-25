@@ -7,6 +7,7 @@ function loadGlobalResources(width, height) {
     const shipVertexFile = "/assets/ship.obj";
     const shipTextObjFile = "/assets/shiptex.obj";
 
+    const thrusterAudioFile = "/assets/audio/thruster.wav";
     const menuSlideAudioFile = "/assets/audio/menu_slide2.wav";
     const menuClickAudioFile = "/assets/audio/menu_click.mp3";
 
@@ -16,6 +17,7 @@ function loadGlobalResources(width, height) {
     const shipTexObjFileP = loadText(shipTextObjFile);
     const menuSlideAudioP = loadAudio(menuSlideAudioFile);
     const menuClickAudioP = loadAudio(menuClickAudioFile);
+    const thrusterAudioP = loadAudio(thrusterAudioFile);
 
     const [
       shipImage,
@@ -24,6 +26,7 @@ function loadGlobalResources(width, height) {
       menuClickAudio,
       shipVertices,
       shipTexObjText,
+      thrusterAudio,
     ] = await Promise.all([
       shipImageP,
       flameImageP,
@@ -31,6 +34,7 @@ function loadGlobalResources(width, height) {
       menuClickAudioP,
       shipVertexFileP,
       shipTexObjFileP,
+      thrusterAudioP,
     ]);
 
     const audioContext = new AudioContext({ latencyHint: "interactive" });
@@ -40,8 +44,26 @@ function loadGlobalResources(width, height) {
     const menuClickTrack =
       audioContext.createMediaElementSource(menuClickAudio);
 
+    const thrusterAudioTrack =
+      audioContext.createMediaElementSource(thrusterAudio);
+
     menuSlideTrack.connect(audioContext.destination);
     menuClickTrack.connect(audioContext.destination);
+
+    const gainNode = audioContext.createGain();
+    const compressor = audioContext.createDynamicsCompressor();
+    gainNode.gain.value = 0;
+
+    thrusterAudio.repeat = true;
+
+    thrusterAudio.addEventListener("ended", function () {
+      thrusterAudio.play();
+    });
+
+    thrusterAudioTrack
+      .connect(gainNode)
+      .connect(compressor)
+      .connect(audioContext.destination);
 
     let shipVertexObj = parseOBJCollissionData(shipVertices);
     console.log("Ship vertex obj", shipVertexObj);
@@ -71,8 +93,11 @@ function loadGlobalResources(width, height) {
       menuSlideAudio,
       menuClickAudio,
       menuClickTrack,
+      thrusterAudio,
+      thrusterAudioTrack,
       shipCollissionObjs: shipVertexObj,
       shipTexObj,
+      gainNode,
     });
   });
 }

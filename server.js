@@ -933,6 +933,11 @@ app.post("/:userid/:sessionid/gamereq/:level", async (req, res) => {
     return;
   }
 
+  if (levelnum > database.levelCount) {
+    res.status(401).send("Invalid level");
+    return;
+  }
+
   const gameSessionID = uuid.v4();
 
   const createdSession = gameSessionsManager.createGameSession(

@@ -110,8 +110,43 @@ async function menu(
     }
   });
 
+  // globalResources.audioCtx.resume();
+  // globalResources.thrusterAudio.currentTime = 0;
+  // globalResources.thrusterAudio.repeat = true;
+
   window.addEventListener("pointerup", (e) => {
     mouse.down = false;
+
+    // if (!globalResources.thrusterAudio.playing) {
+    // globalResources.audioCtx.resume();
+    // // globalResources.thrusterAudio.currTime = 0;
+    // globalResources.thrusterAudio.play();
+    // // }
+
+    // if (globalResources.gainNode.gain.value > 0.5) {
+    //   globalResources.gainNode.gain.setValueAtTime(
+    //     globalResources.gainNode.gain.value,
+    //     globalResources.audioCtx.currentTime,
+    //   );
+    //   globalResources.gainNode.gain.exponentialRampToValueAtTime(
+    //     0.0001,
+    //     globalResources.audioCtx.currentTime + 0.1,
+    //   );
+    // } else {
+    //   globalResources.gainNode.gain.setValueAtTime(
+    //     globalResources.gainNode.gain.value,
+    //     globalResources.audioCtx.currentTime,
+    //   );
+    //   globalResources.gainNode.gain.exponentialRampToValueAtTime(
+    //     1,
+    //     globalResources.audioCtx.currentTime + 0.1,
+    //   );
+    // }
+
+    // globalResources.gainNode.gain.exponentialRampToValueAtTime(
+    //   0.6,
+    //   globalResources.thrusterAudio.currentTime + 0.1,
+    // );
   });
 
   window.addEventListener("wheel", (e) => {

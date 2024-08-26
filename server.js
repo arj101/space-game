@@ -303,10 +303,12 @@ async function updateLeaderboard() {
 
       for (const userid of newOrder) {
         const user = leaderboardUsers[userid];
-        leaderboardView.push({
-          username: await database.getUsernameFromUserID(userid),
-          score: user.score || "[no score]", //i dont want to accidentally send undefined lol
-        });
+        if (user.score) {
+          leaderboardView.push({
+            username: await database.getUsernameFromUserID(userid),
+            score: user.score || "[no score]", //i dont want to accidentally send undefined lol
+          });
+        }
       }
 
       database.leaderboardViews[levelnum.toString()] = leaderboardView;
@@ -537,6 +539,15 @@ class GameSession {
     const timestamp = rawEvent.timestamp;
     if (!timestamp) return { validEvent: false, criticalError: false };
 
+    if (isNaN(timestamp) || timestamp == null || timestamp == undefined) {
+      console.log(
+        `[userID: ${this.userID}] timestamp is null or undefined or not a number`,
+      );
+      validEvent = false;
+      criticalError = true;
+      return { validEvent, criticalError };
+    }
+
     // if (timestamp < this.starttimestamp) {
     //   console.log("Invalidated game event because of timestamp inconsistency");
     //   validEvent = false;
@@ -615,6 +626,7 @@ class GameSession {
           if (!criticalError && validEvent) {
             this.duration = min_duration;
             this.running = false;
+            this.lastEventType = "finish";
           }
         }
         break;
@@ -658,6 +670,7 @@ class GameSession {
           criticalError = true;
         } else {
           this.running = false;
+          this.lastEventType = "dead";
           //no other checks needed, no one's gonna hack the die event lol
         }
         break;
@@ -809,7 +822,7 @@ class GameSessionsManager {
           console.log(`Invalidated game session because of invalid event log`);
         }
 
-        if (validSession) {
+        if (validSession && gameSession.lastEventType == "finish") {
           try {
             console.log(
               `[userID: ${gameSession.userID}] Game duration ${gameSession.duration}`,
@@ -823,7 +836,7 @@ class GameSessionsManager {
           } catch (_) {}
         }
 
-        if (gameSession.lastEventType == "dead") {
+        if (validSession && gameSession.lastEventType == "dead") {
           try {
             const userid = gameSession.userID;
             database.updateDeathCount(userid, gameSession.levelNum);

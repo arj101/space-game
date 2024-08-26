@@ -506,7 +506,7 @@ class GameSession {
     for (const event of this.eventlog) {
       if (event.type == "alive") {
         if (event.health <= 0) {
-          console.log(`[userID: ${this.userID}] health is zero`);
+          console.log(`[userID: ${this.userID}, health is zero`);
           return false;
         }
       }
@@ -585,15 +585,14 @@ class GameSession {
           validEvent = false;
           criticalError = true;
         } else {
-          // const server_game_duration = Date.now() - this.starttimestamp;
+          const server_game_duration = Date.now() - this.starttimestamp;
           const client_game_duration = Math.abs(
             timestamp - this.clientstarttimestamp,
           );
-          // const min_duration = Math.min(
-          //   server_game_duration,
-          //   client_game_duration,
-          // );
-          const min_duration = client_game_duration;
+          const min_duration = Math.min(
+            server_game_duration,
+            client_game_duration,
+          );
 
           // if (
           //   Math.abs(server_game_duration - client_game_duration) >
@@ -607,13 +606,13 @@ class GameSession {
           //   criticalError = true;
           // }
 
-          // if (Math.abs(min_duration) < MIN_GAME_COMPLETION_TIME) {
-          //   console.log(
-          //     "Invalidated game session because of finishing too early",
-          //   );
-          //   validEvent = false;
-          //   criticalError = true;
-          // }
+          if (Math.abs(min_duration) < MIN_GAME_COMPLETION_TIME) {
+            console.log(
+              "Invalidated game session because of finishing too early",
+            );
+            validEvent = false;
+            criticalError = true;
+          }
 
           if (!criticalError && validEvent) {
             this.duration = min_duration;

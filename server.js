@@ -478,7 +478,10 @@ class GameSession {
   }
 
   validateFinalEventLog() {
-    if (this.eventlog.length < 2) return false;
+    if (this.eventlog.length < 2) {
+      console.log(`[userID: ${this.userID}, event log too short]`);
+      return false;
+    }
     // if (this.eventlog[0].type !== "start") return false;
     // if (this.eventlog[1].type !== "alive") return false;
     // if (this.eventlog[this.eventlog.length - 2].type !== "alive") return false;
@@ -498,7 +501,10 @@ class GameSession {
 
     for (const event of this.eventlog) {
       if (event.type == "alive") {
-        if (event.health <= 0) return false;
+        if (event.health <= 0) {
+          console.log(`[userID: ${this.userID}, health is zero`);
+          return false;
+        }
       }
     }
 
@@ -547,7 +553,7 @@ class GameSession {
 
     switch (rawEvent.type) {
       case "start": {
-        if (!this.clientStarted) {
+        if (this.clientStarted) {
           console.log("Invalidated game session because of starting twice");
           validEvent = false;
           criticalError = true;
@@ -791,11 +797,11 @@ class GameSessionsManager {
           console.log(`Invalidated game session because of invalid event log`);
         }
 
-        console.log(`Last event: ${gameSession.lastEventType}`);
-
-        if (gameSession.lastEventType == "finish" && validSession) {
+        if (validSession) {
           try {
-            console.log(`Game duration ${gameSession.duration}`);
+            console.log(
+              `[userID: ${gameSession.userID}] Game duration ${gameSession.duration}`,
+            );
             const userid = gameSession.userID;
             database.updateUserProgress(
               userid,
@@ -833,6 +839,9 @@ class GameSessionsManager {
       gameSessionID,
       levelnum,
     );
+
+    console.log(`Created game session for ${userID}, level ${levelnum}`);
+
     this.sessionGameSessionMap.set(userSessionID, gameSessionID);
     this.gameSessions.set(gameSessionID, gameSession);
     return true;

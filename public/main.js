@@ -1358,14 +1358,26 @@ async function main(
         // collides(shipLThrust, finishPlatform) ||
         // collides(shipRThrust, finishPlatform) ||
         collides(ship, finishPlatform);
-      console.log("finish pad", landedCollission, landed, landTime);
+
+      const dist = Vector.magnitude(
+        Vector.sub(ship.position, finishPlatform.position),
+      );
+      console.log(
+        "finish pad",
+        landedCollission,
+        landed,
+        landTime,
+        ship.angularSpeed,
+        ship.speed,
+        ship.angle,
+        dist,
+      );
       if (
         landedCollission != null &&
         ship.angularSpeed < 1e-2 &&
         ship.speed < 1e-1 &&
         Math.abs(ship.angle) <= 0.1 &&
-        Vector.magnitude(Vector.sub(ship.position, finishPlatform.position)) <=
-          200
+        dist <= 200
       ) {
         if (!landed) {
           landed = true;

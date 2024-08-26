@@ -189,31 +189,32 @@ async function main(
 
   addEventListener("keydown", (e) => {
     globalResources.audioCtx.resume();
-    if (
-      (e.key == "e" || e.key == "E") &&
-      scrollableMenu.enterClickStart < 0
-    ) {
+    if ((e.key == "e" || e.key == "E") && scrollableMenu.enterClickStart < 0) {
       scrollableMenu.enterKeyDown();
     }
 
     if (shouldStopPlay() || scrollableMenu.enabled) return;
 
-    leftThruster = e.key == "a" || e.key == "A" || e.key == "ArrowLeft" || leftThruster;
-    rightThruster = e.key == "d" ||e.key == "D" || e.key == "ArrowRight" || rightThruster;
+    leftThruster =
+      e.key == "a" || e.key == "A" || e.key == "ArrowLeft" || leftThruster;
+    rightThruster =
+      e.key == "d" || e.key == "D" || e.key == "ArrowRight" || rightThruster;
   });
 
   addEventListener("keyup", (e) => {
-    if (e.key == "a" || e.key == "A" ||e.key == "ArrowLeft") {
+    if (e.key == "a" || e.key == "A" || e.key == "ArrowLeft") {
       leftThruster = false;
       scrollableMenu.scrollLeft();
     }
 
-    if (e.key == "d" ||e.key == "D" || e.key == "ArrowRight" ) {
+    if (e.key == "d" || e.key == "D" || e.key == "ArrowRight") {
       rightThruster = false;
       scrollableMenu.scrollRight();
     }
 
-
+    if (e.key == "e" || e.key == "E") {
+      scrollableMenu.enterKeyUp();
+    }
   });
 
   const collissionMap = {};

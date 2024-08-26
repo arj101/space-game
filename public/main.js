@@ -1352,11 +1352,13 @@ async function main(
     // let collided = false;
     const collides = Matter.Collision.collides;
 
+    console.log("stop", stopPlay);
     if (!stopPlay) {
       let landedCollission =
         // collides(shipLThrust, finishPlatform) ||
         // collides(shipRThrust, finishPlatform) ||
         collides(ship, finishPlatform);
+      console.log("finish pad", landedCollission, landed, landTime);
       if (
         landedCollission != null &&
         ship.angularSpeed < 1e-2 &&

@@ -1352,7 +1352,6 @@ async function main(
     // let collided = false;
     const collides = Matter.Collision.collides;
 
-    console.log("stop", stopPlay);
     if (!stopPlay) {
       let landedCollission =
         // collides(shipLThrust, finishPlatform) ||
@@ -1361,16 +1360,6 @@ async function main(
 
       const dist = Vector.magnitude(
         Vector.sub(ship.position, finishPlatform.position),
-      );
-      console.log(
-        "finish pad",
-        landedCollission,
-        landed,
-        landTime,
-        ship.angularSpeed,
-        ship.speed,
-        ship.angle,
-        dist,
       );
       if (
         landedCollission != null &&

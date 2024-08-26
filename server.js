@@ -539,6 +539,15 @@ class GameSession {
     const timestamp = rawEvent.timestamp;
     if (!timestamp) return { validEvent: false, criticalError: false };
 
+    if (isNaN(timestamp) || timestamp == null || timestamp == undefined) {
+      console.log(
+        `[userID: ${this.userID}] timestamp is null or undefined or not a number`,
+      );
+      validEvent = false;
+      criticalError = true;
+      return { validEvent, criticalError };
+    }
+
     // if (timestamp < this.starttimestamp) {
     //   console.log("Invalidated game event because of timestamp inconsistency");
     //   validEvent = false;

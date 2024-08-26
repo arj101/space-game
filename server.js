@@ -192,7 +192,7 @@ database.buildLevelLeaderboardView = async function (level) {
 
   for (const userid of leaderboardData.order) {
     const user = leaderboardData.users[userid];
-    if (user.score) {
+    if (user.score != null && !isNaN(user.score)) {
       leaderboardView.push({
         username: await database.getUsernameFromUserID(userid),
         score: user.score || "[no score]", //i dont want to accidentally send undefined lol

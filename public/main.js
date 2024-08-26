@@ -1376,8 +1376,8 @@ async function main(
         landedCollission != null &&
         ship.angularSpeed < 1e-2 &&
         ship.speed < 1e-1 &&
-        Math.abs(ship.angle) <= 0.1 &&
-        dist <= 200
+        Math.abs(Math.sin(ship.angle * 0.5)) <= 0.1 &&
+        dist <= 180
       ) {
         if (!landed) {
           landed = true;

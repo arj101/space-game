@@ -535,11 +535,11 @@ class GameSession {
     const timestamp = rawEvent.timestamp;
     if (!timestamp) return { validEvent: false, criticalError: false };
 
-    if (timestamp < this.starttimestamp) {
-      console.log("Invalidated game event because of timestamp inconsistency");
-      validEvent = false;
-      criticalError = false;
-    }
+    // if (timestamp < this.starttimestamp) {
+    //   console.log("Invalidated game event because of timestamp inconsistency");
+    //   validEvent = false;
+    //   criticalError = false;
+    // }
 
     if (Date.now() - this.pingtimestamp > GAME_SESSION_TIMEOUT) {
       console.log(

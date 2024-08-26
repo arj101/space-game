@@ -626,6 +626,7 @@ class GameSession {
           if (!criticalError && validEvent) {
             this.duration = min_duration;
             this.running = false;
+            this.lastEventType = "finish";
           }
         }
         break;
@@ -669,6 +670,7 @@ class GameSession {
           criticalError = true;
         } else {
           this.running = false;
+          this.lastEventType = "dead";
           //no other checks needed, no one's gonna hack the die event lol
         }
         break;
@@ -820,7 +822,7 @@ class GameSessionsManager {
           console.log(`Invalidated game session because of invalid event log`);
         }
 
-        if (validSession) {
+        if (validSession && gameSession.lastEventType == "finish") {
           try {
             console.log(
               `[userID: ${gameSession.userID}] Game duration ${gameSession.duration}`,
@@ -834,7 +836,7 @@ class GameSessionsManager {
           } catch (_) {}
         }
 
-        if (gameSession.lastEventType == "dead") {
+        if (validSession && gameSession.lastEventType == "dead") {
           try {
             const userid = gameSession.userID;
             database.updateDeathCount(userid, gameSession.levelNum);

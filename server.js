@@ -141,7 +141,7 @@ database.updateUserProgress = async function (userid, levelnum, score_time) {
   };
 
   if (user.progress[levelnum]) {
-    if (user.progress[levelnum] > score_time) {
+    if (user.progress[levelnum] > score_time || !user.progress[levelnum]) {
       user.progress[levelnum] = score_time;
       updateDb();
     }
@@ -192,10 +192,12 @@ database.buildLevelLeaderboardView = async function (level) {
 
   for (const userid of leaderboardData.order) {
     const user = leaderboardData.users[userid];
-    leaderboardView.push({
-      username: await database.getUsernameFromUserID(userid),
-      score: user.score || "[no score]", //i dont want to accidentally send undefined lol
-    });
+    if (user.score != null && !isNaN(user.score)) {
+      leaderboardView.push({
+        username: await database.getUsernameFromUserID(userid),
+        score: user.score || "[no score]", //i dont want to accidentally send undefined lol
+      });
+    }
   }
 
   database.leaderboardViews[level.toString()] = leaderboardView;

@@ -564,6 +564,46 @@ async function main(
     }
   });
 
+  addEventListener("keyup", (e) => {
+    console.log(e.key);
+    if (e.key != "Escape") return;
+
+    if (scrollableMenu.enabled) {
+      scrollableMenu.closeMenu();
+      return;
+    }
+
+    scrollableMenu.items = ["Retry", "Exit to menu", "Continue game"];
+
+    if (Math.random() > 0.5) {
+      scrollableMenu.items.push("Cheat >:)");
+    }
+    scrollableMenu.selected = 2;
+
+    scrollableMenu.message = "Mid game menu for losers";
+    scrollableMenu.openMenu();
+
+    scrollableMenu.onSelectComplete = (item) => {
+      if (item == "Retry") {
+        scrollableMenu.closeMenu();
+        restartCallback();
+        console.log("Restarting...");
+      }
+
+      if (item == "Continue game") {
+        scrollableMenu.enabled = false;
+      }
+
+      if (item == "Cheat >:)") {
+        window.location.href = "https://www.youtube.com/watch?v=xvFZjo5PgG0";
+      }
+
+      if (item == "Exit to menu") {
+        exitToMenuCallback();
+      }
+    };
+  });
+
   addEventListener("pointerup", (e) => {
     if (e.target == menuElt) {
       return;

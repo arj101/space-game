@@ -1352,18 +1352,32 @@ async function main(
     // let collided = false;
     const collides = Matter.Collision.collides;
 
+    console.log("stop", stopPlay);
     if (!stopPlay) {
       let landedCollission =
         // collides(shipLThrust, finishPlatform) ||
         // collides(shipRThrust, finishPlatform) ||
         collides(ship, finishPlatform);
+
+      const dist = Vector.magnitude(
+        Vector.sub(ship.position, finishPlatform.position),
+      );
+      console.log(
+        "finish pad",
+        landedCollission,
+        landed,
+        landTime,
+        ship.angularSpeed,
+        ship.speed,
+        ship.angle,
+        dist,
+      );
       if (
         landedCollission != null &&
         ship.angularSpeed < 1e-2 &&
         ship.speed < 1e-1 &&
         Math.abs(ship.angle) <= 0.1 &&
-        Vector.magnitude(Vector.sub(ship.position, finishPlatform.position)) <=
-          200
+        dist <= 200
       ) {
         if (!landed) {
           landed = true;
@@ -1452,10 +1466,10 @@ loadGlobalResources(renderers.width, renderers.height).then(
       return !shipStats.running;
     }
 
-    function onFinish(reason) {
+    async function onFinish(reason) {
       shipStats.running = false;
 
-      networkClient.sendStats(
+      await networkClient.sendStats(
         screenToClipX(shipStats.ship.position.x),
         screenToClipY(shipStats.ship.position.y),
         shipStats.ship.angle,
@@ -1466,13 +1480,13 @@ loadGlobalResources(renderers.width, renderers.height).then(
 
       if (reason == GAME_FINISH_REASONS.HEALTH_ZERO) {
         console.log("sending death threat");
-        networkClient.sendDeath();
+        await networkClient.sendDeath();
         shipStats.finished = false;
         shipStats.failed = true;
       }
 
       if (reason == GAME_FINISH_REASONS.LEVEL_COMPLETE) {
-        networkClient.sendFinish();
+        await networkClient.sendFinish();
         shipStats.failed = false;
         shipStats.finished = true;
       }

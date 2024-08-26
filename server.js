@@ -535,11 +535,11 @@ class GameSession {
     const timestamp = rawEvent.timestamp;
     if (!timestamp) return { validEvent: false, criticalError: false };
 
-    if (timestamp < this.starttimestamp) {
-      console.log("Invalidated game event because of timestamp inconsistency");
-      validEvent = false;
-      criticalError = false;
-    }
+    // if (timestamp < this.starttimestamp) {
+    //   console.log("Invalidated game event because of timestamp inconsistency");
+    //   validEvent = false;
+    //   criticalError = false;
+    // }
 
     if (Date.now() - this.pingtimestamp > GAME_SESSION_TIMEOUT) {
       console.log(
@@ -782,6 +782,10 @@ class GameSessionsManager {
           console.log(
             `Game session ${gsid} is invalid. Deleting game session.`,
           );
+          console.log(
+            `[invalid session by ${gameSession.userID}] Final event log: `,
+            JSON.stringify(gameSession.eventlog),
+          );
           gameSession.onClose();
           this.deleteGameSession(sessionID, gsid);
         }
@@ -793,6 +797,12 @@ class GameSessionsManager {
         const gameSession = this.gameSessions.get(gsid);
         console.log(`Deleting session because it has finished running`);
         const validSession = gameSession.validateFinalEventLog();
+
+        console.log(
+          `[finished session by ${gameSession.userID}] Final event log: `,
+          JSON.stringify(gameSession.eventlog),
+        );
+
         if (!validSession) {
           console.log(`Invalidated game session because of invalid event log`);
         }

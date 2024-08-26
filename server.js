@@ -478,23 +478,23 @@ class GameSession {
   }
 
   validateFinalEventLog() {
-    if (this.eventlog.length < 4) return false;
-    if (this.eventlog[0].type !== "start") return false;
-    if (this.eventlog[1].type !== "alive") return false;
-    if (this.eventlog[this.eventlog.length - 2].type !== "alive") return false;
-    if (this.eventlog[this.eventlog.length - 1].type !== "finish") return false;
-    if (
-      this.eventlog[this.eventlog.length - 2].timestamp -
-        this.eventlog[1].timestamp <=
-      MIN_GAME_COMPLETION_TIME
-    )
-      return false;
-    if (
-      Math.abs(this.eventlog[1].posx) >= 0.1 ||
-      Math.abs(this.eventlog[1].posy) >= 0.1
-    )
-      //game always starts at (0, 0)
-      return false;
+    if (this.eventlog.length < 2) return false;
+    // if (this.eventlog[0].type !== "start") return false;
+    // if (this.eventlog[1].type !== "alive") return false;
+    // if (this.eventlog[this.eventlog.length - 2].type !== "alive") return false;
+    // if (this.eventlog[this.eventlog.length - 1].type !== "finish") return false;
+    // if (
+    //   this.eventlog[this.eventlog.length - 2].timestamp -
+    //     this.eventlog[1].timestamp <=
+    //   MIN_GAME_COMPLETION_TIME
+    // )
+    //   return false;
+    // if (
+    //   Math.abs(this.eventlog[1].posx) >= 0.1 ||
+    //   Math.abs(this.eventlog[1].posy) >= 0.1
+    // )
+    //   //game always starts at (0, 0)
+    //   return false;
 
     for (const event of this.eventlog) {
       if (event.type == "alive") {
@@ -532,7 +532,7 @@ class GameSession {
     if (timestamp < this.starttimestamp) {
       console.log("Invalidated game event because of timestamp inconsistency");
       validEvent = false;
-      criticalError = true;
+      criticalError = false;
     }
 
     if (Date.now() - this.pingtimestamp > GAME_SESSION_TIMEOUT) {
@@ -543,29 +543,21 @@ class GameSession {
       criticalError = true;
     }
 
-    const timestampError = Math.abs(timestamp - Date.now());
-    if (timestampError > MAX_TIMESTAMP_ERROR) {
-      console.log("Invalidated game event because of timestamp inconsistency");
-      validEvent = false;
-      criticalError = true;
-    }
-
     let parsedEvent = { timestamp, type: rawEvent.type };
 
     switch (rawEvent.type) {
       case "start": {
-        if (this.eventlog.length > 0 || this.clientStarted) {
-          console.log(
-            "Invalidated game session because of starting twice (or start isnt the first event to be sent)",
-          );
+        if (!this.clientStarted) {
+          console.log("Invalidated game session because of starting twice");
           validEvent = false;
           criticalError = true;
         }
-        if (Math.abs(this.starttimestamp - timestamp) > MAX_START_DELAY) {
-          console.log("Invalidated game session because of starting too late");
-          validEvent = false;
-          criticalError = true;
-        }
+
+        // if (Math.abs(this.starttimestamp - timestamp) > MAX_START_DELAY) {
+        //   console.log("Invalidated game session because of starting too late");
+        //   validEvent = false;
+        //   criticalError = true;
+        // }
 
         if (validEvent && !criticalError) {
           this.clientstarttimestamp = timestamp;
@@ -576,7 +568,7 @@ class GameSession {
 
       //before sending finish, send an alive event with the final state
       case "finish": {
-        if (this.eventlog.length === 0 || !this.clientStarted) {
+        if (!this.clientStarted) {
           console.log(
             "Invalidated game session because of finishing without starting",
           );
@@ -592,17 +584,17 @@ class GameSession {
             client_game_duration,
           );
 
-          if (
-            Math.abs(server_game_duration - client_game_duration) >
-            MAX_TIMESTAMP_ERROR
-          ) {
-            //huge error in game duration
-            console.log(
-              "Invalidated game session because of mismatch in game duration",
-            );
-            validEvent = false;
-            criticalError = true;
-          }
+          // if (
+          //   Math.abs(server_game_duration - client_game_duration) >
+          //   MAX_TIMESTAMP_ERROR
+          // ) {
+          //   //huge error in game duration
+          //   console.log(
+          //     "Invalidated game session because of mismatch in game duration",
+          //   );
+          //   validEvent = false;
+          //   criticalError = true;
+          // }
 
           if (Math.abs(min_duration) < MIN_GAME_COMPLETION_TIME) {
             console.log(
@@ -621,35 +613,28 @@ class GameSession {
       }
 
       case "alive": {
-        if (!this.clientStarted) {
+        if (!this.clientStarted) break;
+        const xpos = rawEvent.xpos;
+        const ypos = rawEvent.ypos;
+        const angle = rawEvent.angle;
+        const health = rawEvent.health;
+
+        if (
+          //TODO: better safe guard here
+          xpos == undefined ||
+          ypos == undefined ||
+          angle == undefined ||
+          health == undefined
+        ) {
           console.log(
-            "Invalidated game event because of sending alive event before starting",
+            "Invalidated (just) game event because of sending invalid alive event",
           );
           validEvent = false;
-          criticalError = true;
         } else {
-          const xpos = rawEvent.xpos;
-          const ypos = rawEvent.ypos;
-          const angle = rawEvent.angle;
-          const health = rawEvent.health;
-
-          if (
-            //TODO: better safe guard here
-            xpos == undefined ||
-            ypos == undefined ||
-            angle == undefined ||
-            health == undefined
-          ) {
-            console.log(
-              "Invalidated (just) game event because of sending invalid alive event",
-            );
-            validEvent = false;
-          } else {
-            parsedEvent.xpos = xpos;
-            parsedEvent.ypos = ypos;
-            parsedEvent.angle = angle;
-            parsedEvent.health = health;
-          }
+          parsedEvent.xpos = xpos;
+          parsedEvent.ypos = ypos;
+          parsedEvent.angle = angle;
+          parsedEvent.health = health;
         }
 
         break;
@@ -681,7 +666,6 @@ class GameSession {
     if (validEvent && !criticalError) {
       this.ping();
       this.eventlog.push(parsedEvent);
-      this.lastEventType = rawEvent.type;
     }
 
     return { validEvent, criticalError };
@@ -696,7 +680,7 @@ class GameSession {
     if (criticalError) this.running = false;
 
     console.log(
-      `Processed event message. Valid: ${validEvent}, Error: ${criticalError}`,
+      `[userID ${this.userID} Processed event message. Valid: ${validEvent}, Error: ${criticalError}`,
     );
 
     return !criticalError;
@@ -715,7 +699,7 @@ class GameSession {
 
   onClose() {
     console.log(
-      "[GameSession] Closing game session (failed, finished or invalidated)",
+      `[GameSession] [userID: ${this.userID} Closing game session (failed, finished or invalidated)`,
     );
     console.log(`${this.eventlog.length} events were sent by the client`);
     console.log("[GameSession] Bye bye... ");
@@ -982,8 +966,6 @@ app.get("/levels/:level/*", (req, res, next) => {
     res.status(401).send("Invalid request");
   }
 
-  console.log("Trying to read from level ", levelNum);
-
   const sessionid = req.headers.sid;
 
   if (!gameSessionsManager.checkSessionPresence(sessionid)) {
@@ -997,7 +979,7 @@ app.get("/levels/:level/*", (req, res, next) => {
     gameSessionsManager.getGameSessionID(sessionid) !== req.headers.gsid
   ) {
     res.status(401).send("Unauthorized");
-    console.log("invalid gamesession");
+    console.log("invalid game session");
     return;
   }
 

@@ -1163,7 +1163,7 @@ async function main(
       );
     }
 
-    if (landed && landDt > 4000) {
+    if (landed && landDt > 3800) {
       // ctx.fillStyle = "rgba(255, 255, 255, 1)";
       // ctx.font = "40px Orbitron";
       // const ltext = "You have landed!";
@@ -1359,12 +1359,11 @@ async function main(
         collides(ship, finishPlatform);
       if (
         landedCollission != null &&
-        landedCollission.supports.length >= 2 &&
-        ship.angularSpeed < 1e-6 &&
+        ship.angularSpeed < 1e-2 &&
         ship.speed < 1e-1 &&
         Math.abs(ship.angle) <= 0.1 &&
         Vector.magnitude(Vector.sub(ship.position, finishPlatform.position)) <=
-          120
+          200
       ) {
         if (!landed) {
           landed = true;

@@ -255,7 +255,8 @@ class NetworkClient {
     if (res) {
       this.gameSessionID = null;
       //optimistically update currLevel, if this is not done on the server(validation failed) the further requests will just fail
-      this.currLevel = this.playingLevel + 1;
+      if (this.currLevel == this.playingLevel)
+        this.currLevel = this.playingLevel + 1;
     }
 
     return res;

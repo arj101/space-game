@@ -448,9 +448,9 @@ async function updateGlobalLeaderboard() {
 
 setTimeout(updateGlobalLeaderboard, 3000);
 
-const GAME_SESSION_TIMEOUT = 15 * 1000;
-const MAX_TIMESTAMP_ERROR = 30 * 1000;
-const MAX_START_DELAY = 15 * 1000;
+const GAME_SESSION_TIMEOUT = 40 * 1000;
+const MAX_TIMESTAMP_ERROR = 60 * 1000;
+const MAX_START_DELAY = 30 * 1000;
 const MIN_GAME_COMPLETION_TIME = 6 * 1000;
 class GameSession {
   constructor(userID, userSessionID, gameSessionID, levelNum) {
@@ -832,7 +832,7 @@ class GameSessionsManager {
         this.gameSessions.delete(gsid);
       }
       this.finishedSessionPool.clear();
-    }, 30000);
+    }, 5000);
   }
 
   createGameSession(userID, userSessionID, gameSessionID, levelnum) {
@@ -1196,8 +1196,6 @@ app.post("/:sessionid/:gamesessionid/a/:hash", async (req, res) => {
     res.status(401).send("Invalid request");
     return;
   }
-
-  console.log(data);
 
   const result = gameSessionsManager.onReceiveKeepAliveAlive(
     gameSessionID,

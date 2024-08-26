@@ -1452,10 +1452,10 @@ loadGlobalResources(renderers.width, renderers.height).then(
       return !shipStats.running;
     }
 
-    function onFinish(reason) {
+    async function onFinish(reason) {
       shipStats.running = false;
 
-      networkClient.sendStats(
+      await networkClient.sendStats(
         screenToClipX(shipStats.ship.position.x),
         screenToClipY(shipStats.ship.position.y),
         shipStats.ship.angle,
@@ -1466,13 +1466,13 @@ loadGlobalResources(renderers.width, renderers.height).then(
 
       if (reason == GAME_FINISH_REASONS.HEALTH_ZERO) {
         console.log("sending death threat");
-        networkClient.sendDeath();
+        await networkClient.sendDeath();
         shipStats.finished = false;
         shipStats.failed = true;
       }
 
       if (reason == GAME_FINISH_REASONS.LEVEL_COMPLETE) {
-        networkClient.sendFinish();
+        await networkClient.sendFinish();
         shipStats.failed = false;
         shipStats.finished = true;
       }

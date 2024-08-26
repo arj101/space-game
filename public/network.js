@@ -147,62 +147,72 @@ class NetworkClient {
   }
 
   async login(username, password) {
-    let sum = 0;
-    for (let i = 0; i < username.length; i++) {
-      const c = username.charCodeAt(i);
-      sum |= 0b1 << (c + i) % 26;
-      sum = (sum * 3) % 24882501;
-    }
+    try {
+      let sum = 0;
+      for (let i = 0; i < username.length; i++) {
+        const c = username.charCodeAt(i);
+        sum |= 0b1 << (c + i) % 26;
+        sum = (sum * 3) % 24882501;
+      }
 
-    const url = `/${sum}/${username}/login`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        psd: password,
-      },
-    });
+      const url = `/${sum}/${username}/login`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          psd: password,
+        },
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        return false;
+      }
+
+      const resbody = await response.json();
+
+      if (!resbody.sessionId || !resbody.user || !resbody.userId) {
+        return false;
+      }
+
+      this.userID = resbody.userId;
+      this.sessionID = resbody.sessionId;
+      this.username = username;
+      this.loggedIn = true;
+      this.currLevel = resbody.user.currLevel || 1;
+
+      return true;
+    } catch (e) {
+      console.log(e);
       return false;
     }
-
-    const resbody = await response.json();
-
-    if (!resbody.sessionId || !resbody.user || !resbody.userId) {
-      return false;
-    }
-
-    this.userID = resbody.userId;
-    this.sessionID = resbody.sessionId;
-    this.username = username;
-    this.loggedIn = true;
-    this.currLevel = resbody.user.currLevel || 1;
-
-    return true;
   }
 
   async requestGame(level) {
-    if (!this.loggedIn || level > this.currLevel) {
+    try {
+      if (!this.loggedIn || level > this.currLevel) {
+        return false;
+      }
+
+      const res = await fetch(
+        `/${this.userID}/${this.sessionID}/gamereq/${level}`,
+        {
+          method: "POST",
+        },
+      );
+
+      if (!res.ok) return false;
+
+      const body = await res.json();
+
+      if (!body.id) return false;
+
+      this.gameSessionID = body.id;
+      this.playingLevel = level;
+
+      return true;
+    } catch (e) {
+      console.log(e);
       return false;
     }
-
-    const res = await fetch(
-      `/${this.userID}/${this.sessionID}/gamereq/${level}`,
-      {
-        method: "POST",
-      },
-    );
-
-    if (!res.ok) return false;
-
-    const body = await res.json();
-
-    if (!body.id) return false;
-
-    this.gameSessionID = body.id;
-    this.playingLevel = level;
-
-    return true;
   }
 
   async sendAlive(body) {
@@ -233,33 +243,42 @@ class NetworkClient {
 
   async sendStart() {
     if (!this.gameSessionID) return false;
+    try {
+      const res = await this.sendAlive({
+        type: "start",
+        timestamp: Date.now(),
+        instance: "txs",
+      });
 
-    const res = await this.sendAlive({
-      type: "start",
-      timestamp: Date.now(),
-      instance: "txs",
-    });
-
-    return res.ok;
+      return res.ok;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
   }
 
   async sendFinish() {
     if (!this.gameSessionID) return false;
 
-    const res = await this.sendAlive({
-      type: "finish",
-      timestamp: Date.now(),
-      instance: "fxs",
-    });
+    try {
+      const res = await this.sendAlive({
+        type: "finish",
+        timestamp: Date.now(),
+        instance: "fxs",
+      });
 
-    if (res) {
-      this.gameSessionID = null;
-      //optimistically update currLevel, if this is not done on the server(validation failed) the further requests will just fail
-      if (this.currLevel == this.playingLevel)
-        this.currLevel = this.playingLevel + 1;
+      if (res) {
+        this.gameSessionID = null;
+        //optimistically update currLevel, if this is not done on the server(validation failed) the further requests will just fail
+        if (this.currLevel == this.playingLevel)
+          this.currLevel = this.playingLevel + 1;
+      }
+
+      return res;
+    } catch (e) {
+      console.log(e);
+      return false;
     }
-
-    return res;
   }
 
   async sendDeath() {

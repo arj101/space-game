@@ -1573,7 +1573,13 @@ loadGlobalResources(renderers.width, renderers.height).then(
       }
       gameStats.levelResources[levelPrefix] = levelResources;
 
-      networkClient.sendStart();
+      const start = await networkClient.sendStart();
+      if (!start) {
+        alert("Server didnt validate start :(");
+        resetStats();
+        startMenu();
+        return;
+      }
 
       shipStats.instance = main(
         levels[gameStats.level].filePrefix,

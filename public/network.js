@@ -250,7 +250,7 @@ class NetworkClient {
         instance: "txs",
       });
 
-      return res.ok;
+      return res;
     } catch (e) {
       console.log(e);
       return false;

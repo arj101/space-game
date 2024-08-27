@@ -233,6 +233,43 @@ async function menu(
   let selectedLeaderboard = "global";
   let loadedLeaderboard = "global";
 
+  let eKeyDown = false;
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key == "e" || e.key == "E") {
+      eKeyDown = true;
+    }
+  });
+
+  window.addEventListener("keyup", (e) => {
+    if (e.key == "e" || e.key == "E") {
+      eKeyDown = false;
+      changedLeaderboard = true;
+      changedLeaderboard = true;
+    }
+
+    let changedLeaderboard = false;
+    if (e.key == "a" || e.key == "A" || e.key == "ArrowLeft") {
+      selectedLevel -= 1;
+      if (selectedLevel < 0) selectedLevel = levelCount - 1;
+      changedLeaderboard = true;
+    }
+    if (e.key == "d" || e.key == "D" || e.key == "ArrowRight") {
+      selectedLevel = (selectedLevel + 1) % levelCount;
+      changedLeaderboard = true;
+    }
+    if (changedLeaderboard) {
+      updateLeaderboard();
+      selectedLeaderboard = selectedLevel == null ? "global" : selectedLevel;
+    }
+
+    if (e.key == "w" || e.key == "W") {
+      selectedLevel = null;
+      selectedLeaderboard = "global";
+      updateLeaderboard();
+    }
+  });
+
   const updateLeaderboard = async () => {
     let serverLeaderboard;
     try {
@@ -464,8 +501,14 @@ async function menu(
 
       if (selectedLevel == i) {
         //green background
-        ctx.fillStyle = "rgba(28, 255, 89, 0.1)";
-        ctx.fillRect(levelRectX, levelRectY, boxSize.width, boxSize.height);
+        ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(
+          levelRectX - 3,
+          levelRectY - 3,
+          boxSize.width + 6,
+          boxSize.height + 6,
+        );
       }
       ctx.restore();
 
@@ -499,7 +542,7 @@ async function menu(
       mouse.down &&
       mouseOutsideLevelBoxes <= 0 &&
       !mouseInsideElement(playbuttonElement) &&
-      !mouseInsideElement(elements.leaderboard)
+      mouseInsideElement(elements.play)
     ) {
       selectedLeaderboard = "global";
       selectedLevel = null;
@@ -568,8 +611,9 @@ async function menu(
       );
 
       if (
-        mouseInsideElement(playbuttonElement) &&
-        (mouse.down || levelReqSent) &&
+        ((mouseInsideElement(playbuttonElement) &&
+          (mouse.down || levelReqSent)) ||
+          eKeyDown) &&
         selectedLevel + 1 <= networkClient.currLevel
       ) {
         if (playbuttonHold == null) {

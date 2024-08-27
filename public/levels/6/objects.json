@@ -1,0 +1,14 @@
+{
+  "finish": {
+    "texture": "finish.png",
+    "vertices": "finish.obj"
+  },
+  "start": {
+    "texture": "start.png",
+    "vertices": "start.obj"
+  },
+  "abc": {
+  	"texture": "abc.png",
+  	"vertices": "abc.obj"
+  }
+}

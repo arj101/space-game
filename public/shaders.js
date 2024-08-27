@@ -21,31 +21,10 @@ varying vec2 texcoord;
 varying vec2 vpos;
 uniform sampler2D texture;
 
-float rand(float n){return fract(sin(n) * 43758.5453123);}
-float rand(vec2 n) {
-	return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
-}
-float noise(float p){
-	float fl = floor(p);
-  float fc = fract(p);
-	return mix(rand(fl), rand(fl + 1.0), fc);
-}
-float noise(vec2 n) {
-	const vec2 d = vec2(0.0, 1.0);
-  vec2 b = floor(n), f = smoothstep(vec2(0.0), vec2(1.0), fract(n));
-	return mix(mix(rand(b), rand(b + d.yx), f.x), mix(rand(b + d.xy), rand(b + d.yy), f.x), f.y);
-}
-
 void main() {
    vec4 color = texture2D(texture, texcoord);
-   color *= color;
 
-  gl_FragColor = vec4(color);
-  gl_FragColor.xyz = mix(gl_FragColor.xyz, vec3(noise(texcoord * 500.0)), color.x * 0.05);
-
-  gl_FragColor.xyz += smoothstep( 0.95, 1.0, color.x) ;
-
-  gl_FragColor.a = gl_FragColor.a;
+  gl_FragColor = color * color;
 }
 `,
   };
@@ -307,9 +286,8 @@ void main() {
    color *= color;
 
 
-   float scale = 1.0;
 
-  vec2 st = vpos * scale;
+  vec2 st = vpos;
   st *= 20.0;
   st.x *= ${width.toFixed(0) / height.toFixed(0)};
   float cn = cnoise(st);
@@ -319,14 +297,8 @@ void main() {
   float intensity = f1f2.y - f1f2.x;
 
   intensity = smoothstep(0.01, 0.1, intensity) - smoothstep(0.1, 0.2, intensity);
-   intensity += (cn - 0.5) ;
+   intensity += (cn - 0.5) + cnoise(st*19.0);
 
-    intensity +=  (cnoise(st*19.0)) ;
-
-
-    // color /= 9.0;
-    // color = clamp(color, 0., 1.);
-    // color.x = color.y = color.z = color.y;
 
 
     intensity = clamp(intensity, 0., 1.);
@@ -390,37 +362,30 @@ void main() {
     void main() {
 
     vec2 pos = position.xy;
-    vec2 texPos = (pos.xy/shipSize.xy/2. + 1.0) * 0.5;
-
-
-
+    vec2 texPos = (pos.xy/shipSize.xy * 0.5 + 1.0) * 0.5;
     vec4 color = texture2D(img, f_texcoord.xy);
 
- //   vec4 color = vec4(1.0 - smoothstep( 0.08, 0.09, distance(position.xy, vec2(0.) )), 1., 1., 1.);
     gl_FragColor = color;
 
-    // gl_FragColor.xw += step(distance(texPos, vec2(0.05, 0.1)), 0.1);
-    // gl_FragColor.xw += step(distance(texPos, vec2(1.-0.05, 0.1)), 0.1);
-
-    vec2 t1 = vec2(0.00, 0.1 );
-    vec2 t2 = vec2(1.-0.09, 0.1);
-
+    const vec2 t1 = vec2(0.00, 0.1 );
+    const vec2 t2 = vec2(1.-0.09, 0.1);
 
     vec2 ft1 = texPos - t1;
     vec2 ft2 = texPos - t2;
 
-    ft1 *= rot(sin(u_time * 70.) * 0.02);
-    ft2 *= rot(sin(u_time * 70.) * 0.02);
+    mat2 r = rot(sin(u_time * 70.) * 0.02);
+
+    ft1 *= r;
+    ft2 *= r;
 
     ft1.y /= abs(sin(u_time * 70. * (20. * lr.x))* (0.2 + lr.x * 0.2) + 1.);
     ft2.y /= abs(sin(u_time * 70. * (20. * lr.y))* (0.2 + lr.y * 0.2) + 1.);
 
 
-    ft1 /= 0.1 ;
-    ft2 /= 0.1;
+    const float divp1 = 1./0.1;
+    ft1 *= divp1 ;
+    ft2 *= divp1;
 
-    // ft1.y *= lr.x ;
-    // ft2.y *= lr.y / (0.2 *0.5 + 0.5);
     ft1.y *= lr.x * 0.2444;
     ft2.y *= lr.y * 0.2444;
 
@@ -505,60 +470,48 @@ mat2 rot(float a) {
       float invlength = 0.3/length(c);
       intensity += min(0.8, 0.002/(abs(c.y * c.x))) *  invlength;
 
-      vec2 cr = c * rot(0.785);
+      const mat2 sr = mat2(0.7, -0.7, 0.7, 0.7);
+      vec2 cr = c * sr;
 
-      intensity += min(0.4, 0.002/(abs(cr.y * cr.x))) *invlength;
-      intensity = max(0., intensity - 0.01);
+      intensity += min(0.4, 0.002/(abs(cr.y * cr.x))) * invlength;
 
-      float red = smoothstep(0.4, 0.9, size) * size;
+      float red = smoothstep(0.6, 0.9, size) * size;
       float green = smoothstep(0.2, 0.3, size) * size;
       float blue = smoothstep(0., 0.01, size) * size;
 
 
       vec3 sc = vec3(red,  green, blue) * intensity;
 
-      float u_time = center.z;
 
-      float blink = fract(u_time *0.05  + 353663.0* noise3(id));
+      float blink = fract(center.z *0.05  + 353663.0 * noise3(id));
       sc *= 1.0 - step(0.98, blink);
 
       return sc;
   }
 
     void main() {
-       vec2 st = position.xy + center.xy  *0.01 ;
+       vec2 st = position.xy + center.xy  * 0.01 ;
       st.y *= ${height.toFixed(1)}/${width.toFixed(1)};
-
-      float u_time = center.z;
-
-      st -= u_time*0.0001;
 
       vec3 color = vec3(0.);
 
-
       const int cutoff = 1;
       const float scale = 6.;
-      const float star_prob = 0.9;
+      st *= scale;
+
       for (int x = -cutoff; x <= cutoff; x++) {
           for (int y = -cutoff; y <= cutoff; y++) {
-
               vec2 offset = vec2(x, y);
-              vec2 id = floor(st*scale ) + offset;
+              vec2 id = floor(st) + offset;
 
-               if (noise2(id) > star_prob) continue;
-
-              vec2 f = fract(st*scale) - offset  ;
-              color += star(id , f);;
+              vec2 f = fract(st) - offset  ;
+              color += star(id , f);
           }
       }
 
       color *= 0.01;
-      color = clamp(color, 0., 1.);
-
-
 
       gl_FragColor.xyz = color;
-      // gl_FragColor.x = sin(u_time);
       gl_FragColor.w = 1.;
     }
     `,

@@ -324,7 +324,7 @@ class NetworkClient {
   async fetchGlobalLeaderboard() {
     const res = await fetch("/leaderboard/global");
     if (!res.ok) {
-      return null;
+      return [];
     }
 
     const data = await res.json();
@@ -340,7 +340,7 @@ class NetworkClient {
   async fetchLevelLeaderboard(levelnum) {
     const res = await fetch(`/leaderboard/level/${levelnum}`);
     if (!res.ok) {
-      return null;
+      return [];
     }
 
     const data = await res.json();

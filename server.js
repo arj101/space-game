@@ -817,7 +817,7 @@ class GameSessionsManager {
             database.updateDeathCount(
               userid,
               gameSession.levelNum,
-              Date.now() - gameSession.starttimestamp,
+              Math.max(0, Date.now() - gameSession.starttimestamp - 15000),
             );
           } catch (e) {
             console.log(e);

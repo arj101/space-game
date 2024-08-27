@@ -140,6 +140,12 @@ database.updateUserProgress = async function (userid, levelnum, score_time) {
     database.leaderboardDiffs.get(levelnum).set(userid, score_time);
   };
 
+  if (user.timeplayed) {
+    user.timeplayed += score_time;
+  } else {
+    user.timeplayed = score_time;
+  }
+
   if (user.progress[levelnum]) {
     if (user.progress[levelnum] > score_time || !user.progress[levelnum]) {
       user.progress[levelnum] = score_time;
@@ -163,13 +169,19 @@ database.updateUserProgress = async function (userid, levelnum, score_time) {
   await db.collection("users").doc(userid).set(user);
 };
 
-database.updateDeathCount = async function (userid, levelnum, score) {
+database.updateDeathCount = async function (userid, levelnum, duration) {
   let user = await db.collection("users").doc(userid).get();
   user = user.data();
   if (!user) return null;
 
   user.deathcount = user.deathcount || 0;
   user.deathcount += 1;
+
+  if (user.timeplayed) {
+    user.timeplayed += duration;
+  } else {
+    user.timeplayed = duration;
+  }
 
   console.log(`Updating user ${JSON.stringify(user)}`);
 
@@ -797,6 +809,19 @@ class GameSessionsManager {
           console.log(
             `Game session ${gsid} is invalid. Deleting game session.`,
           );
+          try {
+            console.log(
+              `Counting invalid session by ${gameSession.userID} as death`,
+            );
+            const userid = gameSession.userID;
+            database.updateDeathCount(
+              userid,
+              gameSession.levelNum,
+              Date.now() - gameSession.starttimestamp,
+            );
+          } catch (e) {
+            console.log(e);
+          }
           console.log(
             `[invalid session by ${gameSession.userID}] Final event log: `,
             JSON.stringify(gameSession.eventlog),
@@ -833,14 +858,22 @@ class GameSessionsManager {
               gameSession.levelNum,
               gameSession.duration,
             );
-          } catch (_) {}
+          } catch (e) {
+            console.log(e);
+          }
         }
 
-        if (validSession && gameSession.lastEventType == "dead") {
+        if (gameSession.lastEventType == "dead") {
           try {
             const userid = gameSession.userID;
-            database.updateDeathCount(userid, gameSession.levelNum);
-          } catch (e) {}
+            database.updateDeathCount(
+              userid,
+              gameSession.levelNum,
+              Date.now() - gameSession.starttimestamp,
+            );
+          } catch (e) {
+            console.log(e);
+          }
         }
 
         gameSession.onClose();

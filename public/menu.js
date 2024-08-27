@@ -231,21 +231,26 @@ async function menu(
   let levelReqSent = false;
 
   let selectedLeaderboard = "global";
+  let loadedLeaderboard = "global";
 
   const updateLeaderboard = async () => {
     let serverLeaderboard;
     try {
-      if (selectedLeaderboard == "global")
+      if (selectedLeaderboard == "global") {
         serverLeaderboard = await networkClient.fetchGlobalLeaderboard();
-      else
+        loadedLeaderboard = selectedLeaderboard;
+      } else {
         serverLeaderboard = await networkClient.fetchLevelLeaderboard(
           selectedLeaderboard + 1,
         );
+        loadedLeaderboard = selectedLeaderboard + 1;
+      }
+      if (serverLeaderboard) leaderboard = serverLeaderboard;
+
+      leaderboardOffset = Math.min(leaderboardOffset, leaderboard.length - 10);
     } catch (e) {
       console.log("Error fetching leaderboard", e);
     }
-
-    if (serverLeaderboard) leaderboard = serverLeaderboard;
   };
 
   updateLeaderboard();
@@ -292,15 +297,31 @@ async function menu(
     ctx.stroke();
 
     ctx.font = "600 40px Orbitron";
-    const { width: lw } = ctx.measureText("Leaderboard");
+    const leaderboardText =
+      loadedLeaderboard != "global"
+        ? `Level ${loadedLeaderboard} leaderboard`
+        : "Global leaderboard";
+    const { width: lw } = ctx.measureText(leaderboardText);
 
     ctx.fillStyle = "white";
     ctx.fillText(
-      "Leaderboard",
+      leaderboardText,
       elements.leaderboard.x + elements.leaderboard.width / 2 - lw / 2,
       elements.leaderboard.y + 60,
     );
 
+    //scroll bar
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.fillRect(
+      elements.leaderboard.x + elements.leaderboard.width - 20,
+      elements.leaderboard.y +
+        130 +
+        (480 / leaderboard.length) * leaderboardOffset,
+      5,
+      480 * (10 / leaderboard.length),
+    );
+
+    ctx.fillStyle = "rgba(255, 255, 255, 1)";
     for (
       let i = leaderboardOffset;
       i < leaderboard.length && i < leaderboardOffset + 10 && i >= 0;
@@ -313,10 +334,10 @@ async function menu(
       else {
         username = leaderboard[i].username;
         score = leaderboard[i].score;
+        if (!score) score = "[no score]";
       }
 
       const posText = `${i + 1}`;
-      1;
       ctx.font = "400 32px Orbitron";
       ctx.fillText(
         posText,
@@ -470,7 +491,8 @@ async function menu(
     if (
       mouse.down &&
       mouseOutsideLevelBoxes <= 0 &&
-      !mouseInsideElement(playbuttonElement)
+      !mouseInsideElement(playbuttonElement) &&
+      !mouseInsideElement(elements.leaderboard)
     ) {
       selectedLeaderboard = "global";
       updateLeaderboard();

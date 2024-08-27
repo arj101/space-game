@@ -503,6 +503,18 @@ async function main(
         scrollableMenu.closeMenu();
         restartCallback();
         console.log("Restarting...");
+
+        ctx.font = "900 50px Orbitron";
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.fillStyle = "rgba(255, 255, 255, 1)";
+        ctx.fillText(
+          "Restarting...",
+          width / 2 - ctx.measureText("Restarting...").width / 2,
+          height / 2,
+        );
       }
 
       if (item == "Continue game") {
@@ -588,6 +600,18 @@ async function main(
         scrollableMenu.closeMenu();
         restartCallback();
         console.log("Restarting...");
+
+        ctx.font = "900 50px Orbitron";
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.fillStyle = "rgba(255, 255, 255, 1)";
+        ctx.fillText(
+          "Restarting...",
+          width / 2 - ctx.measureText("Restarting...").width / 2,
+          height / 2,
+        );
       }
 
       if (item == "Continue game") {
@@ -1230,6 +1254,18 @@ async function main(
           if (item == "Retry") {
             restartCallback();
             console.log("Restarting...");
+
+            ctx.font = "900 50px Orbitron";
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = "rgba(255, 255, 255, 1)";
+            ctx.fillText(
+              "Restarting...",
+              width / 2 - ctx.measureText("Restarting...").width / 2,
+              height / 2,
+            );
           }
           if (item == "Exit to menu") {
             exitToMenuCallback();
@@ -1237,6 +1273,18 @@ async function main(
 
           if (item == "Next") {
             onRequestNextLevel();
+
+            ctx.font = "900 50px Orbitron";
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = "rgba(255, 255, 255, 1)";
+            ctx.fillText(
+              "Loading...",
+              width / 2 - ctx.measureText("Loading...").width / 2,
+              height / 2,
+            );
           }
         };
       }

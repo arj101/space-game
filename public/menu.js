@@ -88,7 +88,7 @@ async function menu(
 
   const form = document.getElementById("loginform");
 
-  window.addEventListener("pointerdown", (e) => {
+  window.onpointerdown = (e) => {
     mouse.y = e.pageY * pixelRatio;
     mouse.x = e.pageX * pixelRatio;
     mouse.down = true;
@@ -108,13 +108,13 @@ async function menu(
       form.style.display = "none";
       elements.login.open = false;
     }
-  });
+  };
 
   // globalResources.audioCtx.resume();
   // globalResources.thrusterAudio.currentTime = 0;
   // globalResources.thrusterAudio.repeat = true;
 
-  window.addEventListener("pointerup", (e) => {
+  window.onpointerup = (e) => {
     mouse.down = false;
 
     // if (!globalResources.thrusterAudio.playing) {
@@ -147,9 +147,9 @@ async function menu(
     //   0.6,
     //   globalResources.thrusterAudio.currentTime + 0.1,
     // );
-  });
+  };
 
-  window.addEventListener("wheel", (e) => {
+  window.onwheel = (e) => {
     mouse.y = e.pageY * pixelRatio;
     mouse.x = e.pageX * pixelRatio;
 
@@ -163,9 +163,9 @@ async function menu(
         Math.min(leaderboard.length - 10, leaderboardOffset),
       );
     }
-  });
+  };
 
-  window.addEventListener("pointermove", (e) => {
+  window.onpointermove = (e) => {
     mouse.x = e.pageX * pixelRatio;
     mouse.y = e.pageY * pixelRatio;
 
@@ -178,9 +178,9 @@ async function menu(
         Math.min(leaderboard.length - 10, leaderboardOffset),
       );
     }
-  });
+  };
 
-  document.getElementById("login").addEventListener("click", async (e) => {
+  document.getElementById("login").onclick = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -200,7 +200,7 @@ async function menu(
     } else {
       alert("Login failed");
     }
-  });
+  };
 
   //create a leaderboard of random names and scores
   let leaderboard = Array.from({ length: 200 }, (_, i) => ({
@@ -233,13 +233,13 @@ async function menu(
 
   let eKeyDown = false;
 
-  window.addEventListener("keydown", (e) => {
+  window.onkeydown = (e) => {
     if (e.key == "e" || e.key == "E") {
       eKeyDown = true;
     }
-  });
+  };
 
-  window.addEventListener("keyup", (e) => {
+  window.onkeyup = (e) => {
     if (e.key == "e" || e.key == "E") {
       eKeyDown = false;
       changedLeaderboard = true;
@@ -266,7 +266,7 @@ async function menu(
       selectedLeaderboard = "global";
       updateLeaderboard();
     }
-  });
+  };
 
   const updateLeaderboard = async () => {
     let serverLeaderboard;
@@ -649,6 +649,12 @@ async function menu(
                 console.log(networkClient.gameSessionID);
                 console.log("Request succeeded, starting level :)");
                 quitted = true;
+                window.onkeyup = null;
+                window.onkeydown = null;
+                window.onwheel = null;
+                window.onpointermove = null;
+                window.onpointerup = null;
+                window.onpointerdown = null;
                 onGameStart(selectedLevel);
               })
               .catch((e) => {

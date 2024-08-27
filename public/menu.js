@@ -110,43 +110,8 @@ async function menu(
     }
   };
 
-  // globalResources.audioCtx.resume();
-  // globalResources.thrusterAudio.currentTime = 0;
-  // globalResources.thrusterAudio.repeat = true;
-
   window.onpointerup = (e) => {
     mouse.down = false;
-
-    // if (!globalResources.thrusterAudio.playing) {
-    // globalResources.audioCtx.resume();
-    // // globalResources.thrusterAudio.currTime = 0;
-    // globalResources.thrusterAudio.play();
-    // // }
-
-    // if (globalResources.gainNode.gain.value > 0.5) {
-    //   globalResources.gainNode.gain.setValueAtTime(
-    //     globalResources.gainNode.gain.value,
-    //     globalResources.audioCtx.currentTime,
-    //   );
-    //   globalResources.gainNode.gain.exponentialRampToValueAtTime(
-    //     0.0001,
-    //     globalResources.audioCtx.currentTime + 0.1,
-    //   );
-    // } else {
-    //   globalResources.gainNode.gain.setValueAtTime(
-    //     globalResources.gainNode.gain.value,
-    //     globalResources.audioCtx.currentTime,
-    //   );
-    //   globalResources.gainNode.gain.exponentialRampToValueAtTime(
-    //     1,
-    //     globalResources.audioCtx.currentTime + 0.1,
-    //   );
-    // }
-
-    // globalResources.gainNode.gain.exponentialRampToValueAtTime(
-    //   0.6,
-    //   globalResources.thrusterAudio.currentTime + 0.1,
-    // );
   };
 
   window.onwheel = (e) => {
@@ -688,6 +653,29 @@ async function menu(
         elements.play.x +
           elements.play.width / 2 -
           ctx.measureText(loginToPlayText).width / 2,
+        elements.play.y + elements.play.height / 2 + 20,
+      );
+    }
+
+    if (levelReqSent) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+      ctx.fillRect(
+        elements.play.x,
+        elements.play.y,
+        elements.play.width,
+        elements.play.height,
+      );
+      ctx.stroke();
+
+      const waitingText = "Waiting for server...";
+
+      ctx.fillStyle = "rgb(255, 255, 255)";
+      ctx.font = "600 32px Orbitron";
+      ctx.fillText(
+        waitingText,
+        elements.play.x +
+          elements.play.width / 2 -
+          ctx.measureText(waitingText).width / 2,
         elements.play.y + elements.play.height / 2 + 20,
       );
     }

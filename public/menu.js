@@ -335,7 +335,7 @@ async function menu(
       const offset = i - leaderboardOffset;
       let username,
         score = "[no score]";
-      if (selectedLeaderboard == "global") username = leaderboard[i];
+      if (loadedLeaderboard == "global") username = leaderboard[i];
       else {
         username = leaderboard[i].username;
         score = leaderboard[i].score;
@@ -502,8 +502,8 @@ async function menu(
       !mouseInsideElement(elements.leaderboard)
     ) {
       selectedLeaderboard = "global";
-      updateLeaderboard();
       selectedLevel = null;
+      updateLeaderboard();
     }
 
     ctx.fillStyle = "white";

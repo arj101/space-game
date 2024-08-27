@@ -171,14 +171,12 @@ async function menu(
 
     //scroll leaderboard just like before
     if (mouse.down && mouseInsideElement(elements.leaderboard)) {
-      console.log(e);
       leaderboardOffset += Math.floor(-e.movementY / 5);
 
       leaderboardOffset = Math.max(
         0,
         Math.min(leaderboard.length - 10, leaderboardOffset),
       );
-      console.log(leaderboardOffset);
     }
   });
 
@@ -327,8 +325,6 @@ async function menu(
 
     ctx.strokeStyle = "white";
     ctx.lineWidth = 2;
-
-    console.log(leaderboard);
 
     ctx.strokeRect(
       elements.leaderboard.x,

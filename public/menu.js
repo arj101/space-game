@@ -321,7 +321,7 @@ async function menu(
         130 +
         (480 / leaderboard.length) * leaderboardOffset,
       5,
-      480 * (10 / leaderboard.length),
+      Math.min(480, 480 * (10 / leaderboard.length)),
     );
 
     ctx.fillStyle = "rgba(255, 255, 255, 1)";

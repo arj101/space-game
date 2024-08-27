@@ -247,7 +247,10 @@ async function menu(
       }
       if (serverLeaderboard) leaderboard = serverLeaderboard;
 
-      leaderboardOffset = Math.min(leaderboardOffset, leaderboard.length - 10);
+      leaderboardOffset = Math.max(
+        0,
+        Math.min(leaderboardOffset, leaderboard.length - 10),
+      );
     } catch (e) {
       console.log("Error fetching leaderboard", e);
     }
@@ -287,6 +290,8 @@ async function menu(
 
     ctx.strokeStyle = "white";
     ctx.lineWidth = 2;
+
+    console.log(leaderboard);
 
     ctx.strokeRect(
       elements.leaderboard.x,

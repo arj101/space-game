@@ -209,7 +209,7 @@ database.buildLevelLeaderboardView = async function (level) {
 database.buildGlobalLeaderboardView = async function () {
   const leaderboardRef = await db.collection("leaderboard").doc("global").get();
 
-  const leaderboardData = leaderboardRef.data();
+  const leaderboardData = leaderboardRef.data() || { order: [], users: {} };
 
   leaderboardData.order = leaderboardData.order || [];
   leaderboardData.users = leaderboardData.users || {};

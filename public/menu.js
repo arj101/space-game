@@ -342,6 +342,8 @@ async function menu(
         if (!score) score = "[no score]";
       }
 
+      if (!username) continue;
+
       const posText = `${i + 1}`;
       ctx.font = "400 32px Orbitron";
       ctx.fillText(

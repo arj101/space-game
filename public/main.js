@@ -1344,6 +1344,18 @@ async function main(
             scrollableMenu.closeMenu();
             restartCallback();
             console.log("restarting...");
+
+            ctx.font = "900 50px Orbitron";
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = "rgba(255, 255, 255, 1)";
+            ctx.fillText(
+              "Restarting...",
+              width / 2 - ctx.measureText("Restarting...").width / 2,
+              height / 2,
+            );
           }
           if (item == "Exit to menu") {
             exitToMenuCallback();

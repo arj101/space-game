@@ -300,7 +300,6 @@ async function updateLeaderboard() {
 
       for (const id in leaderboardUsers) {
         const newUserRank = leaderboardUsers[id].rank;
-        database.globalLeadrboardDiffs.set([levelnum, id], newUserRank);
       }
 
       await leaderboardRef.set({
@@ -361,90 +360,54 @@ async function updateGlobalLeaderboard() {
   try {
     database.needsGlobalLeaderboardUpdate = false;
 
-    //make sure we have all the rank list lengths before building leaderboard
-    //if not we fetch them here
-    for (let i = 0; i < database.levelCount; i++) {
-      const levelnum = i + 1;
-      if (!database.levelRanklistLengthCache.has(levelnum)) {
-        console.log(
-          `Fetching rank list length for level ${levelnum} from database (no cache present)`,
-        );
-        const levelLeaderboardObj = await db
-          .collection("leaderboard")
-          .doc(levelnum.toString())
-          .get();
-        const levelLeaderboardData = levelLeaderboardObj.data();
-        if (!levelLeaderboardData) continue;
-        const rankListLength = levelLeaderboardData.order?.length;
-        if (!rankListLength) {
-          console.log(`Rank list length for level ${levelnum} not found :/`);
-          continue;
-        }
-        database.levelRanklistLengthCache.set(levelnum, rankListLength);
-      }
-    }
+    const score_sums = new Map();
 
-    const globalLeaderboardRef = db.collection("leaderboard").doc("global");
-    const globalLeaderboard = (await globalLeaderboardRef.get()).data() || {
-      order: {},
-      users: {},
-    };
+    for (let levelnum = 1; levelnum <= database.levelCount; levelnum++) {
+      const leaderboardRef = db
+        .collection("leaderboard")
+        .doc(levelnum.toString());
 
-    let newOrder = [];
-    const leaderboardUsers = globalLeaderboard.users || {};
+      let priority = levelnum;
+      let score = 100;
 
-    for (const [[level, userid], score] of database.globalLeadrboardDiffs) {
-      const globalUserObject = leaderboardUsers[userid] || {
-        levels: {},
-      };
-      if (!globalUserObject.levels) {
-        globalUserObject.levels = {};
-      }
-      globalUserObject.levels[level] = score;
-      leaderboardUsers[userid] = globalUserObject;
-    }
+      const leaderboard = await leaderboardRef.get();
+      const order = (leaderboard.data() || { order: [] }).order || [];
 
-    const userRankSums = {};
+      for (const uid of order) {
+        let currScore = score;
+        if (currScore > 0) currScore *= priority;
 
-    for (const userid in leaderboardUsers) {
-      const user = leaderboardUsers[userid];
-      let rankSum = 0;
-      //sum up all the level ranks or default to rank list length
-      for (let i = 0; i < database.levelCount; i++) {
-        const levelnum = i + 1;
-        if (user.levels) {
-          rankSum +=
-            user.levels[levelnum] ||
-            database.levelRanklistLengthCache.get(levelnum) + 1;
+        if (score_sums.has(uid)) {
+          score_sums.set(uid, score_sums.get(uid) + currScore);
         } else {
-          rankSum += database.levelRanklistLengthCache.get(levelnum) + 1;
+          score_sums.set(uid, currScore);
         }
+        score -= 1;
       }
-      userRankSums[userid] = rankSum;
     }
 
-    newOrder = Object.keys(userRankSums);
-    console.log(userRankSums);
-    newOrder.sort((id1, id2) => userRankSums[id1] - userRankSums[id2]);
+    const newOrder = Array.from(score_sums.entries()).sort(
+      (a, b) => b[1] - a[1],
+    );
 
-    for (let i = 0; i < newOrder.length; i++) {
-      const userid = newOrder[i];
-      const user = leaderboardUsers[userid] || {};
-      user.rank = i + 1;
+    const newUsers = {};
+
+    for (let rank = 0; rank < newOrder.length; rank++) {
+      const userid = newOrder[rank][0];
+      newUsers[userid] = { score: newOrder[rank][1], rank: rank + 1 };
     }
 
-    database.globalLeadrboardDiffs.clear();
-
-    globalLeaderboardRef.set({
-      order: newOrder,
-      users: leaderboardUsers,
-    });
-
-    console.log(`Updated global leaderboard: ${newOrder}`);
+    await db
+      .collection("leaderboard")
+      .doc("global")
+      .set({
+        order: newOrder.map((x) => x[0]),
+        users: newUsers,
+      });
 
     let leaderboardView = [];
 
-    for (const userid of newOrder) {
+    for (const [userid, _] of newOrder) {
       leaderboardView.push(await database.getUsernameFromUserID(userid));
     }
 
@@ -452,7 +415,7 @@ async function updateGlobalLeaderboard() {
 
     console.log(`Built global leaderboard view:`, leaderboardView);
 
-    setTimeout(updateGlobalLeaderboard, 5500);
+    setTimeout(updateGlobalLeaderboard, 15000);
   } catch (e) {
     console.log(e);
     console.log(`GLOBAL LEADERBOARD UPDATE FAILED`);

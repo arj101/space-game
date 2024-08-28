@@ -174,7 +174,7 @@ async function main(
     window.addEventListener(event, callback);
   }
 
-  let bodies = [ship, startPlatform];
+  let bodies = [ship];
   bodies.push(finishPlatform, ...collissionBodies);
 
   Composite.add(engine.world, bodies);

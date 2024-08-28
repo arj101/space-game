@@ -1,0 +1,26 @@
+{
+  "finish": {
+    "texture": "finish.png",
+    "vertices": "finish.obj"
+  },
+  "start": {
+    "texture": "start.png",
+    "vertices": "start.obj"
+  },
+  "c1":{
+  "texture": "credit1.png",
+  "vertices": "cred1.obj"
+  },
+   "c2":{
+  "texture": "credit2.png",
+  "vertices": "cred2.obj"
+  },
+   "c3":{
+  "texture": "credit3.png",
+  "vertices": "cred3.obj"
+  },
+   "c4":{
+  "texture": "credit4.png",
+  "vertices": "cred4.obj"
+  }
+}

@@ -175,7 +175,7 @@ async function menu(
   let leaderboardOffset = 0;
 
   let nextLevel = 1;
-  let levelCount = 12;
+  let levelCount = 8;
   let levels = [
     { finished: true, position: 6 },
     { finished: false },
@@ -401,10 +401,9 @@ async function menu(
     let levelRectY = elements.play.y + 150;
 
     //very genius way to check if mouse is outside some elements lol (/s)
-    let mouseOutsideLevelBoxes = levels.length;
+    let mouseOutsideLevelBoxes = levelCount;
 
-    for (let i = 0; i < levels.length; i++) {
-      const level = levels[i];
+    for (let i = 0; i < levelCount; i++) {
       const levelnum = i + 1;
 
       ctx.fillStyle = "white";

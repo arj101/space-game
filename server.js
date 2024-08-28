@@ -54,7 +54,7 @@ const database = {
   //This is necessary because global leaderboard is built by summing up ranks of players in each level
   levelRanklistLengthCache: new Map(),
   //number of levels in the game, probably shouldnt hard code this but should work fine
-  levelCount: 6,
+  levelCount: 7,
 
   //locks the leaderboard when either the global or level leaderboard updates are running. avoids potential corrupt leaderboards
   //each function checks if the lock is set, if it is, waits some time to recheck the lock, and only executes the function when the lock has been released (false = released)

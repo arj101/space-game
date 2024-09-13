@@ -327,7 +327,7 @@ async function menu(
         `${scoreText}`,
         elements.leaderboard.x +
           elements.leaderboard.width -
-          50 -
+          100 -
           ctx.measureText(scoreText).width,
         elements.leaderboard.y + 150 + offset * 50,
       );

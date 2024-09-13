@@ -136,185 +136,78 @@ class NetworkClient {
   }
 
   initClientState() {
-    this.sessionID = null;
+    this.sessionID = 1;
     this.gameSessionID = null;
-    this.userID = null;
-    this.username = null;
+    this.userID = 1;
+    this.username = "";
     this.userLevels = [];
-    this.currLevel = null;
-    this.loggedIn = false;
+    this.currLevel = window.localStorage.getItem("currLevel") || 1;
+    this.scores =
+      JSON.parse(window.localStorage.getItem("scores") ?? "{}") || {};
+    this.loggedIn = true;
+    this.gameStartTime = null;
     this.playingLevel = null;
   }
 
   async login(username, password) {
-    try {
-      let sum = 0;
-      for (let i = 0; i < username.length; i++) {
-        const c = username.charCodeAt(i);
-        sum |= 0b1 << (c + i) % 26;
-        sum = (sum * 3) % 24882501;
-      }
-
-      const url = `/${sum}/${username}/login`;
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          psd: password,
-        },
-      });
-
-      if (!response.ok) {
-        return false;
-      }
-
-      const resbody = await response.json();
-
-      if (!resbody.sessionId || !resbody.user || !resbody.userId) {
-        return false;
-      }
-
-      this.userID = resbody.userId;
-      this.sessionID = resbody.sessionId;
-      this.username = username;
-      this.loggedIn = true;
-      this.currLevel = resbody.user.currLevel || 1;
-
-      return true;
-    } catch (e) {
-      console.log(e);
-      return false;
-    }
+    return true;
   }
 
   async requestGame(level) {
-    try {
-      if (!this.loggedIn || level > this.currLevel) {
-        return false;
-      }
-
-      const res = await fetch(
-        `/${this.userID}/${this.sessionID}/gamereq/${level}`,
-        {
-          method: "POST",
-        },
-      );
-
-      if (!res.ok) return false;
-
-      const body = await res.json();
-
-      if (!body.id) return false;
-
-      this.gameSessionID = body.id;
-      this.playingLevel = level;
-
-      return true;
-    } catch (e) {
-      console.log(e);
+    if (level > this.currLevel) {
       return false;
     }
+    this.playingLevel = level;
+    return true;
   }
 
   async sendAlive(body) {
-    if (!this.gameSessionID) return false;
-
-    const hash = md5(
-      this.gameSessionID +
-        body.instance +
-        body.timestamp.toString() +
-        this.sessionID +
-        "kwfnp",
-    );
-
-    const res = await fetch(
-      `/${this.sessionID}/${this.gameSessionID}/a/${hash}`,
-      {
-        method: "POST",
-        headers: {
-          gsid: this.gameSessionID,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      },
-    );
-
-    return res.ok;
+    return true;
   }
 
   async sendStart() {
-    if (!this.gameSessionID) return false;
-    try {
-      const res = await this.sendAlive({
-        type: "start",
-        timestamp: Date.now(),
-        instance: "txs",
-      });
-
-      return res;
-    } catch (e) {
-      console.log(e);
-      return false;
-    }
+    this.gameSessionID = 1;
+    this.gameStartTime = Date.now();
+    return true;
   }
 
   async sendFinish() {
-    if (!this.gameSessionID) return false;
+    if (!this.gameStartTime) return false;
+    this.gameSessionID = null;
 
-    try {
-      const res = await this.sendAlive({
-        type: "finish",
-        timestamp: Date.now(),
-        instance: "fxs",
-      });
+    if (this.currLevel == this.playingLevel)
+      this.currLevel = this.playingLevel + 1;
 
-      if (res) {
-        this.gameSessionID = null;
-        //optimistically update currLevel, if this is not done on the server(validation failed) the further requests will just fail
-        if (this.currLevel == this.playingLevel)
-          this.currLevel = this.playingLevel + 1;
-      }
+    window.localStorage.setItem("currLevel", this.currLevel);
 
-      return res;
-    } catch (e) {
-      console.log(e);
-      return false;
+    const duration = Date.now() - this.gameStartTime;
+    if (
+      !this.scores[this.playingLevel] ||
+      this.scores[this.playingLevel] > duration
+    ) {
+      this.scores[this.playingLevel] = duration;
+      window.localStorage.setItem("scores", JSON.stringify(this.scores));
     }
+
+    this.gameSessionID = null;
+    this.playingLevel = null;
+    return true;
   }
 
   async sendDeath() {
-    if (!this.gameSessionID) return false;
-
-    const res = await this.sendAlive({
-      type: "dead",
-      timestamp: Date.now(),
-      instance: "dxs",
-    });
-
-    if (res.ok) {
-      this.gameSessionID = null;
-    }
-
-    return res.ok;
+    this.gameSessionID = null;
+    this.playingLevel = null;
+    return true;
   }
 
   async sendStats(xpos, ypos, angle, health) {
-    if (!this.gameSessionID) return false;
-
-    const res = await this.sendAlive({
-      type: "alive",
-      timestamp: Date.now(),
-      xpos,
-      ypos,
-      angle,
-      health,
-      instance: `s${ypos * health}ty`,
-    });
-
-    return res.ok;
+    return true;
   }
 
   exitGame() {
     this.gameSessionID = null;
+    this.playingLevel = null;
+    return true;
   }
 
   /**
@@ -322,14 +215,7 @@ class NetworkClient {
    * @returns an array containing the global leaderboard (just usernames)
    */
   async fetchGlobalLeaderboard() {
-    const res = await fetch("/leaderboard/global");
-    if (!res.ok) {
-      return [];
-    }
-
-    const data = await res.json();
-
-    return data.leaderboard || [];
+    return [];
   }
 
   /**
@@ -338,14 +224,7 @@ class NetworkClient {
    * @returns an array containing the level leaderboard ({username, score}) score is just the time for now
    */
   async fetchLevelLeaderboard(levelnum) {
-    const res = await fetch(`/leaderboard/level/${levelnum}`);
-    if (!res.ok) {
-      return [];
-    }
-
-    const data = await res.json();
-
-    return data.leaderboard || [];
+    return [];
   }
 
   loadImage(url) {
@@ -357,12 +236,7 @@ class NetworkClient {
         resolve(image);
       };
 
-      const res = await fetch(url, {
-        headers: {
-          sid: this.sessionID,
-          gsid: this.gameSessionID,
-        },
-      });
+      const res = await fetch(url, {});
 
       const blob = await res.blob();
       image.src = URL.createObjectURL(blob);
@@ -371,12 +245,7 @@ class NetworkClient {
 
   loadText(url) {
     return new Promise(async (resolve, reject) => {
-      const res = await fetch(url, {
-        headers: {
-          sid: this.sessionID,
-          gsid: this.gameSessionID,
-        },
-      });
+      const res = await fetch(url, {});
 
       const text = await res.text();
 
@@ -386,12 +255,7 @@ class NetworkClient {
 
   loadJSON(url) {
     return new Promise(async (resolve, reject) => {
-      const res = await fetch(url, {
-        headers: {
-          sid: this.sessionID,
-          gsid: this.gameSessionID,
-        },
-      });
+      const res = await fetch(url, {});
 
       const json = await res.json();
 
@@ -408,12 +272,7 @@ class NetworkClient {
         resolve(audio);
       };
 
-      const res = await fetch(url, {
-        headers: {
-          sid: this.sessionID,
-          gsid: this.gameSessionID,
-        },
-      });
+      const res = await fetch(url, {});
 
       const blob = await res.blob();
       audio.src = URL.createObjectURL(blob);

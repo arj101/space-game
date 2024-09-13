@@ -93,7 +93,7 @@ async function menu(
     mouse.x = e.pageX * pixelRatio;
     mouse.down = true;
 
-    if (mouseInsideElement(elements.login) && !networkClient.loggedIn) {
+    if (mouseInsideElement(elements.login)) {
       form.style.display = "flex";
       elements.login.open = true;
     } else if (elements.login.open) {
@@ -142,28 +142,6 @@ async function menu(
         0,
         Math.min(leaderboard.length - 10, leaderboardOffset),
       );
-    }
-  };
-
-  document.getElementById("login").onclick = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const password = document.getElementById("password").value;
-    const username = document.getElementById("username").value;
-
-    if (!password || !username) {
-      alert("Fill both password and username");
-      return;
-    }
-
-    const result = await networkClient.login(username, password);
-
-    if (result) {
-      form.style.display = "none";
-      elements.login.open = false;
-    } else {
-      alert("Login failed");
     }
   };
 
@@ -300,10 +278,7 @@ async function menu(
     ctx.stroke();
 
     ctx.font = "600 40px Orbitron";
-    const leaderboardText =
-      loadedLeaderboard != "global"
-        ? `Level ${loadedLeaderboard} leaderboard`
-        : "Global leaderboard";
+    const leaderboardText = "High scores";
     const { width: lw } = ctx.measureText(leaderboardText);
 
     ctx.fillStyle = "white";
@@ -325,30 +300,13 @@ async function menu(
     );
 
     ctx.fillStyle = "rgba(255, 255, 255, 1)";
-    for (
-      let i = leaderboardOffset;
-      i < leaderboard.length && i < leaderboardOffset + 10 && i >= 0;
-      i++
-    ) {
+    let finishedLevels = Object.keys(networkClient.scores);
+    for (let i = 0; i < finishedLevels.length; i++) {
       const offset = i - leaderboardOffset;
-      let username,
-        score = "[no score]";
-      if (loadedLeaderboard == "global") username = leaderboard[i];
-      else {
-        username = leaderboard[i].username;
-        score = leaderboard[i].score;
-        if (!score) score = "[no score]";
-      }
+      let username = `Level ${finishedLevels[i]}`;
+      let score = networkClient.scores[finishedLevels[i]];
 
       if (!username) continue;
-
-      const posText = `${i + 1}`;
-      ctx.font = "400 32px Orbitron";
-      ctx.fillText(
-        posText,
-        elements.leaderboard.x + 100 - ctx.measureText(posText).width,
-        elements.leaderboard.y + 150 + offset * 50,
-      );
 
       ctx.font = "600 32px Orbitron";
       ctx.fillText(
@@ -357,24 +315,22 @@ async function menu(
         elements.leaderboard.y + 150 + offset * 50,
       );
 
-      if (selectedLeaderboard != "global") {
-        ctx.font = "400 32px Orbitron";
-        const timeSeconds = score / 1000;
-        const subSecondPart = Math.floor(score / 10) % 100;
-        const secondsPart = Math.floor(timeSeconds % 60);
-        const minutesPart = Math.floor(timeSeconds / 60);
-        //render all parts
-        let scoreText = `${minutesPart > 0 ? minutesPart.toString() + ":" : ""}${secondsPart < 10 ? "0" : ""}${secondsPart}:${subSecondPart < 10 ? "0" : ""}${subSecondPart}`;
+      ctx.font = "400 32px Orbitron";
+      const timeSeconds = score / 1000;
+      const subSecondPart = Math.floor(score / 10) % 100;
+      const secondsPart = Math.floor(timeSeconds % 60);
+      const minutesPart = Math.floor(timeSeconds / 60);
+      //render all parts
+      let scoreText = `${minutesPart > 0 ? minutesPart.toString() + ":" : ""}${secondsPart < 10 ? "0" : ""}${secondsPart}:${subSecondPart < 10 ? "0" : ""}${subSecondPart}`;
 
-        ctx.fillText(
-          `${scoreText}`,
-          elements.leaderboard.x +
-            elements.leaderboard.width -
-            50 -
-            ctx.measureText(scoreText).width,
-          elements.leaderboard.y + 150 + offset * 50,
-        );
-      }
+      ctx.fillText(
+        `${scoreText}`,
+        elements.leaderboard.x +
+          elements.leaderboard.width -
+          50 -
+          ctx.measureText(scoreText).width,
+        elements.leaderboard.y + 150 + offset * 50,
+      );
     }
 
     //render levels
@@ -512,42 +468,33 @@ async function menu(
     ctx.fillStyle = "white";
     ctx.font = "600 30px Orbitron";
 
-    const loginText = networkClient.loggedIn
-      ? `Hi, ${networkClient.username}!`
-      : "Login";
+    const loginText = "Credits";
     ctx.fillText(
       loginText,
-      networkClient.loggedIn
-        ? elements.login.x +
-            elements.login.width +
-            50 -
-            ctx.measureText(loginText).width
-        : elements.login.x +
-            elements.login.width / 2 -
-            ctx.measureText(loginText).width / 2,
+      elements.login.x +
+        elements.login.width / 2 -
+        ctx.measureText(loginText).width / 2,
       elements.login.y + elements.login.height / 2 + 10,
     );
 
-    if (!networkClient.loggedIn) {
-      //render login button
+    //render login button
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      elements.login.x,
+      elements.login.y,
+      elements.login.width,
+      elements.login.height,
+    );
+    ctx.stroke();
+    if (mouseInsideElement(elements.login)) {
       ctx.strokeStyle = "white";
-      ctx.lineWidth = 2;
       ctx.strokeRect(
-        elements.login.x,
-        elements.login.y,
-        elements.login.width,
-        elements.login.height,
+        elements.login.x - 5,
+        elements.login.y - 5,
+        elements.login.width + 10,
+        elements.login.height + 10,
       );
-      ctx.stroke();
-      if (mouseInsideElement(elements.login)) {
-        ctx.strokeStyle = "white";
-        ctx.strokeRect(
-          elements.login.x - 5,
-          elements.login.y - 5,
-          elements.login.width + 10,
-          elements.login.height + 10,
-        );
-      }
     }
 
     if (selectedLevel != null) {

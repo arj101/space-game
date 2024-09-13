@@ -613,7 +613,7 @@ async function menu(
       );
       ctx.stroke();
 
-      const waitingText = "Waiting for server...";
+      const waitingText = "Loading...";
 
       ctx.fillStyle = "rgb(255, 255, 255)";
       ctx.font = "600 32px Orbitron";

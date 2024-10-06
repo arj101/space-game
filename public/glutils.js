@@ -65,6 +65,37 @@ function loadAudio(url) {
   });
 }
 
+function parseOBJLineCollissionData(source) {
+  let lines = source.split("\n");
+  let vs = [];
+
+  let sx = 0;
+  let sy = 0;
+
+  let n = 0;
+
+  let collissionLines = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+
+    if (line.startsWith("v ")) {
+      let [_, x, __, z] = line.split(" ");
+      vs.push([parseFloat(x), parseFloat(z)]);
+      n++;
+      sx += parseFloat(x);
+      sy += parseFloat(z);
+    } else if (line.startsWith("l ")) {
+      let [_, a, b] = line.split(" ");
+      collissionLines.push([vs[parseInt(a) - 1], vs[parseInt(b) - 1]]);
+    }
+  }
+
+  console.log("Collission lines parsed: ", collissionLines);
+
+  return collissionLines;
+}
+
 function parseOBJCollissionData(source) {
   let lines = source.split("\n");
   let vs = [];
@@ -130,11 +161,49 @@ function bodyFromCollissionRects(collissionRects) {
   return body;
 }
 
+function buildCollissionRectsFromLines(
+  collssionLines,
+  width,
+  height,
+  { isStatic = true } = { isStatic: true }
+) {
+  console.log("converting these to rects", collssionLines);
+  const Vector = Matter.Vector,
+    Bodies = Matter.Bodies;
+
+  const cvs = collssionLines.map(([v1, v2]) => {
+    const convertV = ([x, y]) => {
+      return {
+        x: (x + 1.0) * 0.5 * width,
+        y: (1.0 - y) * 0.5 * height,
+      };
+    };
+    return [convertV(v1), convertV(v2)];
+  });
+
+  console.log("to screen space", cvs);
+
+  let collissionRects = cvs.map(([v1, v2]) => {
+    let width = Vector.magnitude(Vector.sub(v1, v2));
+    let angle = Math.atan2(-(v2.y - v1.y), v2.x - v1.x);
+
+    let centerx = (v1.x + v2.x) / 2;
+    let centery = (v1.y + v2.y) / 2;
+
+    return Bodies.rectangle(centerx, centery, width, 1, {
+      isStatic,
+      angle: -angle,
+    });
+  });
+
+  return collissionRects;
+}
+
 function buildCollissionRects(
   collissionObjs,
   width,
   height,
-  { isStatic = true } = { isStatic: true },
+  { isStatic = true } = { isStatic: true }
 ) {
   const cvs = collissionObjs.map((collissionObj) => {
     let s = collissionObj.center;

@@ -6,9 +6,10 @@ attribute vec2 uv;
 varying vec2 texcoord;
 varying vec2 vpos;
 uniform vec2 center;
+uniform float scale;
 
 void main() {
-  gl_Position = vec4(position - center, 0., 1.);
+  gl_Position = vec4((position - center) * scale, 0., 1.);
   texcoord = uv.xy;
   vpos = position.xy;
 }
@@ -35,9 +36,10 @@ attribute vec2 uv;
 varying vec2 texcoord;
 varying vec2 vpos;
 uniform vec2 center;
+uniform float scale;
 
 void main() {
-  gl_Position = vec4(position - center, 0., 1.);
+  gl_Position = vec4((position - center) * scale, 0., 1.);
   texcoord = uv.xy;
   vpos = position.xy;
 }
@@ -261,6 +263,7 @@ void main() {
     varying vec4 f_texcoord;
     uniform float angle;
     uniform vec2 shipCenter;
+    uniform float scale;
 
 
     void main() {
@@ -268,7 +271,7 @@ void main() {
        ppos.y *= ${height.toFixed(1)}/${width.toFixed(1)};
       vec2 pos = mat2(cos(angle), -sin(angle), sin(angle) , cos(angle)) * ppos.xy;
       pos.y *= ${width.toFixed(1)}/${height.toFixed(1)};
-      gl_Position = vec4(pos.xy + shipCenter - center, 0., 1.);
+      gl_Position = vec4((pos.xy + shipCenter - center) * scale, 0., 1.);
 
       position = v_position;
       f_texcoord = texcoord;
@@ -361,9 +364,10 @@ void main() {
     uniform vec3 center;
     varying vec4 position;
     uniform float u_time;
+    uniform float scale;
 
     void main() {
-      gl_Position = v_position;
+      gl_Position = v_position * scale;
       position = v_position;
     }
     `,

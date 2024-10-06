@@ -45,7 +45,7 @@ function setupCanvas() {
   if (gl == null) {
     console.error("WebGL not supported");
     alert(
-      "WebGL not supported on your devices. Please try on a different device.",
+      "WebGL not supported on your devices. Please try on a different device."
     );
     return;
   }
@@ -82,7 +82,7 @@ async function main(
     onStopInstance: () => {},
     onExitToMenu: () => {},
     onRequestNextLevel: (onRequestNextLevel = () => {}),
-  },
+  }
 ) {
   const Engine = Matter.Engine,
     Bodies = Matter.Bodies,
@@ -109,29 +109,30 @@ async function main(
     shipPos.y,
     shipBodyWidth,
     shipBodyHeight,
-    {},
+    {}
   );
   const shipLThrust = Bodies.rectangle(
     shipPos.x - shipWidth / 2 + thrusterWidth / 2,
     shipPos.y + 20,
     thrusterWidth,
     thrusterHeight,
-    {},
+    {}
   );
   const shipRThrust = Bodies.rectangle(
     shipPos.x + shipWidth / 2 - thrusterWidth / 2,
     shipPos.y + 20,
     thrusterWidth,
     thrusterHeight,
-    {},
+    {}
   );
 
   const { collissionTries: shipCollissionBodies } = buildCollissionRects(
     globalResources.shipCollissionObjs,
     width,
     height,
-    { isStatic: false },
+    { isStatic: false }
   );
+
   console.log(globalResources);
   const ship = Body.create({
     // parts: [shipBody, shipLThrust, shipRThrust],
@@ -145,7 +146,7 @@ async function main(
     window.innerHeight - 30,
     window.innerWidth,
     60,
-    { isStatic: true },
+    { isStatic: true }
   );
 
   const startPlatform = Bodies.rectangle(
@@ -155,7 +156,7 @@ async function main(
     44,
     {
       isStatic: true,
-    },
+    }
   );
 
   let collissionBodies = levelResources.collissionTries;
@@ -175,7 +176,7 @@ async function main(
   }
 
   let bodies = [ship];
-  bodies.push(finishPlatform, ...collissionBodies);
+  bodies.push(finishPlatform, ...levelResources.collissionRects);
 
   Composite.add(engine.world, bodies);
 
@@ -221,11 +222,11 @@ async function main(
 
   const leftThrusterButtonPos = Vector.create(
     100 * pixelRatio,
-    height - 100 * pixelRatio,
+    height - 100 * pixelRatio
   );
   const rightThrusterButtonPos = Vector.create(
     width - 100 * pixelRatio,
-    height - 100 * pixelRatio,
+    height - 100 * pixelRatio
   );
 
   let mouseX = 0,
@@ -391,13 +392,13 @@ async function main(
         width / 2 - bgWidth / 2 - xPadding,
         height / 2 - menuHeight / 2,
         bgWidth + xPadding * 2,
-        menuHeight,
+        menuHeight
       );
       ctx.strokeRect(
         width / 2 - bgWidth / 2 - xPadding,
         height / 2 - menuHeight / 2,
         bgWidth + xPadding * 2,
-        menuHeight,
+        menuHeight
       );
 
       ctx.fillStyle = "rgba(255, 255, 255, 1)";
@@ -409,7 +410,7 @@ async function main(
         ctx.fillText(
           message,
           width / 2 - ctx.measureText(message).width / 2,
-          bottomY,
+          bottomY
         );
 
         bottomY += 50;
@@ -513,7 +514,7 @@ async function main(
         ctx.fillText(
           "Restarting...",
           width / 2 - ctx.measureText("Restarting...").width / 2,
-          height / 2,
+          height / 2
         );
       }
 
@@ -610,7 +611,7 @@ async function main(
         ctx.fillText(
           "Restarting...",
           width / 2 - ctx.measureText("Restarting...").width / 2,
-          height / 2,
+          height / 2
         );
       }
 
@@ -690,6 +691,8 @@ async function main(
 
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
+  let gameScale = 0.6;
+
   gl.enable(gl.SAMPLE_COVERAGE);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -720,12 +723,14 @@ async function main(
   // gl.uniform2f(imgSizeU, (bg.width * 5162) / 2048, (bg.height * 5162) / 2048);
 
   const center = gl.getUniformLocation(pg, "center");
+  const bgScaleU = gl.getUniformLocation(pg, "scale");
+  gl.uniform1f(bgScaleU, gameScale);
   let tloc = gl.getUniformLocation(pg, "img");
   gl.uniform3f(
     center,
     screenToClipX(camPos.x),
     screenToClipY(camPos.y),
-    Math.PI / 2,
+    Math.PI / 2
   );
 
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pos), gl.STATIC_DRAW);
@@ -747,7 +752,7 @@ async function main(
     gl.RGBA,
     gl.RGBA,
     gl.UNSIGNED_BYTE,
-    shipTexImage,
+    shipTexImage
   );
 
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -769,6 +774,9 @@ async function main(
 
   const flameU = gl.getUniformLocation(shipg, "flame");
   gl.uniform1i(flameU, 2);
+
+  const shipScaleU = gl.getUniformLocation(shipg, "scale");
+  gl.uniform1f(shipScaleU, gameScale);
 
   const shipvbuf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, shipvbuf);
@@ -808,7 +816,7 @@ async function main(
   gl.uniform2f(
     shipCenter,
     screenToClipX(ship.position.x - camPos.x + width / 2),
-    screenToClipY(ship.position.y - camPos.y + height / 2),
+    screenToClipY(ship.position.y - camPos.y + height / 2)
   );
 
   const shipSize = gl.getUniformLocation(shipg, "shipSize");
@@ -835,7 +843,7 @@ async function main(
     gl.RGBA,
     gl.RGBA,
     gl.UNSIGNED_BYTE,
-    terrainTexImage,
+    terrainTexImage
   );
 
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -865,6 +873,9 @@ async function main(
   gl.vertexAttribPointer(tvPos, 2, gl.FLOAT, false, 4 * 4, 0);
   gl.vertexAttribPointer(tuvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
 
+  const terrainScaleU = gl.getUniformLocation(terrainPg, "scale");
+  gl.uniform1f(terrainScaleU, gameScale);
+
   //<----terrain setup-------
 
   //-----other objects----->
@@ -890,7 +901,7 @@ async function main(
       gl.RGBA,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      texture,
+      texture
     );
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -914,6 +925,9 @@ async function main(
 
     const texU = gl.getUniformLocation(otherObjectPg, "texture");
     gl.uniform1i(texU, texUnit);
+
+    const scaleU = gl.getUniformLocation(otherObjectPg, "scale");
+    gl.uniform1f(scaleU, gameScale);
     otherObjects.push({
       texture: objTexture,
       buffer: ovaBuf,
@@ -986,7 +1000,7 @@ async function main(
       const collission = pair.collision;
 
       const normalisedImpact = Math.abs(
-        Vector.dot(collission.normal, Vector.normalise(ship.velocity)),
+        Vector.dot(collission.normal, Vector.normalise(ship.velocity))
       );
 
       // const impactSpeed = Math.abs(
@@ -1065,8 +1079,9 @@ async function main(
       center,
       screenToClipX(camPos.x),
       screenToClipY(camPos.y),
-      t / 1000,
+      t / 1000
     );
+    gl.uniform1f(bgScaleU, gameScale);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 5);
 
     gl.useProgram(shipg);
@@ -1086,15 +1101,16 @@ async function main(
     gl.uniform2f(
       shipCenter,
       screenToClipX(ship.position.x),
-      screenToClipY(ship.position.y),
+      screenToClipY(ship.position.y)
     );
     gl.uniform2f(lr, leftThruster ? 1 : 0, rightThruster ? 1 : 0);
     gl.uniform1f(u_time, t / 1000);
+    gl.uniform1f(shipScaleU, gameScale);
 
     gl.drawArrays(
       gl.TRIANGLE_FAN,
       0,
-      globalResources.shipTexObj.vertices.length,
+      globalResources.shipTexObj.vertices.length
     );
 
     gl.useProgram(terrainPg);
@@ -1110,6 +1126,7 @@ async function main(
       screenToClipX(camPos.x),
       screenToClipY(camPos.y),
     ]);
+    gl.uniform1f(terrainScaleU, gameScale);
     gl.drawArrays(gl.TRIANGLES, 0, tvs.length / 2);
 
     gl.useProgram(otherObjectPg);
@@ -1137,6 +1154,9 @@ async function main(
 
       const texU = gl.getUniformLocation(otherObjectPg, "texture");
       gl.uniform1i(texU, obj.texUnit);
+
+      const scaleU = gl.getUniformLocation(otherObjectPg, "scale");
+      gl.uniform1f(scaleU, gameScale);
 
       gl.drawArrays(gl.TRIANGLES, 0, obj.vertices.vertices.length);
     }
@@ -1214,7 +1234,7 @@ async function main(
         shipScreenX - shipWidth / 2,
         shipScreenY - shipHeight,
         shipWidth,
-        30,
+        30
       );
       ctx.fillStyle = "rgba(255, 255, 255, 1)";
       const landDtfract = Math.min(1, landDt / 4000);
@@ -1222,7 +1242,7 @@ async function main(
         shipScreenX - shipWidth / 2,
         shipScreenY - shipHeight,
         shipWidth * landDtfract,
-        30,
+        30
       );
     }
 
@@ -1264,7 +1284,7 @@ async function main(
             ctx.fillText(
               "Restarting...",
               width / 2 - ctx.measureText("Restarting...").width / 2,
-              height / 2,
+              height / 2
             );
           }
           if (item == "Exit to menu") {
@@ -1283,7 +1303,7 @@ async function main(
             ctx.fillText(
               "Loading...",
               width / 2 - ctx.measureText("Loading...").width / 2,
-              height / 2,
+              height / 2
             );
           }
         };
@@ -1354,7 +1374,7 @@ async function main(
             ctx.fillText(
               "Restarting...",
               width / 2 - ctx.measureText("Restarting...").width / 2,
-              height / 2,
+              height / 2
             );
           }
           if (item == "Exit to menu") {
@@ -1382,7 +1402,7 @@ async function main(
       const edgeLoc = Vector.mult(Vector.normalise(screenTarget), edgeDist);
       edgeLoc.y = Math.max(
         -height / 2 + 5,
-        Math.min(height / 2 - 5, edgeLoc.y),
+        Math.min(height / 2 - 5, edgeLoc.y)
       );
       edgeLoc.x = Math.max(-width / 2 + 5, Math.min(width / 2 - 5, edgeLoc.x));
 
@@ -1422,13 +1442,13 @@ async function main(
 
       globalResources.gainNode.gain.setValueAtTime(
         globalResources.gainNode.gain.value,
-        globalResources.audioCtx.currentTime,
+        globalResources.audioCtx.currentTime
       );
 
       globalResources.gainNode.gain.linearRampToValueAtTime(
         vol,
         globalResources.audioCtx.currentTime +
-          (globalResources.gainNode.gain.value > vol ? 0.3 : 0.2),
+          (globalResources.gainNode.gain.value > vol ? 0.3 : 0.2)
       );
 
       prevLeftThruster = leftThruster;
@@ -1441,7 +1461,7 @@ async function main(
         Vector.create(0, -100),
         ship.angle -
           (leftThruster ? 1 : 0) * PI_2 +
-          (rightThruster ? 1 : 0) * PI_2,
+          (rightThruster ? 1 : 0) * PI_2
       );
       const forceMag = leftThruster && rightThruster ? 0.02 : 0.01;
       const forceOriginOff = Vector.add(forceOrigin, fOriginOffset);
@@ -1458,7 +1478,7 @@ async function main(
         collides(ship, finishPlatform);
 
       const dist = Vector.magnitude(
-        Vector.sub(ship.position, finishPlatform.position),
+        Vector.sub(ship.position, finishPlatform.position)
       );
       if (
         landedCollission != null &&
@@ -1487,6 +1507,11 @@ async function main(
     camVel = Vector.sub(camVel, Vector.mult(camVel, collided ? 0.03 : 0.4));
     camPos = Vector.add(camPos, Vector.mult(camVel, dt));
     collided = false;
+
+    const velMag = Vector.magnitude(ship.velocity);
+    desiredScale = 1 / (velMag * 0.1 + 1);
+    const deltaScale = desiredScale - gameScale;
+    gameScale += deltaScale * 0.03;
 
     frameCallback(t, landed, landTime, shipHealth, ship);
   }
@@ -1544,7 +1569,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
           screenToClipX(ship.position.x),
           screenToClipY(ship.position.y),
           ship.angle,
-          shipHealth,
+          shipHealth
         );
         lastStatSend = Date.now();
       }
@@ -1561,7 +1586,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
         screenToClipX(shipStats.ship.position.x),
         screenToClipY(shipStats.ship.position.y),
         shipStats.ship.angle,
-        shipStats.health,
+        shipStats.health
       );
 
       console.log("Game finished");
@@ -1603,7 +1628,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
 
         if (!result) {
           alert(
-            "Restart failed, try going to main menu by reloading this page.",
+            "Restart failed, try going to main menu by reloading this page."
           );
           return;
         }
@@ -1667,7 +1692,7 @@ loadGlobalResources(renderers.width, renderers.height).then(
           levelPrefix,
           renderers.width,
           renderers.height,
-          networkClient,
+          networkClient
         );
       }
       gameStats.levelResources[levelPrefix] = levelResources;
@@ -1695,10 +1720,10 @@ loadGlobalResources(renderers.width, renderers.height).then(
           onStopInstance,
           onExitToMenu: exitToMenu,
           onRequestNextLevel: onReqeuestNextLevel,
-        },
+        }
       );
     }
     // startInstance();
     startMenu();
-  },
+  }
 );

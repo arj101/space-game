@@ -72,8 +72,8 @@ function loadGlobalResources(width, height) {
       scaleOBJ(
         (GLOBAL_OBJ_SCALE * height) / width,
         GLOBAL_OBJ_SCALE,
-        collissionObj,
-      ),
+        collissionObj
+      )
     );
     // const { collissionTries: shipCollissionBodies, finishPlatform } =
     //   buildCollissionRects(shipVertexObj, width, height, { isStatic: false });
@@ -82,7 +82,7 @@ function loadGlobalResources(width, height) {
     shipTexObj = scaleOBJ(
       (GLOBAL_OBJ_SCALE * height) / width,
       GLOBAL_OBJ_SCALE,
-      shipTexObj,
+      shipTexObj
     );
 
     resolve({
@@ -107,6 +107,7 @@ function loadLevelResources(filePrefix, width, height, networkClient) {
     const nc = networkClient;
 
     const collissionFile = filePrefix + "collission.obj";
+    const lineCollissionFile = filePrefix + "collission1.obj";
     const terrainFile = filePrefix + "terrain.obj";
     const terrainImageFile = filePrefix + "terrain.png";
 
@@ -121,6 +122,7 @@ function loadLevelResources(filePrefix, width, height, networkClient) {
 
     const objectsInfo = await nc.loadJSON(objectsInfoFile);
 
+    const collssionLineP = nc.loadText(lineCollissionFile);
     const terrainImageP = nc.loadImage(terrainImageFile);
     const startPlatformImageP = nc.loadImage(startPlatformImageFile);
     const finishPlatformP = nc.loadImage(finishPlatformImageFile);
@@ -133,6 +135,7 @@ function loadLevelResources(filePrefix, width, height, networkClient) {
       startPlatformImage,
       finishPlatformImage,
       finishObjText,
+      collissionLineText,
     ] = await Promise.all([
       collissionP,
       terrainP,
@@ -140,21 +143,39 @@ function loadLevelResources(filePrefix, width, height, networkClient) {
       startPlatformImageP,
       finishPlatformP,
       finishObjP,
+      collssionLineP,
     ]);
 
     let collissionObjs = parseOBJCollissionData(collissionText);
+    let collissionLines = parseOBJLineCollissionData(collissionLineText);
+    console.log(collissionLines);
     collissionObjs = collissionObjs.map((collissionObj) =>
       scaleOBJ(
         (GLOBAL_OBJ_SCALE * height) / width,
         GLOBAL_OBJ_SCALE,
-        collissionObj,
-      ),
+        collissionObj
+      )
     );
+    collissionLines = collissionLines.map((line) =>
+      line.map((point) => [
+        (point[0] * (GLOBAL_OBJ_SCALE * height)) / width,
+        point[1] * GLOBAL_OBJ_SCALE,
+      ])
+    );
+
     const { collissionTries, finishPlatform } = buildCollissionRects(
       collissionObjs,
       width,
-      height,
+      height
     );
+
+    const collissionRects = buildCollissionRectsFromLines(
+      collissionLines,
+      width,
+      height
+    );
+
+    console.log("collission rects from lines", collissionRects);
 
     let terrainObj = parseOBJ(terrainText);
     terrainObj = scaleOBJ(GLOBAL_OBJ_SCALE, GLOBAL_OBJ_SCALE, terrainObj);
@@ -173,9 +194,7 @@ function loadLevelResources(filePrefix, width, height, networkClient) {
         vertices: scaleOBJ(
           (height / width) * GLOBAL_OBJ_SCALE,
           GLOBAL_OBJ_SCALE,
-          parseOBJ(
-            await nc.loadText(filePrefix + objectsInfo[obj]["vertices"]),
-          ),
+          parseOBJ(await nc.loadText(filePrefix + objectsInfo[obj]["vertices"]))
         ),
         texture: await nc.loadImage(filePrefix + objectsInfo[obj]["texture"]),
       };
@@ -192,6 +211,7 @@ function loadLevelResources(filePrefix, width, height, networkClient) {
       finishPlatformBody: finishPlatform, //this is the body used for collission detection while...
       finishPlatformObj: finishObj, //this is the object used for rendering
       otherObjects,
+      collissionRects,
     });
   });
 }

@@ -1194,7 +1194,7 @@ async function main(
     }
 
     gl.useProgram(shaderPrograms.noiseShader);
-    gl.uniform1f(noiseUTime, t);
+    gl.uniform1f(noiseUTime, t / 1000);
     noiseBg.draw(gl.TRIANGLES);
 
     const shakeOffsetX =

@@ -45,7 +45,7 @@ async function menu(
   networkClient,
   { onGameStart } = {
     onGameStart: (levelIdx) => {},
-  },
+  }
 ) {
   const elements = {
     leaderboard: {
@@ -82,7 +82,7 @@ async function menu(
       element.width,
       element.height,
       mouse.x,
-      mouse.y,
+      mouse.y
     );
   };
 
@@ -125,7 +125,7 @@ async function menu(
 
       leaderboardOffset = Math.max(
         0,
-        Math.min(leaderboard.length - 10, leaderboardOffset),
+        Math.min(leaderboard.length - 10, leaderboardOffset)
       );
     }
   };
@@ -140,7 +140,7 @@ async function menu(
 
       leaderboardOffset = Math.max(
         0,
-        Math.min(leaderboard.length - 10, leaderboardOffset),
+        Math.min(leaderboard.length - 10, leaderboardOffset)
       );
     }
   };
@@ -241,7 +241,7 @@ async function menu(
         loadedLeaderboard = selectedLeaderboard;
       } else {
         serverLeaderboard = await networkClient.fetchLevelLeaderboard(
-          selectedLeaderboard + 1,
+          selectedLeaderboard + 1
         );
         loadedLeaderboard = selectedLeaderboard + 1;
       }
@@ -249,7 +249,7 @@ async function menu(
 
       leaderboardOffset = Math.max(
         0,
-        Math.min(leaderboardOffset, leaderboard.length - 10),
+        Math.min(leaderboardOffset, leaderboard.length - 10)
       );
     } catch (e) {
       console.log("Error fetching leaderboard", e);
@@ -281,7 +281,7 @@ async function menu(
         tw,
         80,
         mouse.x,
-        mouse.y,
+        mouse.y
       )
     ) {
       ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(Math.sin(t * 0.01))})`;
@@ -295,7 +295,7 @@ async function menu(
       elements.leaderboard.x,
       elements.leaderboard.y,
       elements.leaderboard.width,
-      elements.leaderboard.height,
+      elements.leaderboard.height
     );
     ctx.stroke();
 
@@ -310,7 +310,7 @@ async function menu(
     ctx.fillText(
       leaderboardText,
       elements.leaderboard.x + elements.leaderboard.width / 2 - lw / 2,
-      elements.leaderboard.y + 60,
+      elements.leaderboard.y + 60
     );
 
     //scroll bar
@@ -321,7 +321,7 @@ async function menu(
         130 +
         (480 / leaderboard.length) * leaderboardOffset,
       5,
-      Math.min(480, 480 * (10 / leaderboard.length)),
+      Math.min(480, 480 * (10 / leaderboard.length))
     );
 
     ctx.fillStyle = "rgba(255, 255, 255, 1)";
@@ -347,14 +347,14 @@ async function menu(
       ctx.fillText(
         posText,
         elements.leaderboard.x + 100 - ctx.measureText(posText).width,
-        elements.leaderboard.y + 150 + offset * 50,
+        elements.leaderboard.y + 150 + offset * 50
       );
 
       ctx.font = "600 32px Orbitron";
       ctx.fillText(
         `${username}`,
         elements.leaderboard.x + 150,
-        elements.leaderboard.y + 150 + offset * 50,
+        elements.leaderboard.y + 150 + offset * 50
       );
 
       if (selectedLeaderboard != "global") {
@@ -364,7 +364,11 @@ async function menu(
         const secondsPart = Math.floor(timeSeconds % 60);
         const minutesPart = Math.floor(timeSeconds / 60);
         //render all parts
-        let scoreText = `${minutesPart > 0 ? minutesPart.toString() + ":" : ""}${secondsPart < 10 ? "0" : ""}${secondsPart}:${subSecondPart < 10 ? "0" : ""}${subSecondPart}`;
+        let scoreText = `${
+          minutesPart > 0 ? minutesPart.toString() + ":" : ""
+        }${secondsPart < 10 ? "0" : ""}${secondsPart}:${
+          subSecondPart < 10 ? "0" : ""
+        }${subSecondPart}`;
 
         ctx.fillText(
           `${scoreText}`,
@@ -372,7 +376,7 @@ async function menu(
             elements.leaderboard.width -
             50 -
             ctx.measureText(scoreText).width,
-          elements.leaderboard.y + 150 + offset * 50,
+          elements.leaderboard.y + 150 + offset * 50
         );
       }
     }
@@ -384,7 +388,7 @@ async function menu(
       elements.play.x,
       elements.play.y,
       elements.play.width,
-      elements.play.height,
+      elements.play.height
     );
     ctx.stroke();
 
@@ -394,7 +398,7 @@ async function menu(
       elements.play.x +
         elements.play.width / 2 -
         ctx.measureText("Play").width / 2,
-      elements.play.y + 60,
+      elements.play.y + 60
     );
 
     let levelRectX = elements.play.x + 100;
@@ -414,7 +418,7 @@ async function menu(
       ctx.fillText(
         `${i + 1}`,
         levelRectX + boxSize.width / 2 - ctx.measureText(`${i + 1}`).width / 2,
-        levelRectY + boxSize.height / 2 + 16,
+        levelRectY + boxSize.height / 2 + 16
       );
 
       ctx.strokeStyle =
@@ -445,7 +449,7 @@ async function menu(
           levelRectX - 5,
           levelRectY - 5,
           boxSize.width + 10,
-          boxSize.height + 10,
+          boxSize.height + 10
         );
 
         if (mouse.down && networkClient.loggedIn) {
@@ -467,7 +471,7 @@ async function menu(
           levelRectX - 3,
           levelRectY - 3,
           boxSize.width + 6,
-          boxSize.height + 6,
+          boxSize.height + 6
         );
       }
       ctx.restore();
@@ -525,7 +529,7 @@ async function menu(
         : elements.login.x +
             elements.login.width / 2 -
             ctx.measureText(loginText).width / 2,
-      elements.login.y + elements.login.height / 2 + 10,
+      elements.login.y + elements.login.height / 2 + 10
     );
 
     if (!networkClient.loggedIn) {
@@ -536,7 +540,7 @@ async function menu(
         elements.login.x,
         elements.login.y,
         elements.login.width,
-        elements.login.height,
+        elements.login.height
       );
       ctx.stroke();
       if (mouseInsideElement(elements.login)) {
@@ -545,7 +549,7 @@ async function menu(
           elements.login.x - 5,
           elements.login.y - 5,
           elements.login.width + 10,
-          elements.login.height + 10,
+          elements.login.height + 10
         );
       }
     }
@@ -558,7 +562,7 @@ async function menu(
         elements.play.x,
         elements.play.y + elements.play.height - 100,
         elements.play.width,
-        100,
+        100
       );
       ctx.font = "600 30px Orbitron";
       const levelText = `Play level ${selectedLevel + 1}`;
@@ -567,7 +571,7 @@ async function menu(
         elements.play.x +
           elements.play.width / 2 -
           ctx.measureText(levelText).width / 2,
-        elements.play.y + elements.play.height - 40,
+        elements.play.y + elements.play.height - 40
       );
 
       if (
@@ -586,7 +590,7 @@ async function menu(
             elements.play.x,
             elements.play.y + elements.play.height - 100,
             elements.play.width * holdProgressF,
-            100,
+            100
           );
           ctx.fillStyle = "black";
           ctx.fillText(
@@ -594,7 +598,7 @@ async function menu(
             elements.play.x +
               elements.play.width / 2 -
               ctx.measureText(levelText).width / 2,
-            elements.play.y + elements.play.height - 40,
+            elements.play.y + elements.play.height - 40
           );
 
           if (holdProgressF >= 1 && !levelReqSent) {
@@ -639,7 +643,7 @@ async function menu(
         elements.play.x,
         elements.play.y,
         elements.play.width,
-        elements.play.height,
+        elements.play.height
       );
       ctx.stroke();
 
@@ -652,7 +656,7 @@ async function menu(
         elements.play.x +
           elements.play.width / 2 -
           ctx.measureText(loginToPlayText).width / 2,
-        elements.play.y + elements.play.height / 2 + 20,
+        elements.play.y + elements.play.height / 2 + 20
       );
     }
 
@@ -662,7 +666,7 @@ async function menu(
         elements.play.x,
         elements.play.y,
         elements.play.width,
-        elements.play.height,
+        elements.play.height
       );
       ctx.stroke();
 
@@ -675,7 +679,7 @@ async function menu(
         elements.play.x +
           elements.play.width / 2 -
           ctx.measureText(waitingText).width / 2,
-        elements.play.y + elements.play.height / 2 + 20,
+        elements.play.y + elements.play.height / 2 + 20
       );
     }
   }

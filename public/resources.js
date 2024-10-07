@@ -19,6 +19,10 @@ function loadGlobalResources(width, height) {
     const menuClickAudioP = loadAudio(menuClickAudioFile);
     const thrusterAudioP = loadAudio(thrusterAudioFile);
 
+    sounds.load(["./assets/audio/ambient1.mp3"]);
+
+    ambientSound = sounds["./assets/audio/ambient1.mp3"];
+
     const [
       shipImage,
       flameImage,
@@ -98,6 +102,7 @@ function loadGlobalResources(width, height) {
       shipCollissionObjs: shipVertexObj,
       shipTexObj,
       gainNode,
+      ambientSound,
     });
   });
 }

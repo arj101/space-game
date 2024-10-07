@@ -85,6 +85,7 @@ void main() {
 varying vec2 texcoord;
 varying vec2 vpos;
 uniform sampler2D texture;
+uniform vec2 center;
 
 mat2 rot(float a) {
     return mat2(
@@ -224,6 +225,8 @@ void main() {
    color *= color;
 
 
+   vec2 spos = vpos - center;
+   float sposMag = length(spos);
 
   vec2 st = vpos;
   st *= 20.0;
@@ -244,6 +247,8 @@ void main() {
     intensity += smoothstep(0.95, 1., texColor.x);
 
     color *= intensity;
+
+    color *= 1.0 - clamp(pow(sposMag*0.7, 2.0), 0., 1.);
 
 
 

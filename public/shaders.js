@@ -1,4 +1,39 @@
 function getShaders(width, height) {
+  const noiseShader = {
+    vertex: `
+   attribute vec3 a_position;
+   varying vec2 st;
+   void main() {
+    gl_Position = vec4(a_position, 1.0);
+    st = a_position.xy;
+   }
+   `,
+    fragment: `
+   precision mediump float;
+   varying vec2 st;
+   uniform float u_time;
+   uniform float u_alpha;
+
+   float noise1(float seed1,float seed2){
+    return(
+    fract(seed1+12.34567*
+    fract(100.*(abs(seed1*0.91)+seed2+94.68)*
+    fract((abs(seed2*0.41)+45.46)*
+    fract((abs(seed2)+757.21)*
+    fract(seed1*0.0171))))))
+    * 1.0038 - 0.00185;
+    }
+
+    void main() {
+      float f = noise1(st.x, st.y + sin(u_time));
+      
+      if (noise1(u_time*3., floor(st.y  * 20.0 * noise1(st.y, 0.0))) > 0.2) {
+          f = 0.0;
+      }
+      gl_FragColor = vec4(vec3(f), f * u_alpha);
+    }
+   `,
+  };
   const finishPlatformShader = {
     vertex: `
 attribute vec2 position;
@@ -462,7 +497,13 @@ mat2 rot(float a) {
     `,
   };
 
-  return { terrainShader, shipShader, bgShader, finishPlatformShader };
+  return {
+    terrainShader,
+    shipShader,
+    bgShader,
+    finishPlatformShader,
+    noiseShader,
+  };
 }
 
 function compileShaders(gl, shaders) {

@@ -987,6 +987,7 @@ async function main(
   let timerTime = 0;
 
   let collided = false;
+  let collissionImpact = 0;
 
   let deltaTime = 0;
 
@@ -1015,6 +1016,8 @@ async function main(
       const damageScale = 1000 / 144 / deltaTime;
       const scaledImpact =
         Vector.magnitude(ship.velocity) * impactScale * 3.0 * damageScale;
+
+      collissionImpact = scaledImpact;
 
       if (scaledImpact > 2) {
         shipHealth -= scaledImpact;
@@ -1052,6 +1055,35 @@ async function main(
       prevT = t;
       startTime = t;
     }
+
+    const noisePg = shaderPrograms.noiseShader;
+    gl.useProgram(noisePg);
+
+    const noiseBg = new Drawable(
+      gl,
+      noisePg,
+      [
+        {
+          name: "a_position",
+          size: 3,
+          stride: 3 * 4,
+          offset: 0,
+        },
+      ],
+
+      // prettier-ignore
+      [-1, -1, 0, 
+        -1, 1, 0,
+        1, 1, 0, 
+        
+        1, 1, 0,
+        1, -1, 0,
+        -1, -1, 0],
+      6
+    );
+
+    const noiseUTime = gl.getUniformLocation(noisePg, "u_time");
+    const noiseUAlpha = gl.getUniformLocation(noisePg, "u_alpha");
     // accumDt += t - prevT;
 
     // while (accumDt >= physicsStep) {
@@ -1160,6 +1192,10 @@ async function main(
 
       gl.drawArrays(gl.TRIANGLES, 0, obj.vertices.vertices.length);
     }
+
+    gl.useProgram(shaderPrograms.noiseShader);
+    gl.uniform1f(noiseUTime, t);
+    noiseBg.draw(gl.TRIANGLES);
 
     const shakeOffsetX =
       Math.max(-50 / 0.3, Math.min(200, -(camPos.x - ship.position.x))) * 0.3;
@@ -1506,6 +1542,17 @@ async function main(
     camVel = Vector.add(camVel, Vector.mult(norm_dp, accel));
     camVel = Vector.sub(camVel, Vector.mult(camVel, collided ? 0.03 : 0.4));
     camPos = Vector.add(camPos, Vector.mult(camVel, dt));
+
+    if (collided) {
+      gl.uniform1f(noiseUAlpha, collissionImpact / 10);
+    } else if (shipHealth < 25) {
+      gl.uniform1f(noiseUAlpha, 0.9);
+    } else if (shipHealth < 50 && Math.random() > shipHealth / 50) {
+      gl.uniform1f(noiseUAlpha, 0.6);
+    } else {
+      gl.uniform1f(noiseUAlpha, 0.0);
+    }
+
     collided = false;
 
     const velMag = Vector.magnitude(ship.velocity);

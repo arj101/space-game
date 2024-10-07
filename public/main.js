@@ -712,7 +712,7 @@ async function main(
 
   const terrainTexImage = levelResources.terrainImage;
 
-  const shaderPrograms = compileShaders(gl, getShaders(width, height));
+  const shaderPrograms = globalResources.shaderPrograms;
 
   console.log(shaderPrograms);
 
@@ -1577,7 +1577,7 @@ for (let pair of queryString.entries()) {
 
 const renderers = setupCanvas();
 const networkClient = new NetworkClient();
-loadGlobalResources(renderers.width, renderers.height).then(
+loadGlobalResources(renderers.gl, renderers.width, renderers.height).then(
   (globalResources) => {
     let shipStats = {};
 

@@ -1,6 +1,6 @@
 const GLOBAL_OBJ_SCALE = 0.4;
 
-function loadGlobalResources(width, height) {
+function loadGlobalResources(gl, width, height) {
   return new Promise(async (resolve, reject) => {
     const shipFile = "/assets/ship.png";
     const flameFile = "/assets/flame.png";
@@ -89,6 +89,8 @@ function loadGlobalResources(width, height) {
       shipTexObj
     );
 
+    const shaderPrograms = compileShaders(gl, getShaders(width, height));
+
     resolve({
       shipImage,
       flameImage,
@@ -103,6 +105,7 @@ function loadGlobalResources(width, height) {
       shipTexObj,
       gainNode,
       ambientSound,
+      shaderPrograms,
     });
   });
 }

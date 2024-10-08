@@ -90,6 +90,7 @@ async function main(
     Composite = Matter.Composite,
     Vector = Matter.Vector;
 
+  globalResources.audioEngine.destroyAllLoops();
   globalResources.audioEngine.playLoop(
     "./assets/audio/06 Save in Space_loop.wav",
     "bgm",
@@ -1218,6 +1219,14 @@ async function main(
       ctx.fillStyle = `rgba(${
         100 + (1 + Math.sin(t / 300)) * 0.5 * 155
       }, 0, 0, 1)`;
+
+      if (!globalResources.audioEngine.isPlayingLoop("bgm_danger")) {
+        globalResources.audioEngine.destroyLoop("bgm");
+        globalResources.audioEngine.playLoop(
+          "./assets/audio/Danger.wav",
+          "bgm_danger"
+        );
+      }
     }
 
     ctx.strokeStyle = ctx.fillStyle;

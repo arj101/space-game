@@ -47,6 +47,13 @@ async function menu(
     onGameStart: (levelIdx) => {},
   }
 ) {
+  globalResources.audioEngine.destroyAllLoops();
+  if (globalResources.audioEngine.ctx.state == "running") {
+    globalResources.audioEngine.playLoop(
+      "./assets/audio/meet-the-princess.wav",
+      "bgm"
+    );
+  }
   const elements = {
     leaderboard: {
       x: 80,
@@ -96,11 +103,13 @@ async function menu(
     if (mouseInsideElement(elements.login) && !networkClient.loggedIn) {
       form.style.display = "flex";
       elements.login.open = true;
-      globalResources.audioEngine.resume();
-      globalResources.audioEngine.playLoop(
-        "./assets/audio/meet-the-princess.wav",
-        "bgm"
-      );
+      if (globalResources.audioEngine.ctx.state != "running") {
+        globalResources.audioEngine.resume();
+        globalResources.audioEngine.playLoop(
+          "./assets/audio/meet-the-princess.wav",
+          "bgm"
+        );
+      }
     } else if (elements.login.open) {
       const bounds = form.getBoundingClientRect();
       if (
@@ -627,7 +636,6 @@ async function menu(
                 window.onpointermove = null;
                 window.onpointerup = null;
                 window.onpointerdown = null;
-                globalResources.audioEngine.destroyLoop("bgm");
                 onGameStart(selectedLevel);
               })
               .catch((e) => {

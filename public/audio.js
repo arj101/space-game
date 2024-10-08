@@ -34,6 +34,16 @@ class AudioEngine {
     this.bgmEnabled = false;
   }
 
+  isPlayingLoop(id) {
+    return this.loops.has(id);
+  }
+
+  destroyAllLoops() {
+    for (const id of this.loops.keys()) {
+      this.destroyLoop(id);
+    }
+  }
+
   playOneShot(audioSrc, vol) {
     this.resume();
 
@@ -53,6 +63,8 @@ class AudioEngine {
     this.resume();
 
     if (this.loops.has(id)) return;
+
+    console.log("Creating loop ", id);
 
     const getDuration = (audioElement) => {
       return new Promise((resolve) => {
@@ -85,19 +97,23 @@ class AudioEngine {
       gain.gain.setValueAtTime(vol, this.ctx.currentTime + duration - 2);
       gain.gain.linearRampToValueAtTime(0.0, this.ctx.currentTime + duration);
 
-      audioElement.play();
+      if (this.loops.has(id)) {
+        audioElement.play();
 
-      if (this.loops.get(id)) setTimeout(scheduleNext, duration * 1000);
+        setTimeout(scheduleNext, duration * 1000);
+      }
     };
 
     scheduleNext();
   }
 
   destroyLoop(id) {
-    if (!this.loops.get(id)) return;
+    if (!this.loops.has(id)) return;
     this.loops.get(id).pause();
     this.loops.get(id).currentTime = 0;
+    this.loops.get(id).remove();
     this.loops.delete(id);
+    console.log("Destroying loop ", id);
   }
 
   initBgm() {

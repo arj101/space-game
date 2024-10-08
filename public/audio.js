@@ -63,6 +63,7 @@ class AudioEngine {
     this.resume();
 
     if (this.loops.has(id)) return;
+    this.loops.set(id, true); //placeholder for above condition to be true
 
     console.log("Creating loop ", id);
 
@@ -79,7 +80,6 @@ class AudioEngine {
     };
 
     const audioElement = this.createAudioElement(audioSrc);
-
     this.loops.set(id, audioElement);
 
     const duration = await getDuration(audioElement);
@@ -99,12 +99,13 @@ class AudioEngine {
 
       if (this.loops.has(id)) {
         audioElement.play();
-
-        setTimeout(scheduleNext, duration * 1000);
+      } else {
+        removeEventListener("ended", scheduleNext);
       }
     };
 
     scheduleNext();
+    audioElement.addEventListener("ended", scheduleNext);
   }
 
   destroyLoop(id) {

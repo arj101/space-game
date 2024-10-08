@@ -59,7 +59,7 @@ class AudioEngine {
     audioElement.play();
   }
 
-  async playLoop(audioSrc, id, vol = 1.0) {
+  async playLoop(audioSrc, id, vol = 1.0, fadeDuration = 2) {
     this.resume();
 
     if (this.loops.has(id)) return;
@@ -82,20 +82,31 @@ class AudioEngine {
     const audioElement = this.createAudioElement(audioSrc);
     this.loops.set(id, audioElement);
 
+    const track = this.ctx.createMediaElementSource(audioElement);
+    const gain = this.ctx.createGain();
+    track.connect(gain).connect(this.compressor);
+
     const duration = await getDuration(audioElement);
 
     const scheduleNext = () => {
       // const audioElement = this.createAudioElement(audioSrc);
       // this.loops.set(id, audioElement);
-      const track = this.ctx.createMediaElementSource(audioElement);
-      const gain = this.ctx.createGain();
-      track.connect(gain).connect(this.compressor);
       audioElement.currentTime = 0;
 
-      gain.gain.setValueAtTime(0.0, this.ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 2);
-      gain.gain.setValueAtTime(vol, this.ctx.currentTime + duration - 2);
-      gain.gain.linearRampToValueAtTime(0.0, this.ctx.currentTime + duration);
+      if (fadeDuration > 0.0) {
+        gain.gain.setValueAtTime(0.0, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(
+          vol,
+          this.ctx.currentTime + fadeDuration
+        );
+        gain.gain.setValueAtTime(
+          vol,
+          this.ctx.currentTime + duration - fadeDuration
+        );
+        gain.gain.linearRampToValueAtTime(0.0, this.ctx.currentTime + duration);
+      } else {
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+      }
 
       if (this.loops.has(id)) {
         audioElement.play();

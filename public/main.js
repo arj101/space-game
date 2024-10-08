@@ -1220,7 +1220,10 @@ async function main(
         100 + (1 + Math.sin(t / 300)) * 0.5 * 155
       }, 0, 0, 1)`;
 
-      if (!globalResources.audioEngine.isPlayingLoop("bgm_danger")) {
+      if (
+        !globalResources.audioEngine.isPlayingLoop("bgm_danger") &&
+        shipHealth > 0
+      ) {
         globalResources.audioEngine.destroyLoop("bgm");
         globalResources.audioEngine.playLoop(
           "./assets/audio/Danger.wav",
@@ -1360,48 +1363,15 @@ async function main(
     }
 
     if (shipHealth <= 0) {
-      // ctx.fillStyle = "rgba(255, 255, 255, 1)";
-      // ctx.font = "40px Orbitron";
-      // const ltext = "You failed! We'll get em next time";
-      // ctx.fillText(
-      //   ltext,
-      //   width / 2 - ctx.measureText(ltext).width / 2,
-      //   height / 2,
-      // );
-
-      // const restartText = "Restart";
-      // const restartTextSize = ctx.measureText(restartText);
-      // ctx.strokeStyle = "rgba(255, 255, 255, 1)";
-      // ctx.lineWidth = 2;
-
-      // const hoff = 100;
-      // ctx.strokeRect(
-      //   width / 2 - restartTextSize.width / 2 - 50,
-      //   height / 2 - 20 - 40 + hoff,
-      //   restartTextSize.width + 100,
-      //   20 + 40,
-      // );
-      // ctx.stroke();
-      // ctx.fillText(
-      //   restartText,
-      //   width / 2 - restartTextSize.width / 2,
-      //   height / 2 - 20 + hoff,
-      // );
-
-      // const widthS = window.innerWidth * window.devicePixelRatio;
-      // const heightS = window.innerHeight * window.devicePixelRatio;
-      // if (
-      //   mouseDown
-      //   // mouseX > widthS / 2 - restartTextSize.width / 2 - 40 &&
-      //   // mouseX < widthS / 2 + restartTextSize.width / 2 + 50 &&
-      //   // mouseY > heightS / 2 - 20 - 40 + hoff &&
-      //   // mouseY < heightS / 2 + 20 + 40 + hoff
-      // ) {
-      //   restartCallback();
-      //   console.log("restarting...");
-      // }
-
       if (!failed) {
+        globalResources.audioEngine.destroyAllLoops();
+        globalResources.audioEngine.playLoop(
+          "./assets/audio/pink noise.wav",
+          "bgm_over",
+          0.6,
+          0.0
+        );
+
         failed = true;
         scrollableMenu.items = ["Retry", "Exit to menu"];
         scrollableMenu.message = "You failed! We'll get em next time";
@@ -1562,10 +1532,29 @@ async function main(
         "./assets/audio/explosion.wav",
         collissionImpact / 5
       );
+    } else if (shipHealth <= 0) {
+      gl.uniform1f(noiseUAlpha, 1.0);
     } else if (shipHealth < 25) {
       gl.uniform1f(noiseUAlpha, 0.9);
+      if (!globalResources.audioEngine.isPlayingLoop("bgm_noise2")) {
+        globalResources.audioEngine.destroyLoop("bgm_noise1");
+        globalResources.audioEngine.playLoop(
+          "./assets/audio/pink noise.wav",
+          "bgm_noise2",
+          0.1,
+          0.0
+        );
+      }
     } else if (shipHealth < 50 && Math.random() > shipHealth / 50) {
       gl.uniform1f(noiseUAlpha, 0.6);
+      if (!globalResources.audioEngine.isPlayingLoop("bgm_noise1")) {
+        globalResources.audioEngine.playLoop(
+          "./assets/audio/pink noise.wav",
+          "bgm_noise1",
+          0.05,
+          0.0
+        );
+      }
     } else {
       gl.uniform1f(noiseUAlpha, 0.0);
     }

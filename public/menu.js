@@ -51,7 +51,7 @@ async function menu(
   if (globalResources.audioEngine.ctx.state == "running") {
     globalResources.audioEngine.playLoop(
       "./assets/audio/meet-the-princess.wav",
-      "bgm"
+      "bgm_menu"
     );
   }
   const elements = {
@@ -107,7 +107,7 @@ async function menu(
         globalResources.audioEngine.resume();
         globalResources.audioEngine.playLoop(
           "./assets/audio/meet-the-princess.wav",
-          "bgm"
+          "bgm_menu"
         );
       }
     } else if (elements.login.open) {

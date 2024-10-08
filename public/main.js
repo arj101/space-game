@@ -90,6 +90,12 @@ async function main(
     Composite = Matter.Composite,
     Vector = Matter.Vector;
 
+  globalResources.audioEngine.playLoop(
+    "./assets/audio/06 Save in Space_loop.wav",
+    "bgm",
+    0.2
+  );
+
   const engine = Engine.create();
 
   const pixelRatio = window.devicePixelRatio;
@@ -578,7 +584,6 @@ async function main(
   });
 
   addEventListener("keyup", (e) => {
-    console.log(e.key);
     if (e.key != "Escape") return;
 
     if (scrollableMenu.enabled) {
@@ -1009,7 +1014,6 @@ async function main(
       // );
 
       const collissionAngle = Math.acos(normalisedImpact);
-      console.log((collissionAngle * 180) / Math.PI);
 
       const impactScale = Math.sin(collissionAngle) * 0.2 + 0.8;
 
@@ -1545,6 +1549,10 @@ async function main(
 
     if (collided) {
       gl.uniform1f(noiseUAlpha, collissionImpact / 10);
+      globalResources.audioEngine.playOneShot(
+        "./assets/audio/explosion.wav",
+        collissionImpact / 5
+      );
     } else if (shipHealth < 25) {
       gl.uniform1f(noiseUAlpha, 0.9);
     } else if (shipHealth < 50 && Math.random() > shipHealth / 50) {

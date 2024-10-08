@@ -16,6 +16,8 @@ class AudioEngine {
     );
     this.bgmEnabled = false;
     this.compressor.connect(this.globalGain).connect(this.ctx.destination);
+
+    this.loops = new Map();
   }
 
   resume() {
@@ -32,8 +34,25 @@ class AudioEngine {
     this.bgmEnabled = false;
   }
 
-  async playLoop(audioSrc, vol = 1.0) {
+  playOneShot(audioSrc, vol) {
     this.resume();
+
+    const audioElement = this.createAudioElement(audioSrc);
+    const track = this.ctx.createMediaElementSource(audioElement);
+    const gain = this.ctx.createGain();
+    track.connect(gain).connect(this.compressor);
+    audioElement.currentTime = 0;
+
+    gain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(vol, this.ctx.currentTime + 0.1);
+
+    audioElement.play();
+  }
+
+  async playLoop(audioSrc, id, vol = 1.0) {
+    this.resume();
+
+    if (this.loops.has(id)) return;
 
     const getDuration = (audioElement) => {
       return new Promise((resolve) => {
@@ -49,30 +68,36 @@ class AudioEngine {
 
     const audioElement = this.createAudioElement(audioSrc);
 
+    this.loops.set(id, audioElement);
+
     const duration = await getDuration(audioElement);
 
-    const scheduleNext = () =>
-      setTimeout(() => {
-        const audioElement = this.createAudioElement(audioSrc);
-        const track = this.ctx.createMediaElementSource(audioElement);
-        const gain = this.ctx.createGain();
-        track.connect(gain).connect(this.compressor);
-        audioElement.currentTime = 0;
+    const scheduleNext = () => {
+      // const audioElement = this.createAudioElement(audioSrc);
+      // this.loops.set(id, audioElement);
+      const track = this.ctx.createMediaElementSource(audioElement);
+      const gain = this.ctx.createGain();
+      track.connect(gain).connect(this.compressor);
+      audioElement.currentTime = 0;
 
-        gain.gain.setValueAtTime(0, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(vol, this.ctx.currentTime + 0.3);
-        gain.gain.setValueAtTime(vol, this.ctx.currentTime + duration - 0.3);
-        gain.gain.exponentialRampToValueAtTime(
-          0.0001,
-          this.ctx.currentTime + duration
-        );
+      gain.gain.setValueAtTime(0.0, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 2);
+      gain.gain.setValueAtTime(vol, this.ctx.currentTime + duration - 2);
+      gain.gain.linearRampToValueAtTime(0.0, this.ctx.currentTime + duration);
 
-        audioElement.play();
+      audioElement.play();
 
-        setTimeout(scheduleNext, duration * 1000 - 700);
-      }, duration * 1000 - 200);
+      if (this.loops.get(id)) setTimeout(scheduleNext, duration * 1000);
+    };
 
     scheduleNext();
+  }
+
+  destroyLoop(id) {
+    if (!this.loops.get(id)) return;
+    this.loops.get(id).pause();
+    this.loops.get(id).currentTime = 0;
+    this.loops.delete(id);
   }
 
   initBgm() {

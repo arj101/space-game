@@ -19,9 +19,7 @@ function loadGlobalResources(gl, width, height) {
     const menuClickAudioP = loadAudio(menuClickAudioFile);
     const thrusterAudioP = loadAudio(thrusterAudioFile);
 
-    sounds.load(["./assets/audio/ambient1.mp3"]);
-
-    ambientSound = sounds["./assets/audio/ambient1.mp3"];
+    const audioEngine = new AudioEngine();
 
     const [
       shipImage,
@@ -31,6 +29,7 @@ function loadGlobalResources(gl, width, height) {
       shipVertices,
       shipTexObjText,
       thrusterAudio,
+      _,
     ] = await Promise.all([
       shipImageP,
       flameImageP,
@@ -39,6 +38,7 @@ function loadGlobalResources(gl, width, height) {
       shipVertexFileP,
       shipTexObjFileP,
       thrusterAudioP,
+      audioEngine.init(),
     ]);
 
     const audioContext = new AudioContext({ latencyHint: "interactive" });
@@ -104,8 +104,8 @@ function loadGlobalResources(gl, width, height) {
       shipCollissionObjs: shipVertexObj,
       shipTexObj,
       gainNode,
-      ambientSound,
       shaderPrograms,
+      audioEngine,
     });
   });
 }

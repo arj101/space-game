@@ -96,6 +96,11 @@ async function menu(
     if (mouseInsideElement(elements.login) && !networkClient.loggedIn) {
       form.style.display = "flex";
       elements.login.open = true;
+      globalResources.audioEngine.resume();
+      globalResources.audioEngine.playLoop(
+        "./assets/audio/meet-the-princess.wav",
+        "bgm"
+      );
     } else if (elements.login.open) {
       const bounds = form.getBoundingClientRect();
       if (
@@ -614,7 +619,6 @@ async function menu(
                   alert("Failed to start level");
                   return;
                 }
-                console.log(networkClient.gameSessionID);
                 console.log("Request succeeded, starting level :)");
                 quitted = true;
                 window.onkeyup = null;
@@ -623,6 +627,7 @@ async function menu(
                 window.onpointermove = null;
                 window.onpointerup = null;
                 window.onpointerdown = null;
+                globalResources.audioEngine.destroyLoop("bgm");
                 onGameStart(selectedLevel);
               })
               .catch((e) => {

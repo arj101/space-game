@@ -50,6 +50,12 @@ function setupCanvas() {
     return;
   }
 
+  gl.enable(gl.SAMPLE_COVERAGE);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.sampleCoverage(1, false);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
   return { ctx, gl, width, height };
 }
 
@@ -699,12 +705,6 @@ async function main(
 
   let gameScale = 0.6;
 
-  gl.enable(gl.SAMPLE_COVERAGE);
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  gl.sampleCoverage(1, false);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-
   const posBuf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
 
@@ -1316,6 +1316,13 @@ async function main(
       if (!landingComplete) {
         finishCallback(GAME_FINISH_REASONS.LEVEL_COMPLETE);
         landingComplete = true;
+
+        globalResources.audioEngine.destroyAllLoops();
+        globalResources.audioEngine.playOneShot(
+          "./assets/audio/levelfinish.mp3",
+          0.5,
+          "finish_sound"
+        );
 
         scrollableMenu.items = ["Retry", "Next", "Exit to menu"];
         scrollableMenu.selected = 1;

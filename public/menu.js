@@ -51,7 +51,8 @@ async function menu(
   if (globalResources.audioEngine.ctx.state == "running") {
     globalResources.audioEngine.playLoop(
       "./assets/audio/meet-the-princess.wav",
-      "bgm_menu"
+      "bgm_menu",
+      0.4
     );
   }
   const elements = {
@@ -100,16 +101,18 @@ async function menu(
     mouse.x = e.pageX * pixelRatio;
     mouse.down = true;
 
+    if (globalResources.audioEngine.ctx.state != "running") {
+      globalResources.audioEngine.resume();
+      globalResources.audioEngine.playLoop(
+        "./assets/audio/meet-the-princess.wav",
+        "bgm_menu",
+        0.4
+      );
+    }
+
     if (mouseInsideElement(elements.login) && !networkClient.loggedIn) {
       form.style.display = "flex";
       elements.login.open = true;
-      if (globalResources.audioEngine.ctx.state != "running") {
-        globalResources.audioEngine.resume();
-        globalResources.audioEngine.playLoop(
-          "./assets/audio/meet-the-princess.wav",
-          "bgm_menu"
-        );
-      }
     } else if (elements.login.open) {
       const bounds = form.getBoundingClientRect();
       if (
@@ -273,6 +276,38 @@ async function menu(
   updateLeaderboard();
   const leaderboardUpdatePoll = setInterval(updateLeaderboard, 5000);
 
+  const centerU = gl.getUniformLocation(
+    globalResources.shaderPrograms.menuBg,
+    "center"
+  );
+  const scaleU = gl.getUniformLocation(
+    globalResources.shaderPrograms.menuBg,
+    "scale"
+  );
+  const timeU = gl.getUniformLocation(
+    globalResources.shaderPrograms.menuBg,
+    "u_time"
+  );
+
+  const bg = new Drawable(
+    gl,
+    globalResources.shaderPrograms.menuBg,
+    [
+      {
+        name: "v_position",
+        size: 3,
+        stride: 3 * 4,
+        offset: 0,
+      },
+    ],
+    [
+      -1, 1, 0, 1, 1, 0, -1, -1, 0,
+
+      -1, -1, 0, 1, 1, 0, 1, -1, 0,
+    ],
+    6
+  );
+
   run();
   function run(t) {
     if (quitted) {
@@ -281,8 +316,17 @@ async function menu(
     }
     requestAnimationFrame(run);
 
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.useProgram(globalResources.shaderPrograms.menuBg);
+    gl.uniform1f(scaleU, 1.0);
+    gl.uniform3fv(centerU, [t / 720, -t / 400, 0]);
+    gl.uniform1f(timeU, t / 1000);
+    bg.draw(gl.TRIANGLES);
+
     ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, width, height);
+    ctx.clearRect(0, 0, width, height);
 
     ctx.font = "800 80px Orbitron";
     const { width: tw } = ctx.measureText("Real space game");

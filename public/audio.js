@@ -44,7 +44,7 @@ class AudioEngine {
     }
   }
 
-  playOneShot(audioSrc, vol) {
+  playOneShot(audioSrc, vol, id) {
     this.resume();
 
     const audioElement = this.createAudioElement(audioSrc);
@@ -57,6 +57,10 @@ class AudioEngine {
     gain.gain.exponentialRampToValueAtTime(vol, this.ctx.currentTime + 0.1);
 
     audioElement.play();
+
+    if (id) {
+      this.loops.set(id, audioElement);
+    }
   }
 
   async playLoop(audioSrc, id, vol = 1.0, fadeDuration = 2) {
@@ -93,20 +97,16 @@ class AudioEngine {
       // this.loops.set(id, audioElement);
       audioElement.currentTime = 0;
 
-      if (fadeDuration > 0.0) {
-        gain.gain.setValueAtTime(0.0, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(
-          vol,
-          this.ctx.currentTime + fadeDuration
-        );
-        gain.gain.setValueAtTime(
-          vol,
-          this.ctx.currentTime + duration - fadeDuration
-        );
-        gain.gain.linearRampToValueAtTime(0.0, this.ctx.currentTime + duration);
-      } else {
-        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-      }
+      gain.gain.setValueAtTime(0.0, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(
+        vol,
+        this.ctx.currentTime + fadeDuration
+      );
+      gain.gain.setValueAtTime(
+        vol,
+        this.ctx.currentTime + duration - fadeDuration
+      );
+      gain.gain.linearRampToValueAtTime(0.0, this.ctx.currentTime + duration);
 
       if (this.loops.has(id)) {
         audioElement.play();
@@ -115,8 +115,14 @@ class AudioEngine {
       }
     };
 
-    scheduleNext();
-    audioElement.addEventListener("ended", scheduleNext);
+    if (fadeDuration > 0.0) {
+      scheduleNext();
+      audioElement.addEventListener("ended", scheduleNext);
+    } else {
+      gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+      audioElement.loop = true;
+      audioElement.play();
+    }
   }
 
   destroyLoop(id) {

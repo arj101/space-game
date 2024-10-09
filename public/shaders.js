@@ -497,12 +497,115 @@ mat2 rot(float a) {
     `,
   };
 
+  const menuBg = {
+    vertex: `
+
+    attribute vec4 v_position;
+    uniform vec3 center;
+    varying vec4 position;
+    uniform float u_time;
+    uniform float scale;
+
+    void main() {
+      gl_Position = v_position * scale;
+      position = v_position;
+    }
+    `,
+    fragment: `
+    
+    precision highp float;
+    varying vec4 position;
+    uniform vec3 center;
+    uniform float u_time;
+    uniform sampler2D img;
+
+
+
+mat2 rot(float a) {
+  return mat2(
+      cos(a), -sin(a),
+      sin(a), cos(a)
+  );
+}
+
+    float noise(vec2 p) {
+      return fract(0.35353 * abs(dot(p, vec2(235658.35, 544646.464))));
+  }
+
+  float noise2(vec2 p) {
+       return fract(abs(dot(p, vec2(4648.35, 2926.464))));
+  }
+
+  float noise3(vec2 p) {
+       return fract(0.136477 * abs(dot(p, vec2(4648.35, 2926.464))));
+  }
+
+    vec3 star(vec2 id, vec2 f) {
+      vec2 sp = vec2(0.5, 0.5) - rot(noise(id) * 3.14)*vec2(0.6, 0.);
+      vec2 c = sp - f;
+
+      float size = noise3(id);
+
+      float intensity = (0.1 * size)/distance(sp, f);
+
+
+      float invlength = 0.9/length(c);
+      intensity += min(0.8, 0.002/(abs(c.y * c.x))) *  invlength;
+
+      const mat2 sr = mat2(0.7, -0.7, 0.7, 0.7);
+      vec2 cr = c * sr;
+
+      intensity += min(0.4, 0.002/(abs(cr.y * cr.x))) * invlength;
+
+      float red = smoothstep(0.6, 0.9, size) * size;
+      float green = smoothstep(0.2, 0.3, size) * size;
+      float blue = smoothstep(0., 0.01, size) * size;
+
+
+      vec3 sc = vec3(red,  green, blue) * intensity;
+
+
+      float blink = fract(center.z *0.05  + 353663.0 * noise3(id));
+      sc *= 1.0 - step(0.98, blink);
+
+      return sc;
+  }
+
+    void main() {
+       vec2 st = position.xy + center.xy  * 0.01 ;
+      st.y *= ${height.toFixed(1)}/${width.toFixed(1)};
+
+      vec3 color = vec3(0.);
+
+      const int cutoff = 1;
+      const float scale = 8.0;
+      st *= scale ;
+
+      for (int x = -cutoff; x <= cutoff; x++) {
+          for (int y = -cutoff; y <= cutoff; y++) {
+              vec2 offset = vec2(x, y);
+              vec2 id = floor(st) + offset;
+
+              vec2 f = fract(st) - offset  ;
+              color += star(id , f);
+          }
+      }
+
+      color *= 0.01;
+
+      gl_FragColor.xyz = clamp(color, 0., 1.) * 0.7;
+      gl_FragColor.w = 1.;
+    }
+    `,
+  };
+
   return {
     terrainShader,
     shipShader,
     bgShader,
     finishPlatformShader,
     noiseShader,
+    menuBg,
   };
 }
 

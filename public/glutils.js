@@ -203,7 +203,10 @@ function buildCollissionRects(
   collissionObjs,
   width,
   height,
-  { isStatic = true } = { isStatic: true }
+  { isStatic = true, collisionFilter = {} } = {
+    isStatic: true,
+    collisionFilter: {},
+  }
 ) {
   const cvs = collissionObjs.map((collissionObj) => {
     let s = collissionObj.center;
@@ -244,6 +247,7 @@ function buildCollissionRects(
 
       let b = Bodies.fromVertices(centerx, centery, [[v1, v2, v3]], {
         isStatic,
+        collisionFilter,
       });
 
       bodies.push(b);

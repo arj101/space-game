@@ -143,13 +143,19 @@ async function main(
     globalResources.shipCollissionObjs,
     width,
     height,
-    { isStatic: false }
+    {
+      isStatic: false,
+    }
   );
 
   console.log(globalResources);
   const ship = Body.create({
     // parts: [shipBody, shipLThrust, shipRThrust],
     parts: shipCollissionBodies,
+    collisionFilter: {
+      category: 0b100,
+      mask: 0b011,
+    },
   });
 
   let shipHealth = 100;
@@ -188,10 +194,11 @@ async function main(
     window.addEventListener(event, callback);
   }
 
-  let bodies = [ship];
-  bodies.push(finishPlatform, ...levelResources.collissionRects);
-
-  Composite.add(engine.world, bodies);
+  Composite.add(engine.world, ship);
+  Composite.add(engine.world, [
+    finishPlatform,
+    ...levelResources.collissionRects,
+  ]);
 
   const PI = Math.PI;
   const PI_2 = Math.PI / 2;
@@ -985,7 +992,7 @@ async function main(
   // gl.vertexAttribPointer(fuvPos, 2, gl.FLOAT, false, 4 * 4, 2 * 4);
 
   // const finishU = gl.getUniformLocation(finishPlatformPg, "texture");
-  // gl.uniform1i(finishU, 4);
+  // gl.uniform1i(finishU, 4);ag
 
   //<-----finsih platform
   let startTime = 0;
@@ -1002,7 +1009,12 @@ async function main(
       const bodyA = pair.bodyA.isStatic ? pair.bodyB : pair.bodyA;
       const bodyB = pair.bodyB.isStatic ? pair.bodyB : pair.bodyA;
 
-      if (bodyA.parent.id != ship.id) return;
+      if (
+        bodyA.parent.id != ship.id ||
+        pair.bodyA.collisionFilter.category == 2 ||
+        pair.bodyB.collisionFilter.category == 2
+      )
+        return;
       collided = true;
       const collission = pair.collision;
 
@@ -1036,6 +1048,21 @@ async function main(
 
   let accumDt = 0;
   const physicsStep = 1000 / 60;
+
+  const particleSystem = new ParticleSystem(gl, engine.world);
+
+  setInterval(() => {
+    particleSystem.addParticle(
+      Vector.add(
+        Vector.create(1000, 200),
+        Vector.rotate(
+          Vector.create(0, Math.random() * 300),
+          Math.random() * Math.PI * 0.5
+        )
+      ),
+      Vector.create(0, -0.0000008)
+    );
+  }, 100);
 
   run(0);
   function run(t) {
@@ -1166,7 +1193,11 @@ async function main(
     gl.uniform1f(terrainScaleU, gameScale);
     gl.drawArrays(gl.TRIANGLES, 0, tvs.length / 2);
 
+    particleSystem.update();
+    particleSystem.draw(width, height, camPos, gameScale);
+
     gl.useProgram(otherObjectPg);
+
     // gl.bindBuffer(gl.ARRAY_BUFFER, tvBuf);
     // gl.vertexAttribPointer(tvPos, 2, gl.FLOAT, false, 0, 0);
     // gl.bindBuffer(gl.ARRAY_BUFFER, tuvBuf);

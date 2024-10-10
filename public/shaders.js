@@ -283,7 +283,7 @@ void main() {
 
     color *= intensity;
 
-    color *= 1.0 - clamp(pow(sposMag*0.7, 2.0), 0., 1.);
+    color *= 1.0 - clamp(pow(sposMag*0.7, 2.0), 0., 0.8);
 
 
 

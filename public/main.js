@@ -1200,7 +1200,7 @@ async function main(
 
       {
         for (const pos of damageParticlePoss) {
-          if (noise.simplex2(t / 500, pos[1]) > 0.6) {
+          if (noise.simplex3(pos[0], pos[1], t / 100) > 0.6) {
             const x = (pos[0] * (GLOBAL_OBJ_SCALE * height)) / width;
             const y = pos[1] * GLOBAL_OBJ_SCALE;
             const ppos = Vector.create(

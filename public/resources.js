@@ -136,6 +136,8 @@ function loadLevelResources(filePrefix, width, height, networkClient) {
     const finishPlatformP = nc.loadImage(finishPlatformImageFile);
     const finishObjP = nc.loadText(finishObjFile);
 
+    const gameObjectTextP = nc.loadText(filePrefix + "gameobjs.obj");
+
     let [
       collissionText,
       terrainText,
@@ -144,6 +146,7 @@ function loadLevelResources(filePrefix, width, height, networkClient) {
       finishPlatformImage,
       finishObjText,
       collissionLineText,
+      gameObjectsText,
     ] = await Promise.all([
       collissionP,
       terrainP,
@@ -152,6 +155,7 @@ function loadLevelResources(filePrefix, width, height, networkClient) {
       finishPlatformP,
       finishObjP,
       collssionLineP,
+      gameObjectTextP,
     ]);
 
     let collissionObjs = parseOBJCollissionData(collissionText);
@@ -183,8 +187,6 @@ function loadLevelResources(filePrefix, width, height, networkClient) {
       height
     );
 
-    console.log("collission rects from lines", collissionRects);
-
     let terrainObj = parseOBJ(terrainText);
     terrainObj = scaleOBJ(GLOBAL_OBJ_SCALE, GLOBAL_OBJ_SCALE, terrainObj);
     terrainObj = scaleOBJ(height / width, 1, terrainObj);
@@ -195,9 +197,10 @@ function loadLevelResources(filePrefix, width, height, networkClient) {
 
     const otherObjects = {};
 
+    const gameObjects = parseOBJGameObjData(gameObjectsText);
+
     //todo async loading
     for (const obj in objectsInfo) {
-      console.log(objectsInfo[obj].vertices, objectsInfo[obj].texture);
       otherObjects[obj] = {
         vertices: scaleOBJ(
           (height / width) * GLOBAL_OBJ_SCALE,
@@ -220,6 +223,7 @@ function loadLevelResources(filePrefix, width, height, networkClient) {
       finishPlatformObj: finishObj, //this is the object used for rendering
       otherObjects,
       collissionRects,
+      gameObjects,
     });
   });
 }

@@ -96,6 +96,30 @@ function parseOBJLineCollissionData(source) {
   return collissionLines;
 }
 
+function parseOBJGameObjData(source) {
+  let gobjs = {};
+  let lines = source.split("\n");
+  let vs = [];
+
+  let shapeName = "";
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+
+    if (line.startsWith("v ")) {
+      if (!gobjs[shapeName]) {
+        gobjs[shapeName] = [];
+      }
+      let [_, x, __, z] = line.split(" ");
+      gobjs[shapeName].push([parseFloat(x), parseFloat(z)]);
+    } else if (line.startsWith("o ")) {
+      let [_, name] = line.split(" ");
+      shapeName = name.split(".")[0];
+    }
+  }
+
+  return gobjs;
+}
+
 function parseOBJCollissionData(source) {
   let lines = source.split("\n");
   let vs = [];

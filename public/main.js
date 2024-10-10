@@ -90,6 +90,7 @@ async function main(
     onRequestNextLevel: (onRequestNextLevel = () => {}),
   }
 ) {
+  noise.seed(Math.random());
   const Engine = Matter.Engine,
     Bodies = Matter.Bodies,
     Body = Matter.Body,
@@ -1050,19 +1051,15 @@ async function main(
   const physicsStep = 1000 / 60;
 
   const particleSystem = new ParticleSystem(gl, engine.world);
+  const damageParticleSystem = new DamageParticleSystem(gl, engine.world);
+  const particlePoss = levelResources.gameObjects.particle1 || [];
+  const damageParticlePoss = levelResources.gameObjects.particle2 || [];
 
-  setInterval(() => {
-    particleSystem.addParticle(
-      Vector.add(
-        Vector.create(1000, 200),
-        Vector.rotate(
-          Vector.create(0, Math.random() * 300),
-          Math.random() * Math.PI * 0.5
-        )
-      ),
-      Vector.create(0, -0.0000008)
-    );
-  }, 100);
+  console.log(particlePoss);
+
+  setInterval(() => {}, 100);
+
+  let lastParticleAdd = 0;
 
   run(0);
   function run(t) {
@@ -1177,6 +1174,64 @@ async function main(
       globalResources.shipTexObj.vertices.length
     );
 
+    if (t - lastParticleAdd > 10) {
+      {
+        if (Math.random() > 0.2 && particlePoss.length > 0) {
+          const pos =
+            particlePoss[Math.floor(Math.random() * particlePoss.length)];
+          const x = (pos[0] * (GLOBAL_OBJ_SCALE * height)) / width;
+          const y = pos[1] * GLOBAL_OBJ_SCALE;
+          const ppos = Vector.create(
+            ((x + 1) * width) / 2,
+            ((1 - y) * height) / 2
+          );
+          particleSystem.addParticle(
+            Vector.add(
+              ppos,
+              Vector.rotate(
+                Vector.create(0, Math.random() * 300),
+                Math.random() * Math.PI * 0.5
+              )
+            ),
+            Vector.create(0, -0.0000008)
+          );
+        }
+      }
+
+      {
+        for (const pos of damageParticlePoss) {
+          if (noise.simplex2(t / 500, pos[1]) > 0.6) {
+            const x = (pos[0] * (GLOBAL_OBJ_SCALE * height)) / width;
+            const y = pos[1] * GLOBAL_OBJ_SCALE;
+            const ppos = Vector.create(
+              ((x + 1) * width) / 2,
+              ((1 - y) * height) / 2
+            );
+            damageParticleSystem.addParticle(
+              Vector.add(
+                ppos,
+                Vector.rotate(
+                  Vector.create(0, Math.random() * 300),
+                  Math.random() * Math.PI * 0.5
+                )
+              ),
+              Vector.create(0, -0.0000008)
+            );
+          }
+        }
+      }
+      lastParticleAdd = t;
+    }
+    particleSystem.update();
+    damageParticleSystem.update();
+    particleSystem.draw(width, height, camPos, gameScale);
+    damageParticleSystem.draw(width, height, camPos, gameScale);
+
+    console.log(
+      particleSystem.particles.length,
+      damageParticleSystem.particles.length
+    );
+
     gl.useProgram(terrainPg);
     // gl.bindBuffer(gl.ARRAY_BUFFER, tvBuf);
     // gl.vertexAttribPointer(tvPos, 2, gl.FLOAT, false, 0, 0);
@@ -1192,9 +1247,6 @@ async function main(
     ]);
     gl.uniform1f(terrainScaleU, gameScale);
     gl.drawArrays(gl.TRIANGLES, 0, tvs.length / 2);
-
-    particleSystem.update();
-    particleSystem.draw(width, height, camPos, gameScale);
 
     gl.useProgram(otherObjectPg);
 

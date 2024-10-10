@@ -234,7 +234,7 @@ async function menu(
   let leaderboardOffset = 0;
 
   let nextLevel = 1;
-  let levelCount = 8;
+  let levelCount = 4;
   let levels = [
     { finished: true, position: 6 },
     { finished: false },

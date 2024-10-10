@@ -12,15 +12,15 @@ const credentials = {};
 if (process.env.PROD) {
   const key = fs.readFileSync(
     "/etc/letsencrypt/live/upright-parallelport.online-0001/privkey.pem",
-    "utf8",
+    "utf8"
   );
   const certificate = fs.readFileSync(
     "/etc/letsencrypt/live/upright-parallelport.online-0001/cert.pem",
-    "utf8",
+    "utf8"
   );
   const ca = fs.readFileSync(
     "/etc/letsencrypt/live/upright-parallelport.online-0001/chain.pem",
-    "utf8",
+    "utf8"
   );
   credentials.key = key;
   credentials.cert = certificate;
@@ -54,7 +54,7 @@ const database = {
   //This is necessary because global leaderboard is built by summing up ranks of players in each level
   levelRanklistLengthCache: new Map(),
   //number of levels in the game, probably shouldnt hard code this but should work fine
-  levelCount: 8,
+  levelCount: 4,
 
   //locks the leaderboard when either the global or level leaderboard updates are running. avoids potential corrupt leaderboards
   //each function checks if the lock is set, if it is, waits some time to recheck the lock, and only executes the function when the lock has been released (false = released)
@@ -290,7 +290,7 @@ async function updateLeaderboard() {
 
       newOrder = Object.keys(leaderboardUsers);
       newOrder.sort(
-        (id1, id2) => leaderboardUsers[id1].score - leaderboardUsers[id2].score,
+        (id1, id2) => leaderboardUsers[id1].score - leaderboardUsers[id2].score
       );
 
       for (let i = 0; i < newOrder.length; i++) {
@@ -326,7 +326,7 @@ async function updateLeaderboard() {
 
       console.log(
         `Built leaderboard view for level ${levelnum}:`,
-        leaderboardView,
+        leaderboardView
       );
     }
 
@@ -387,7 +387,7 @@ async function updateGlobalLeaderboard() {
     }
 
     const newOrder = Array.from(score_sums.entries()).sort(
-      (a, b) => b[1] - a[1],
+      (a, b) => b[1] - a[1]
     );
 
     const newUsers = {};
@@ -516,7 +516,7 @@ class GameSession {
 
     if (isNaN(timestamp) || timestamp == null || timestamp == undefined) {
       console.log(
-        `[userID: ${this.userID}] timestamp is null or undefined or not a number`,
+        `[userID: ${this.userID}] timestamp is null or undefined or not a number`
       );
       validEvent = false;
       criticalError = true;
@@ -531,7 +531,7 @@ class GameSession {
 
     if (Date.now() - this.pingtimestamp > GAME_SESSION_TIMEOUT) {
       console.log(
-        "Invalidated game event because of session timeout (didnt ping with a valid event)",
+        "Invalidated game event because of session timeout (didnt ping with a valid event)"
       );
       validEvent = false;
       criticalError = true;
@@ -564,18 +564,18 @@ class GameSession {
       case "finish": {
         if (!this.clientStarted) {
           console.log(
-            "Invalidated game session because of finishing without starting",
+            "Invalidated game session because of finishing without starting"
           );
           validEvent = false;
           criticalError = true;
         } else {
           const server_game_duration = Date.now() - this.starttimestamp;
           const client_game_duration = Math.abs(
-            timestamp - this.clientstarttimestamp,
+            timestamp - this.clientstarttimestamp
           );
           const min_duration = Math.min(
             server_game_duration,
-            client_game_duration,
+            client_game_duration
           );
 
           // if (
@@ -592,7 +592,7 @@ class GameSession {
 
           if (Math.abs(min_duration) < MIN_GAME_COMPLETION_TIME) {
             console.log(
-              "Invalidated game session because of finishing too early",
+              "Invalidated game session because of finishing too early"
             );
             validEvent = false;
             criticalError = true;
@@ -622,7 +622,7 @@ class GameSession {
           health == undefined
         ) {
           console.log(
-            "Invalidated (just) game event because of sending invalid alive event",
+            "Invalidated (just) game event because of sending invalid alive event"
           );
           validEvent = false;
         } else {
@@ -639,7 +639,7 @@ class GameSession {
       case "dead": {
         if (!this.clientStarted || !this.clientstarttimestamp) {
           console.log(
-            "Invalidated game event because of sending dead event before starting",
+            "Invalidated game event because of sending dead event before starting"
           );
           validEvent = false;
           criticalError = true;
@@ -655,7 +655,7 @@ class GameSession {
         validEvent = false;
         criticalError = true;
         console.log(
-          "Invalidated game session (not just this particular event) because of sending invalid event type (client likely doesn't know what he's doing)",
+          "Invalidated game session (not just this particular event) because of sending invalid event type (client likely doesn't know what he's doing)"
         );
     }
 
@@ -676,7 +676,7 @@ class GameSession {
     if (criticalError) this.running = false;
 
     console.log(
-      `[userID ${this.userID} Processed event message. Valid: ${validEvent}, Error: ${criticalError}`,
+      `[userID ${this.userID} Processed event message. Valid: ${validEvent}, Error: ${criticalError}`
     );
 
     return !criticalError;
@@ -685,7 +685,7 @@ class GameSession {
   isValid() {
     if (Date.now() - this.pingtimestamp > GAME_SESSION_TIMEOUT) {
       console.log(
-        "[isValid] Invalidated game session because of session timeout",
+        "[isValid] Invalidated game session because of session timeout"
       );
       return false;
     }
@@ -695,7 +695,7 @@ class GameSession {
 
   onClose() {
     console.log(
-      `[GameSession] [userID: ${this.userID} Closing game session (failed, finished or invalidated)`,
+      `[GameSession] [userID: ${this.userID} Closing game session (failed, finished or invalidated)`
     );
     console.log(`${this.eventlog.length} events were sent by the client`);
     console.log("[GameSession] Bye bye... ");
@@ -713,7 +713,7 @@ class GameSessionsManager {
     if (this.userIDBrowserSessionMap[id]) {
       //delete old session if present
       console.log(
-        `Found previous session for user '${username}' deleting for new session`,
+        `Found previous session for user '${username}' deleting for new session`
       );
       this.browserSessions.delete(this.userIDBrowserSessionMap[id]);
       this.browserSessions.delete(id);
@@ -737,7 +737,7 @@ class GameSessionsManager {
     }
 
     console.log(
-      `Password for user '${username}', (ID: ${id}) did not match. Failing request...`,
+      `Password for user '${username}', (ID: ${id}) did not match. Failing request...`
     );
 
     return null;
@@ -770,24 +770,24 @@ class GameSessionsManager {
         const gameSession = this.gameSessions.get(gsid);
         if (!gameSession.isValid()) {
           console.log(
-            `Game session ${gsid} is invalid. Deleting game session.`,
+            `Game session ${gsid} is invalid. Deleting game session.`
           );
           try {
             console.log(
-              `Counting invalid session by ${gameSession.userID} as death`,
+              `Counting invalid session by ${gameSession.userID} as death`
             );
             const userid = gameSession.userID;
             database.updateDeathCount(
               userid,
               gameSession.levelNum,
-              Math.max(0, Date.now() - gameSession.starttimestamp - 15000),
+              Math.max(0, Date.now() - gameSession.starttimestamp - 15000)
             );
           } catch (e) {
             console.log(e);
           }
           console.log(
             `[invalid session by ${gameSession.userID}] Final event log: `,
-            JSON.stringify(gameSession.eventlog),
+            JSON.stringify(gameSession.eventlog)
           );
           gameSession.onClose();
           this.deleteGameSession(sessionID, gsid);
@@ -803,7 +803,7 @@ class GameSessionsManager {
 
         console.log(
           `[finished session by ${gameSession.userID}] Final event log: `,
-          JSON.stringify(gameSession.eventlog),
+          JSON.stringify(gameSession.eventlog)
         );
 
         if (!validSession) {
@@ -813,13 +813,13 @@ class GameSessionsManager {
         if (validSession && gameSession.lastEventType == "finish") {
           try {
             console.log(
-              `[userID: ${gameSession.userID}] Game duration ${gameSession.duration}`,
+              `[userID: ${gameSession.userID}] Game duration ${gameSession.duration}`
             );
             const userid = gameSession.userID;
             database.updateUserProgress(
               userid,
               gameSession.levelNum,
-              gameSession.duration,
+              gameSession.duration
             );
           } catch (e) {
             console.log(e);
@@ -832,7 +832,7 @@ class GameSessionsManager {
             database.updateDeathCount(
               userid,
               gameSession.levelNum,
-              Date.now() - gameSession.starttimestamp,
+              Date.now() - gameSession.starttimestamp
             );
           } catch (e) {
             console.log(e);
@@ -849,7 +849,7 @@ class GameSessionsManager {
   createGameSession(userID, userSessionID, gameSessionID, levelnum) {
     if (this.sessionGameSessionMap.has(userSessionID)) {
       console.log(
-        "User already in another session (or did not exit properly). Not allowing to create another session",
+        "User already in another session (or did not exit properly). Not allowing to create another session"
       );
       return false;
     }
@@ -858,7 +858,7 @@ class GameSessionsManager {
       userID,
       userSessionID,
       gameSessionID,
-      levelnum,
+      levelnum
     );
 
     console.log(`Created game session for ${userID}, level ${levelnum}`);
@@ -978,7 +978,7 @@ app.post("/:userid/:sessionid/gamereq/:level", async (req, res) => {
     userid,
     sessionid,
     gameSessionID,
-    levelnum,
+    levelnum
   );
 
   if (!createdSession) {
@@ -1014,7 +1014,7 @@ app.get("/levels/:level/*", (req, res, next) => {
   }
 
   const gameSession = gameSessionsManager.getGameSession(
-    gameSessionsManager.getGameSessionID(sessionid),
+    gameSessionsManager.getGameSessionID(sessionid)
   );
 
   if (!gameSession) {
@@ -1201,7 +1201,7 @@ app.post("/:sessionid/:gamesessionid/a/:hash", async (req, res) => {
       data.instance +
       data.timestamp.toString() +
       req.params.sessionid +
-      "kwfnp",
+      "kwfnp"
   );
 
   if (hash != req.params.hash) {
@@ -1211,7 +1211,7 @@ app.post("/:sessionid/:gamesessionid/a/:hash", async (req, res) => {
 
   const result = gameSessionsManager.onReceiveKeepAliveAlive(
     gameSessionID,
-    data,
+    data
   );
 
   if (result) res.send({ status: "success" });
@@ -1225,7 +1225,7 @@ app.get("/leaderboard/level/:level", (req, res) => {
   if (isNaN(levelNum)) {
     res.status(404).send(
       `<h1>Imagine not sending a number lol... fyi its /leaderboard/level/<levelnumber>,
-        do better next time lmao</h1>`,
+        do better next time lmao</h1>`
     );
     return;
   }
@@ -1234,7 +1234,7 @@ app.get("/leaderboard/level/:level", (req, res) => {
     res
       .status(404)
       .send(
-        `<h1>How stupid are you to not realise that levels are from 1 to <lastLevelNum>???!!</h1>`,
+        `<h1>How stupid are you to not realise that levels are from 1 to <lastLevelNum>???!!</h1>`
       );
     return;
   }

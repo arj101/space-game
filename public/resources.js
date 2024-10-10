@@ -21,6 +21,26 @@ function loadGlobalResources(gl, width, height) {
 
     const audioEngine = new AudioEngine();
 
+    let bgmMenuVol = window.localStorage.getItem("bgm_menu_vol") || 1;
+    let bgmGameVol = window.localStorage.getItem("bgm_game_vol") || 1;
+    let sfxVol = window.localStorage.getItem("sfx_vol") || 1;
+
+    const bgmMenuGain = audioEngine.createGainNode("bgm_menu_vol", bgmMenuVol);
+    const bgmGameGain = audioEngine.createGainNode("bgm_game_vol", bgmGameVol);
+    const sfxGain = audioEngine.createGainNode("sfx_vol", sfxVol);
+
+    bgmMenuGain.addEventListener("volumechange", (e) => {
+      window.localStorage.setItem("bgm_menu_vol", e.target.gain.value);
+    });
+
+    bgmGameGain.addEventListener("volumechange", (e) => {
+      window.localStorage.setItem("bgm_game_vol", e.target.gain.value);
+    });
+
+    sfxGain.addEventListener("volumechange", (e) => {
+      window.localStorage.setItem("sfx_vol", e.target.gain.value);
+    });
+
     const [
       shipImage,
       flameImage,

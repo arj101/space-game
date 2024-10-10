@@ -57,6 +57,16 @@
             <input type="submit" id="login" value="Submit" />
         </div>
 
+        <div id="settings-menu">
+            <h1>Settings</h1>
+            <label>Menu music volume</label>
+            <input type="range" id="menu-music-vol" min="0" max="1" step="0.01" />
+            <label>Game music volume</label>
+            <input type="range" id="game-music-vol" min="0" max="1" step="0.01" />
+            <label>Sfx volume</label>
+            <input type="range" id="sfx-vol" min="0" max="1" step="0.01" />
+        </div>
+
         <!-- <canvas width="1024" height="480" id="canvas1"></canvas> -->
         <script src="./perlin.js"></script>
         <script src="./matter.min.js"></script>
@@ -140,6 +150,26 @@
             }
 
             #loginform {
+                font-family: "Orbitron", sans-serif;
+                /* font-size: 2rem; */
+                font-weight: 800;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: rgba(0, 0, 0, 0.9);
+                border: 2px solid white;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-around;
+                align-items: start;
+                border-radius: 0;
+                color: white;
+                padding: 1rem;
+                display: none;
+            }
+
+            #settings-menu {
                 font-family: "Orbitron", sans-serif;
                 /* font-size: 2rem; */
                 font-weight: 800;

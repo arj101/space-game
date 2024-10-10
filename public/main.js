@@ -101,7 +101,8 @@ async function main(
   globalResources.audioEngine.playLoop(
     "./assets/audio/06 Save in Space_loop.wav",
     "bgm",
-    0.2
+    0.2,
+    "bgm_game_vol"
   );
 
   const engine = Engine.create();
@@ -1227,11 +1228,6 @@ async function main(
     particleSystem.draw(width, height, camPos, gameScale);
     damageParticleSystem.draw(width, height, camPos, gameScale);
 
-    console.log(
-      particleSystem.particles.length,
-      damageParticleSystem.particles.length
-    );
-
     gl.useProgram(terrainPg);
     // gl.bindBuffer(gl.ARRAY_BUFFER, tvBuf);
     // gl.vertexAttribPointer(tvPos, 2, gl.FLOAT, false, 0, 0);
@@ -1404,7 +1400,8 @@ async function main(
         globalResources.audioEngine.playOneShot(
           "./assets/audio/levelfinish.mp3",
           0.5,
-          "finish_sound"
+          "finish_sound",
+          "menu_bgm_vol"
         );
 
         scrollableMenu.items = ["Retry", "Next", "Exit to menu"];
@@ -1620,7 +1617,9 @@ async function main(
       gl.uniform1f(noiseUAlpha, collissionImpact / 10);
       globalResources.audioEngine.playOneShot(
         "./assets/audio/explosion.wav",
-        collissionImpact / 5
+        collissionImpact / 5,
+        "explosion",
+        "sfx_vol"
       );
     } else if (shipHealth <= 0) {
       gl.uniform1f(noiseUAlpha, 1.0);
@@ -1632,6 +1631,7 @@ async function main(
           "./assets/audio/pink noise.wav",
           "bgm_noise2",
           0.1,
+          "sfx_vol",
           0.0
         );
       }
@@ -1642,6 +1642,7 @@ async function main(
           "./assets/audio/pink noise.wav",
           "bgm_noise1",
           0.05,
+          "sfx_vol",
           0.0
         );
       }

@@ -95,8 +95,49 @@ async function menu(
   };
 
   const form = document.getElementById("loginform");
+  const settingsElt = document.getElementById("settings-menu");
+
+  const menuMusicVol = document.getElementById("menu-music-vol");
+  const gameMusicVol = document.getElementById("game-music-vol");
+  const sfxVol = document.getElementById("sfx-vol");
+
+  document.getElementById("menu").onpointerdown = (e) => {
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    if (settingsElt.style.display == "none") {
+      settingsElt.style.display = "flex";
+    } else {
+      settingsElt.style.display = "none";
+    }
+  };
+
+  menuMusicVol.oninput = (e) => {
+    globalResources.audioEngine.setGainNodeVolume(
+      "bgm_menu_vol",
+      menuMusicVol.value
+    );
+  };
+
+  gameMusicVol.oninput = (e) => {
+    globalResources.audioEngine.setGainNodeVolume(
+      "bgm_game_vol",
+      gameMusicVol.value
+    );
+  };
+
+  sfxVol.oninput = (e) => {
+    globalResources.audioEngine.setGainNodeVolume("sfx_vol", sfxVol.value);
+  };
 
   window.onpointerdown = (e) => {
+    if (
+      e.target != settingsElt &&
+      e.target.parentNode != settingsElt &&
+      e.target != menu
+    ) {
+      settingsElt.style.display = "none";
+    }
+
     mouse.y = e.pageY * pixelRatio;
     mouse.x = e.pageX * pixelRatio;
     mouse.down = true;
@@ -106,7 +147,8 @@ async function menu(
       globalResources.audioEngine.playLoop(
         "./assets/audio/meet-the-princess.wav",
         "bgm_menu",
-        0.4
+        0.4,
+        "bgm_menu_vol"
       );
     }
 
@@ -151,7 +193,6 @@ async function menu(
     mouse.x = e.pageX * pixelRatio;
     mouse.y = e.pageY * pixelRatio;
 
-    //scroll leaderboard just like before
     if (mouse.down && mouseInsideElement(elements.leaderboard)) {
       leaderboardOffset += Math.floor(-e.movementY / 5);
 
@@ -680,6 +721,7 @@ async function menu(
                 window.onpointermove = null;
                 window.onpointerup = null;
                 window.onpointerdown = null;
+                document.getElementById("menu").onpointerdown = null;
                 onGameStart(selectedLevel);
               })
               .catch((e) => {

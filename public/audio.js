@@ -18,6 +18,24 @@ class AudioEngine {
     this.compressor.connect(this.globalGain).connect(this.ctx.destination);
 
     this.loops = new Map();
+
+    this.gainNodes = new Map();
+  }
+
+  createGainNode(id, vol) {
+    if (this.gainNodes.has(id)) return;
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+    this.gainNodes.set(id, gain);
+    return gain;
+  }
+
+  setGainNodeVolume(id, vol) {
+    if (!this.gainNodes.has(id)) return;
+    this.gainNodes.get(id).gain.setValueAtTime(vol, this.ctx.currentTime);
+
+    this.gainNodes.get(id).dispatchEvent(new CustomEvent("volumechange"));
   }
 
   resume() {
@@ -44,13 +62,17 @@ class AudioEngine {
     }
   }
 
-  playOneShot(audioSrc, vol, id) {
+  playOneShot(audioSrc, vol, id, gainNodeId) {
     this.resume();
 
     const audioElement = this.createAudioElement(audioSrc);
     const track = this.ctx.createMediaElementSource(audioElement);
     const gain = this.ctx.createGain();
-    track.connect(gain).connect(this.compressor);
+
+    if (gainNodeId)
+      track.connect(this.gainNodes.get(gainNodeId)).connect(this.compressor);
+    else track.connect(gain).connect(this.compressor);
+
     audioElement.currentTime = 0;
 
     gain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
@@ -63,7 +85,7 @@ class AudioEngine {
     }
   }
 
-  async playLoop(audioSrc, id, vol = 1.0, fadeDuration = 2) {
+  async playLoop(audioSrc, id, vol = 1.0, gainNodeId, fadeDuration = 2) {
     this.resume();
 
     if (this.loops.has(id)) return;
@@ -88,7 +110,10 @@ class AudioEngine {
 
     const track = this.ctx.createMediaElementSource(audioElement);
     const gain = this.ctx.createGain();
-    track.connect(gain).connect(this.compressor);
+
+    if (gainNodeId)
+      track.connect(this.gainNodes.get(gainNodeId)).connect(this.compressor);
+    else track.connect(gain).connect(this.compressor);
 
     const duration = await getDuration(audioElement);
 

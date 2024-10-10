@@ -52,7 +52,8 @@ async function menu(
     globalResources.audioEngine.playLoop(
       "./assets/audio/meet-the-princess.wav",
       "bgm_menu",
-      0.4
+      0.4,
+      "bgm_menu_vol"
     );
   }
   const elements = {

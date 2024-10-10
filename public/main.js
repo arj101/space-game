@@ -101,7 +101,7 @@ async function main(
   globalResources.audioEngine.playLoop(
     "./assets/audio/06 Save in Space_loop.wav",
     "bgm",
-    0.2,
+    0.7,
     "bgm_game_vol"
   );
 
@@ -1277,9 +1277,11 @@ async function main(
       gl.drawArrays(gl.TRIANGLES, 0, obj.vertices.vertices.length);
     }
 
-    gl.useProgram(shaderPrograms.noiseShader);
-    gl.uniform1f(noiseUTime, t / 1000);
-    noiseBg.draw(gl.TRIANGLES);
+    if (globalResources.crashEffectEnabled) {
+      gl.useProgram(shaderPrograms.noiseShader);
+      gl.uniform1f(noiseUTime, t / 1000);
+      noiseBg.draw(gl.TRIANGLES);
+    }
 
     const shakeOffsetX =
       Math.max(-50 / 0.3, Math.min(200, -(camPos.x - ship.position.x))) * 0.3;
@@ -1456,7 +1458,7 @@ async function main(
           "./assets/audio/pink noise.wav",
           "bgm_over",
           0.6,
-          undefined,
+          "sfx_vol",
           0.0
         );
 
@@ -1631,7 +1633,7 @@ async function main(
         globalResources.audioEngine.playLoop(
           "./assets/audio/pink noise.wav",
           "bgm_noise2",
-          0.1,
+          0.4,
           "sfx_vol",
           0.0
         );
@@ -1642,7 +1644,7 @@ async function main(
         globalResources.audioEngine.playLoop(
           "./assets/audio/pink noise.wav",
           "bgm_noise1",
-          0.05,
+          0.2,
           "sfx_vol",
           0.0
         );

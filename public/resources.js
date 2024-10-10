@@ -19,6 +19,10 @@ function loadGlobalResources(gl, width, height) {
     const menuClickAudioP = loadAudio(menuClickAudioFile);
     const thrusterAudioP = loadAudio(thrusterAudioFile);
 
+    const crashEffectEnabled = !window.localStorage.getItem(
+      "crash_effect_disabled"
+    );
+
     const audioEngine = new AudioEngine();
 
     let bgmMenuVol = window.localStorage.getItem("bgm_menu_vol") || 1;
@@ -126,6 +130,7 @@ function loadGlobalResources(gl, width, height) {
       gainNode,
       shaderPrograms,
       audioEngine,
+      crashEffectEnabled,
     });
   });
 }

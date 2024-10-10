@@ -101,6 +101,19 @@ async function menu(
   const menuMusicVol = document.getElementById("menu-music-vol");
   const gameMusicVol = document.getElementById("game-music-vol");
   const sfxVol = document.getElementById("sfx-vol");
+  const crashEffect = document.getElementById("crash-effect");
+
+  crashEffect.checked = globalResources.crashEffectEnabled;
+
+  crashEffect.onchange = (e) => {
+    if (crashEffect.checked) {
+      window.localStorage.removeItem("crash_effect_disabled");
+      globalResources.crashEffectEnabled = true;
+    } else {
+      window.localStorage.setItem("crash_effect_disabled", true);
+      globalResources.crashEffectEnabled = false;
+    }
+  };
 
   document.getElementById("menu").onpointerdown = (e) => {
     e.stopPropagation();

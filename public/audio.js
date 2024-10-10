@@ -70,7 +70,10 @@ class AudioEngine {
     const gain = this.ctx.createGain();
 
     if (gainNodeId)
-      track.connect(this.gainNodes.get(gainNodeId)).connect(this.compressor);
+      track
+        .connect(gain)
+        .connect(this.gainNodes.get(gainNodeId))
+        .connect(this.compressor);
     else track.connect(gain).connect(this.compressor);
 
     audioElement.currentTime = 0;
@@ -112,7 +115,10 @@ class AudioEngine {
     const gain = this.ctx.createGain();
 
     if (gainNodeId)
-      track.connect(this.gainNodes.get(gainNodeId)).connect(this.compressor);
+      track
+        .connect(gain)
+        .connect(this.gainNodes.get(gainNodeId))
+        .connect(this.compressor);
     else track.connect(gain).connect(this.compressor);
 
     const duration = await getDuration(audioElement);

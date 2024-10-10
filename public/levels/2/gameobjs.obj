@@ -1,0 +1,7 @@
+# Blender 4.2.0
+# www.blender.org
+mtllib gameobjs.mtl
+o particle1
+v -3.314667 0.000000 5.610883
+o particle2
+v 0.915637 0.000000 5.356282

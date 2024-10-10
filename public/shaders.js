@@ -279,7 +279,7 @@ void main() {
 
     intensity = clamp(intensity, 0., 1.);
 
-    intensity += smoothstep(0.95, 1., texColor.x);
+    intensity += smoothstep(0.92, 1., texColor.x);
 
     color *= intensity;
 

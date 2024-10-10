@@ -1401,7 +1401,7 @@ async function main(
           "./assets/audio/levelfinish.mp3",
           0.5,
           "finish_sound",
-          "menu_bgm_vol"
+          "bgm_menu_vol"
         );
 
         scrollableMenu.items = ["Retry", "Next", "Exit to menu"];

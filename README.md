@@ -6,7 +6,7 @@ A retro-style 2D spaceship lander game built using **pure JavaScript** and **Web
 
 > Pilot a lander through a stylized rocky terrain and attempt to land safely. Built from scratch with raw WebGL, Matter.js and procedural shaders.
 
-**🌐 Live demo**: [space-game-vert.vercel.app](https://real-space-game.vercel.app)
+**🌐 Live demo**: [space-game-vert.vercel.app](https://real-space-game.vercel.app) (no global leaderboard)
 
 ## Features
 
@@ -15,6 +15,7 @@ A retro-style 2D spaceship lander game built using **pure JavaScript** and **Web
 - Physics-based simulation (gravity, thrust, rotation, momentum) - using matter.js
 - Retro-style UI
 - Visual effects using GLSL shaders
+- Global leaderboard (if using server enabled version)
 
 ## 🕹 Controls
 
